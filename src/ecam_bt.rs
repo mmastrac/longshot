@@ -2,16 +2,18 @@ use async_stream::stream;
 use btleplug::api::{Central, Characteristic, Manager as _, Peripheral as _, ScanFilter};
 use btleplug::platform::{Adapter, Manager};
 use tokio::sync::mpsc;
+use std::pin::Pin;
 use std::result::Result;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use stream_cancel::{StreamExt as _, Tripwire};
 use tokio::time;
 use tokio_stream::Stream;
 use tokio_stream::StreamExt;
 use uuid::Uuid;
+use futures::future::FutureExt;
 
-use crate::ecam::{EcamError, EcamOutput};
+use crate::ecam::{Ecam, EcamError, EcamOutput};
 use crate::packet::{self, packetize};
 
 const SERVICE_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000300);
@@ -23,7 +25,7 @@ type Peripheral = <Adapter as Central>::Peripheral;
 pub struct EcamBT {
     peripheral: Peripheral,
     characteristic: Characteristic,
-    notifications: Box<dyn Stream<Item = EcamOutput> + Send + Sync>,
+    notifications: Pin<Box<dyn Stream<Item = EcamOutput> + Send + Sync>>,
 }
 
 impl EcamBT {
@@ -60,11 +62,21 @@ impl EcamBT {
     }
 }
 
-fn assert_send<T: Send>() {}
+impl Ecam for EcamBT {
+    fn read(self: &Self) -> Pin<Box<dyn std::future::Future<Output = Result<Option<EcamOutput>, EcamError>> + Send>> {
+        let x = self.notifications.get_mut().expect("mutex failure").next();
+        let y = x.map(|x| x);
+        unimplemented!()
+    }
+
+    fn send(self: &Self, data: Vec<u8>) -> Pin<Box<dyn std::future::Future<Output = Result<(), EcamError>> + Send>> {
+        // Box::pin(self.send(data))
+        unimplemented!()
+    }
+}
 
 pub async fn get_ecam() -> Result<EcamBT, EcamError> {
     let manager = Manager::new().await?;
-    assert_send::<&EcamBT>();
     get_ecam_from_manager(&manager).await
 }
 
@@ -105,7 +117,7 @@ async fn get_ecam_from_manager(manager: &Manager) -> Result<EcamBT, EcamError> {
     for adapter in adapter_list.iter() {
         let res = get_ecam_from_adapter(adapter).await?;
         if let Some((p, c)) = res {
-            let n = Box::new(get_notifications_from_peripheral(&p, &c).await?);
+            let n = Box::pin(get_notifications_from_peripheral(&p, &c).await?);
             return Ok(EcamBT {
                 peripheral: p,
                 characteristic: c,

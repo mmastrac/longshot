@@ -1,4 +1,4 @@
-use std::future::Future;
+use std::{future::Future, pin::Pin};
 
 use thiserror::Error;
 
@@ -20,9 +20,9 @@ pub enum EcamError {
     Unknown,
 }
 
-trait Ecam {
+pub trait Ecam {
     /// Read one item from the ECAM.
-    fn read(self: &Self) -> Box<dyn Future<Output = Result<EcamOutput, EcamError>> + Send>;
+    fn read(self: &Self) -> Pin<Box<dyn Future<Output = Result<Option<EcamOutput>, EcamError>> + Send>>;
     /// Send one item to the ECAM.
-    fn send(self: &Self, data: Vec<u8>) -> Box<dyn Future<Output = Result<(), EcamError>> + Send>;
+    fn send(self: &Self, data: Vec<u8>) -> Pin<Box<dyn Future<Output = Result<(), EcamError>> + Send>>;
 }

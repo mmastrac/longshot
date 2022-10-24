@@ -527,6 +527,7 @@ dependencies = [
  "async-stream",
  "btleplug",
  "clap",
+ "futures",
  "hex",
  "pretty_env_logger",
  "stream-cancel",
