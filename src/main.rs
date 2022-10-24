@@ -10,6 +10,7 @@ use tuples::*;
 
 mod command;
 mod ecam_bt;
+mod ecam_subprocess;
 mod packet;
 mod packet_stream;
 
@@ -94,6 +95,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
     match subcommand {
         Some(("brew", cmd)) => {
             println!("{:?}", cmd);
+            let mut ecam = ecam_subprocess::connect(
+                &cmd.get_one::<String>("device-name")
+                    .expect("Device name required")
+                    .clone(),
+            )
+            .await?;
+
+            let mut r = Box::pin(ecam.read().await?);
+            while let Some(s) = r.next().await {
+                println!("{:?}", s);
+            }
         }
         Some(("list", cmd)) => {
             println!("{:?}", cmd);
