@@ -40,7 +40,7 @@ async fn pipe(device: String) -> Result<(), Box<dyn Error>> {
         while let Some(value) = bt_out.next().await {
             ecam.send(value).await?;
         }
-        println!("a done");
+        println!("Packet stream done.");
         trigger1.lock().unwrap().take();
         Result::<(), EcamError>::Ok(())
     });
@@ -55,7 +55,7 @@ async fn pipe(device: String) -> Result<(), Box<dyn Error>> {
                     .collect::<String>()
             );
         }
-        println!("b done");
+        println!("Device stream done.");
         trigger2.lock().unwrap().take();
         Result::<(), EcamError>::Ok(())
     });

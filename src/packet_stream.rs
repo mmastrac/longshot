@@ -50,5 +50,6 @@ pub fn packet_stdio_stream() -> impl Stream<Item = Vec<u8>> {
                 }
             }
         }
+        println!("Exiting stdin loop.");
     }
 }
