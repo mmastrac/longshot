@@ -1,6 +1,9 @@
+use async_stream::stream;
 use btleplug::api::{Central, Characteristic, Manager as _, Peripheral as _, ScanFilter};
 use btleplug::platform::{Adapter, Manager};
+use tokio::sync::mpsc;
 use std::result::Result;
+use std::sync::Arc;
 use std::time::Duration;
 use stream_cancel::{StreamExt as _, Tripwire};
 use tokio::time;
@@ -8,7 +11,7 @@ use tokio_stream::Stream;
 use tokio_stream::StreamExt;
 use uuid::Uuid;
 
-use crate::ecam::EcamError;
+use crate::ecam::{EcamError, EcamOutput};
 use crate::packet::{self, packetize};
 
 const SERVICE_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000300);
@@ -20,6 +23,7 @@ type Peripheral = <Adapter as Central>::Peripheral;
 pub struct EcamBT {
     peripheral: Peripheral,
     characteristic: Characteristic,
+    notifications: Box<dyn Stream<Item = EcamOutput> + Send + Sync>,
 }
 
 impl EcamBT {
@@ -37,7 +41,7 @@ impl EcamBT {
     }
 
     /// Create a stream that outputs the packets from the ECAM
-    pub async fn stream(self: &Self) -> Result<impl Stream<Item = Vec<u8>>, EcamError> {
+    pub async fn stream(self: &Self) -> Result<impl Stream<Item = Vec<u8>> + Send, EcamError> {
         self.peripheral.subscribe(&self.characteristic).await?;
         let peripheral = self.peripheral.clone();
         let (trigger, tripwire) = Tripwire::new();
@@ -56,9 +60,40 @@ impl EcamBT {
     }
 }
 
+fn assert_send<T: Send>() {}
+
 pub async fn get_ecam() -> Result<EcamBT, EcamError> {
     let manager = Manager::new().await?;
+    assert_send::<&EcamBT>();
     get_ecam_from_manager(&manager).await
+}
+
+async fn get_notifications_from_peripheral(peripheral: &Peripheral, characteristic: &Characteristic) -> Result<impl Stream<Item = EcamOutput> + Send + Sync, EcamError> {
+    peripheral.subscribe(characteristic).await?;
+    let peripheral2 = peripheral.clone();
+    let (trigger, tripwire) = Tripwire::new();
+    tokio::spawn(async move {
+        while peripheral2.is_connected().await.unwrap_or_default() {}
+        drop(trigger);
+    });
+
+    // Use a forwarding task to make this stream Sync
+    let mut n = peripheral.notifications().await?.take_until_if(tripwire);
+    let (tx, mut rx) = mpsc::channel(100);
+    tokio::spawn(async move {
+        while let Some(m) = n.next().await {
+            tx.send(m).await.expect("Failed to forward notification");
+        }
+    });
+
+    // Then yield the rest
+    Result::Ok(stream! {
+        yield EcamOutput::Ready;
+        while let Some(m) = rx.recv().await {
+            yield EcamOutput::Packet(m.value[2..m.value.len() - 2].to_vec());
+        }
+        yield EcamOutput::Done;
+    })
 }
 
 async fn get_ecam_from_manager(manager: &Manager) -> Result<EcamBT, EcamError> {
@@ -70,9 +105,11 @@ async fn get_ecam_from_manager(manager: &Manager) -> Result<EcamBT, EcamError> {
     for adapter in adapter_list.iter() {
         let res = get_ecam_from_adapter(adapter).await?;
         if let Some((p, c)) = res {
+            let n = Box::new(get_notifications_from_peripheral(&p, &c).await?);
             return Ok(EcamBT {
                 peripheral: p,
                 characteristic: c,
+                notifications: n,
             });
         }
     }

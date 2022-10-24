@@ -22,7 +22,7 @@ pub enum EcamError {
 
 trait Ecam {
     /// Read one item from the ECAM.
-    fn read(self: &Self) -> Box<dyn Future<Output = Result<EcamOutput, EcamError>>>;
+    fn read(self: &Self) -> Box<dyn Future<Output = Result<EcamOutput, EcamError>> + Send>;
     /// Send one item to the ECAM.
-    fn send(self: &Self, data: Vec<u8>) -> Box<dyn Future<Output = Result<(), EcamError>>>;
+    fn send(self: &Self, data: Vec<u8>) -> Box<dyn Future<Output = Result<(), EcamError>> + Send>;
 }
