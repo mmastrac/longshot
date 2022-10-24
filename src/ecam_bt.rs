@@ -3,28 +3,16 @@ use btleplug::platform::{Adapter, Manager};
 use std::result::Result;
 use std::time::Duration;
 use stream_cancel::{StreamExt as _, Tripwire};
-use thiserror::Error;
 use tokio::time;
 use tokio_stream::Stream;
 use tokio_stream::StreamExt;
 use uuid::Uuid;
 
+use crate::ecam::EcamError;
 use crate::packet::{self, packetize};
 
 const SERVICE_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000300);
 const CHARACTERISTIC_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000301);
-
-#[derive(Error, Debug)]
-pub enum EcamError {
-    #[error("not found")]
-    NotFound,
-    #[error(transparent)]
-    BTError(#[from] btleplug::Error),
-    #[error(transparent)]
-    IOError(#[from] std::io::Error),
-    #[error("Unknown error")]
-    Unknown,
-}
 
 /// The concrete peripheral type to avoid going crazy here managaing an unsized trait.
 type Peripheral = <Adapter as Central>::Peripheral;

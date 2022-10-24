@@ -9,12 +9,13 @@ use tokio_stream::{Stream, StreamExt as _};
 use tuples::*;
 
 mod command;
+mod ecam;
 mod ecam_bt;
 mod ecam_subprocess;
 mod packet;
 mod packet_stream;
 
-use ecam_bt::EcamError;
+use ecam::EcamError;
 
 fn get_update_packet_stream(d: Duration) -> impl Stream<Item = Vec<u8>> {
     let mut interval = tokio::time::interval(d);

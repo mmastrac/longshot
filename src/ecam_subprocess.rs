@@ -4,7 +4,7 @@ use async_stream::stream;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_stream::{wrappers::LinesStream, Stream, StreamExt};
 
-use crate::ecam_bt::EcamError;
+use crate::ecam::EcamError;
 
 pub struct EcamSubprocess {
     child: Option<tokio::process::Child>,
