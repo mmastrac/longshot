@@ -17,12 +17,12 @@ const CHARACTERISTIC_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_0812
 /// The concrete peripheral type to avoid going crazy here managaing an unsized trait.
 type Peripheral = <Adapter as Central>::Peripheral;
 
-pub struct Ecam {
+pub struct EcamBT {
     peripheral: Peripheral,
     characteristic: Characteristic,
 }
 
-impl Ecam {
+impl EcamBT {
     /// Send a packet to the ECAM
     pub async fn send(self: &Self, data: Vec<u8>) -> Result<(), EcamError> {
         Result::Ok(
@@ -56,12 +56,12 @@ impl Ecam {
     }
 }
 
-pub async fn get_ecam() -> Result<Ecam, EcamError> {
+pub async fn get_ecam() -> Result<EcamBT, EcamError> {
     let manager = Manager::new().await?;
     get_ecam_from_manager(&manager).await
 }
 
-async fn get_ecam_from_manager(manager: &Manager) -> Result<Ecam, EcamError> {
+async fn get_ecam_from_manager(manager: &Manager) -> Result<EcamBT, EcamError> {
     let adapter_list = manager.adapters().await?;
     if adapter_list.is_empty() {
         return Result::Err(EcamError::NotFound);
@@ -70,7 +70,7 @@ async fn get_ecam_from_manager(manager: &Manager) -> Result<Ecam, EcamError> {
     for adapter in adapter_list.iter() {
         let res = get_ecam_from_adapter(adapter).await?;
         if let Some((p, c)) = res {
-            return Ok(Ecam {
+            return Ok(EcamBT {
                 peripheral: p,
                 characteristic: c,
             });
