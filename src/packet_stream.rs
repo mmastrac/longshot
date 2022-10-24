@@ -1,39 +1,54 @@
-use tokio::sync::mpsc;
-use tokio_stream::wrappers::ReceiverStream;
-use tokio_stream::Stream;
+use std::time::Duration;
+
+use async_stream::stream;
+use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
+
+enum InputResult {
+    Packet(Vec<u8>),
+    Quit,
+}
+
+fn parse_line(s: &str) -> Option<InputResult> {
+    if s.starts_with("S: ") {
+        if let Ok(bytes) = hex::decode(&s[3..]) {
+            InputResult::Packet(bytes);
+        }
+        None
+    } else if s.starts_with("Q:") {
+        Some(InputResult::Quit)
+    } else {
+        None
+    }
+}
 
 pub fn packet_stdio_stream() -> impl Stream<Item = Vec<u8>> {
     println!("R: READY");
 
-    let (tx, mut rx) = mpsc::channel(2);
-    let h1 = tokio::task::spawn_blocking(move || loop {
-        let lines = std::io::stdin().lines();
-        for s in lines {
-            if let Ok(s) = s {
-                tx.blocking_send(s).expect("Failed to send");
-            } else {
-                return ();
+    let (tx, rx) = tokio::sync::mpsc::channel(1);
+    std::thread::spawn(move || {
+        for l in std::io::stdin().lines() {
+            if tx.blocking_send(l).is_err() {
+                break;
             }
         }
     });
 
-    // Listen to the stdin lines
-    let (tx2, rx2) = mpsc::channel(2);
-    let h2 = tokio::spawn(async move {
-        while let Some(s) = rx.recv().await {
-            if s.starts_with("S: ") {
-                if let Ok(bytes) = hex::decode(&s[3..]) {
-                    tx2.send(bytes).await;
-                } else {
-                    println!("Invalid hex");
+    let mut lines = ReceiverStream::new(rx);
+    stream! {
+        loop {
+            match tokio::time::timeout(Duration::from_millis(250), lines.next()).await {
+                Ok(Some(Ok(s))) => {
+                    match parse_line(&s) {
+                        Some(InputResult::Packet(v)) => { yield v; }
+                        Some(InputResult::Quit) => { break; }
+                        _ => { println!("Input error"); }
+                    }
+                },
+                Err(_) => { /* Elapsed */ }
+                _ => {
+                    break;
                 }
-            } else if s.starts_with("Q: ") {
-                return ();
-            } else {
-                println!("Invalid input");
             }
         }
-    });
-
-    ReceiverStream::new(rx2)
+    }
 }

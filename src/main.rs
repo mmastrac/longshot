@@ -1,7 +1,12 @@
 use clap::{arg, command, value_parser, ArgAction};
-use std::error::Error;
+use std::future::{self, Future};
+use std::sync::Mutex;
 use std::time::Duration;
-use tokio_stream::{Stream, StreamExt};
+use std::{error::Error, sync::Arc};
+use stream_cancel::{StreamExt as _, Tripwire};
+use tokio::try_join;
+use tokio_stream::{Stream, StreamExt as _};
+use tuples::*;
 
 mod command;
 mod ecam_bt;
@@ -23,16 +28,19 @@ fn get_update_packet_stream(d: Duration) -> impl Stream<Item = Vec<u8>> {
 
 async fn pipe(device: String) -> Result<(), Box<dyn Error>> {
     let ecam = ecam_bt::get_ecam().await?;
-    let mut bt_in = ecam.stream().await?;
-    let packet_out = packet_stream::packet_stdio_stream();
-    let update_stream = get_update_packet_stream(Duration::from_millis(250));
-    let mut bt_out = Box::pin(packet_out.merge(update_stream));
+    let (trigger, tripwire) = Tripwire::new();
+    let trigger1 = Arc::new(Mutex::new(Some(trigger)));
+    let trigger2 = trigger1.clone();
+
+    let mut bt_in = ecam.stream().await?.take_until_if(tripwire.clone());
+    let mut bt_out = Box::pin(packet_stream::packet_stdio_stream().take_until_if(tripwire.clone()));
 
     let a = tokio::spawn(async move {
         while let Some(value) = bt_out.next().await {
             ecam.send(value).await?;
         }
-        println!("a closed");
+        println!("a done");
+        trigger1.lock().unwrap().take();
         Result::<(), EcamError>::Ok(())
     });
 
@@ -46,13 +54,18 @@ async fn pipe(device: String) -> Result<(), Box<dyn Error>> {
                     .collect::<String>()
             );
         }
-        println!("b closed");
+        println!("b done");
+        trigger2.lock().unwrap().take();
         Result::<(), EcamError>::Ok(())
     });
 
-    a.await?;
-    b.await?;
+    // iterator_try_collect will probably simplify this
+    try_join!(a, b)?
+        .into_iter()
+        .collect::<Result<Vec<_>, _>>()?;
 
+    // TODO: Figure out where tokio is getting stuck and failing to terminate the process
+    // std::process::exit(0);
     Result::Ok(())
 }
 

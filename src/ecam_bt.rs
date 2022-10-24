@@ -2,11 +2,9 @@ use btleplug::api::{Central, Characteristic, Manager as _, Peripheral as _, Scan
 use btleplug::platform::{Adapter, Manager};
 use std::result::Result;
 use std::time::Duration;
+use stream_cancel::{StreamExt as _, Tripwire};
 use thiserror::Error;
-use tokio::sync::mpsc;
-use tokio::task;
 use tokio::time;
-use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::Stream;
 use tokio_stream::StreamExt;
 use uuid::Uuid;
@@ -20,8 +18,12 @@ const CHARACTERISTIC_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_0812
 pub enum EcamError {
     #[error("not found")]
     NotFound,
-    #[error("root")]
-    Error(#[from] btleplug::Error),
+    #[error(transparent)]
+    BTError(#[from] btleplug::Error),
+    #[error(transparent)]
+    IOError(#[from] std::io::Error),
+    #[error("Unknown error")]
+    Unknown,
 }
 
 /// The concrete peripheral type to avoid going crazy here managaing an unsized trait.
@@ -49,12 +51,19 @@ impl Ecam {
     /// Create a stream that outputs the packets from the ECAM
     pub async fn stream(self: &Self) -> Result<impl Stream<Item = Vec<u8>>, EcamError> {
         self.peripheral.subscribe(&self.characteristic).await?;
+        let peripheral = self.peripheral.clone();
+        let (trigger, tripwire) = Tripwire::new();
+        tokio::spawn(async move {
+            while peripheral.is_connected().await.unwrap_or_default() {}
+            drop(trigger);
+        });
         // Trim the header and CRC
         Result::Ok(
             self.peripheral
                 .notifications()
                 .await?
-                .map(|m| m.value[2..m.value.len() - 2].to_vec()),
+                .map(|m| m.value[2..m.value.len() - 2].to_vec())
+                .take_until_if(tripwire),
         )
     }
 }
