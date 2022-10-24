@@ -1,17 +1,17 @@
 use async_stream::stream;
 use btleplug::api::{Central, Characteristic, Manager as _, Peripheral as _, ScanFilter};
 use btleplug::platform::{Adapter, Manager};
-use tokio::sync::mpsc;
+use futures::future::FutureExt;
 use std::pin::Pin;
 use std::result::Result;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use stream_cancel::{StreamExt as _, Tripwire};
+use tokio::sync::mpsc::{self, Receiver};
 use tokio::time;
 use tokio_stream::Stream;
 use tokio_stream::StreamExt;
 use uuid::Uuid;
-use futures::future::FutureExt;
 
 use crate::ecam::{Ecam, EcamError, EcamOutput};
 use crate::packet::{self, packetize};
@@ -25,7 +25,7 @@ type Peripheral = <Adapter as Central>::Peripheral;
 pub struct EcamBT {
     peripheral: Peripheral,
     characteristic: Characteristic,
-    notifications: Pin<Box<dyn Stream<Item = EcamOutput> + Send + Sync>>,
+    notifications: Pin<Box<Receiver<EcamOutput>>>,
 }
 
 impl EcamBT {
@@ -63,15 +63,18 @@ impl EcamBT {
 }
 
 impl Ecam for EcamBT {
-    fn read(self: &Self) -> Pin<Box<dyn std::future::Future<Output = Result<Option<EcamOutput>, EcamError>> + Send>> {
-        let x = self.notifications.get_mut().expect("mutex failure").next();
-        let y = x.map(|x| x);
-        unimplemented!()
+    fn read<'a>(
+        self: &'a mut Self,
+    ) -> Pin<Box<dyn std::future::Future<Output = Result<Option<EcamOutput>, EcamError>> + Send + 'a>>
+    {
+        Box::pin(async { Result::Ok(self.notifications.recv().await) })
     }
 
-    fn send(self: &Self, data: Vec<u8>) -> Pin<Box<dyn std::future::Future<Output = Result<(), EcamError>> + Send>> {
-        // Box::pin(self.send(data))
-        unimplemented!()
+    fn write<'a>(
+        self: &'a mut Self,
+        data: Vec<u8>,
+    ) -> Pin<Box<dyn std::future::Future<Output = Result<(), EcamError>> + Send + 'a>> {
+        Box::pin(self.send(data))
     }
 }
 
@@ -80,7 +83,10 @@ pub async fn get_ecam() -> Result<EcamBT, EcamError> {
     get_ecam_from_manager(&manager).await
 }
 
-async fn get_notifications_from_peripheral(peripheral: &Peripheral, characteristic: &Characteristic) -> Result<impl Stream<Item = EcamOutput> + Send + Sync, EcamError> {
+async fn get_notifications_from_peripheral(
+    peripheral: &Peripheral,
+    characteristic: &Characteristic,
+) -> Result<Receiver<EcamOutput>, EcamError> {
     peripheral.subscribe(characteristic).await?;
     let peripheral2 = peripheral.clone();
     let (trigger, tripwire) = Tripwire::new();
@@ -93,19 +99,20 @@ async fn get_notifications_from_peripheral(peripheral: &Peripheral, characterist
     let mut n = peripheral.notifications().await?.take_until_if(tripwire);
     let (tx, mut rx) = mpsc::channel(100);
     tokio::spawn(async move {
+        tx.send(EcamOutput::Ready)
+            .await
+            .expect("Failed to forward notification");
         while let Some(m) = n.next().await {
-            tx.send(m).await.expect("Failed to forward notification");
+            tx.send(EcamOutput::Packet(m.value[2..m.value.len() - 2].to_vec()))
+                .await
+                .expect("Failed to forward notification");
         }
+        tx.send(EcamOutput::Done)
+            .await
+            .expect("Failed to forward notification");
     });
 
-    // Then yield the rest
-    Result::Ok(stream! {
-        yield EcamOutput::Ready;
-        while let Some(m) = rx.recv().await {
-            yield EcamOutput::Packet(m.value[2..m.value.len() - 2].to_vec());
-        }
-        yield EcamOutput::Done;
-    })
+    Result::Ok(rx)
 }
 
 async fn get_ecam_from_manager(manager: &Manager) -> Result<EcamBT, EcamError> {

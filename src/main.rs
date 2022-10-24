@@ -15,7 +15,7 @@ mod ecam_subprocess;
 mod packet;
 mod packet_stream;
 
-use ecam::EcamError;
+use ecam::{Ecam, EcamError};
 
 fn get_update_packet_stream(d: Duration) -> impl Stream<Item = Vec<u8>> {
     let mut interval = tokio::time::interval(d);
@@ -29,7 +29,7 @@ fn get_update_packet_stream(d: Duration) -> impl Stream<Item = Vec<u8>> {
 }
 
 async fn pipe(device: String) -> Result<(), Box<dyn Error>> {
-    let ecam = ecam_bt::get_ecam().await?;
+    let mut ecam = ecam_bt::get_ecam().await?;
     let (trigger, tripwire) = Tripwire::new();
     let trigger1 = Arc::new(Mutex::new(Some(trigger)));
     let trigger2 = trigger1.clone();
