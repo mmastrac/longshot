@@ -131,7 +131,7 @@ async fn get_notifications_from_peripheral(
         .await?
         .map(f)
         .take_until_if(tripwire);
-    Ok(EcamPacketReceiver::from_stream(n))
+    Ok(EcamPacketReceiver::from_stream(n, true))
 }
 
 async fn get_ecam_from_manager(manager: &Manager, uuid: Uuid) -> Result<EcamBT, EcamError> {

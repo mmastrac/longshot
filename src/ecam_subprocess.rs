@@ -1,65 +1,44 @@
-use std::process::Stdio;
+use std::{process::Stdio, sync::Arc};
 
 use async_stream::stream;
-use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio_stream::{wrappers::LinesStream, Stream, StreamExt};
+use futures::TryFutureExt;
+use tokio::{
+    io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
+    process::ChildStdin,
+    sync::Mutex,
+};
+use tokio_stream::{wrappers::LinesStream, StreamExt};
 
 use crate::{
     command::Response,
-    ecam::{AsyncFuture, Ecam, EcamError, EcamOutput},
+    ecam::{AsyncFuture, Ecam, EcamError, EcamOutput, EcamPacketReceiver},
+    packet,
 };
 
 pub struct EcamSubprocess {
-    child: Option<tokio::process::Child>,
+    stdin: Arc<Mutex<ChildStdin>>,
+    receiver: EcamPacketReceiver,
 }
 
 impl EcamSubprocess {
-    pub async fn stream(self: &mut Self) -> Result<impl Stream<Item = EcamOutput>, EcamError> {
-        let mut child = self.child.take().expect("child was missing");
-        let mut stderr = LinesStream::new(
-            BufReader::new(child.stderr.take().expect("stderr was missing")).lines(),
-        );
-        let mut stdout = LinesStream::new(
-            BufReader::new(child.stdout.take().expect("stdout was missing")).lines(),
-        );
-
-        let stdout = stream! {
-            while let Some(Ok(s)) = stdout.next().await {
-                if s == "R: READY" {
-                    yield EcamOutput::Ready;
-                } else if s.starts_with("R: ") {
-                    if let Ok(bytes) = hex::decode(&s[3..]) {
-                        yield EcamOutput::Packet(Response::decode(&bytes));
-                    } else {
-                        yield EcamOutput::Logging(format!("Failed to decode '{}'", s));
-                    }
-                } else {
-                    yield EcamOutput::Logging(s);
-                }
-            }
-        };
-        let stderr = stream! {
-            while let Some(Ok(s)) = stderr.next().await {
-                yield EcamOutput::Logging(s);
-            }
-        };
-
-        let termination = stream! {
-            let _ = child.wait().await;
-            yield EcamOutput::Done
-        };
-
-        Result::Ok(stdout.merge(stderr).merge(termination))
+    async fn write_stdin(self: &Self, data: Vec<u8>) -> Result<(), EcamError> {
+        self.stdin
+            .lock()
+            .await
+            .write(format!("S: {}\n", packet::stringify(&data)).as_bytes())
+            .map_ok(|_| ())
+            .await?;
+        Ok(())
     }
 }
 
 impl Ecam for EcamSubprocess {
     fn read<'a>(self: &'a Self) -> AsyncFuture<'a, Option<EcamOutput>> {
-        unimplemented!()
+        Box::pin(self.receiver.recv())
     }
 
     fn write<'a>(self: &'a Self, data: Vec<u8>) -> AsyncFuture<'a, ()> {
-        unimplemented!()
+        Box::pin(self.write_stdin(data))
     }
 
     fn scan<'a>() -> AsyncFuture<'a, (String, uuid::Uuid)>
@@ -68,6 +47,43 @@ impl Ecam for EcamSubprocess {
     {
         unimplemented!()
     }
+}
+
+pub async fn stream(
+    mut child: tokio::process::Child,
+) -> Result<impl StreamExt<Item = EcamOutput>, EcamError> {
+    let mut stderr =
+        LinesStream::new(BufReader::new(child.stderr.take().expect("stderr was missing")).lines());
+    let mut stdout =
+        LinesStream::new(BufReader::new(child.stdout.take().expect("stdout was missing")).lines());
+
+    let stdout = stream! {
+        while let Some(Ok(s)) = stdout.next().await {
+            if s == "R: READY" {
+                yield EcamOutput::Ready;
+            } else if s.starts_with("R: ") {
+                if let Ok(bytes) = hex::decode(&s[3..]) {
+                    yield EcamOutput::Packet(Response::decode(&bytes));
+                } else {
+                    yield EcamOutput::Logging(format!("Failed to decode '{}'", s));
+                }
+            } else {
+                yield EcamOutput::Logging(s);
+            }
+        }
+    };
+    let stderr = stream! {
+        while let Some(Ok(s)) = stderr.next().await {
+            yield EcamOutput::Logging(s);
+        }
+    };
+
+    let termination = stream! {
+        let _ = child.wait().await;
+        yield EcamOutput::Done
+    };
+
+    Result::Ok(stdout.merge(stderr).merge(termination))
 }
 
 pub async fn connect(device_name: &str) -> Result<EcamSubprocess, EcamError> {
@@ -79,7 +95,12 @@ pub async fn connect(device_name: &str) -> Result<EcamSubprocess, EcamError> {
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
     cmd.kill_on_drop(true);
-    let child = cmd.spawn()?;
+    let mut child = cmd.spawn()?;
+    let stdin = Arc::new(Mutex::new(child.stdin.take().expect("stdin was missing")));
 
-    Result::Ok(EcamSubprocess { child: Some(child) })
+    let s = Box::pin(stream(child).await?);
+    Result::Ok(EcamSubprocess {
+        stdin,
+        receiver: EcamPacketReceiver::from_stream(s, false),
+    })
 }

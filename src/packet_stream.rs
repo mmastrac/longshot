@@ -11,9 +11,10 @@ enum InputResult {
 fn parse_line(s: &str) -> Option<InputResult> {
     if s.starts_with("S: ") {
         if let Ok(bytes) = hex::decode(&s[3..]) {
-            InputResult::Packet(bytes);
+            Some(InputResult::Packet(bytes))
+        } else {
+            None
         }
-        None
     } else if s.starts_with("Q:") {
         Some(InputResult::Quit)
     } else {

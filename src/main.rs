@@ -31,8 +31,9 @@ fn get_update_packet_stream(d: Duration) -> impl Stream<Item = Vec<u8>> {
     update_stream
 }
 
-async fn pipe(device: String) -> Result<(), Box<dyn Error>> {
-    let mut ecam = ecam_bt::get_ecam(Uuid::nil()).await?;
+async fn pipe(device_name: String) -> Result<(), Box<dyn Error>> {
+    let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
+    let mut ecam = ecam_bt::get_ecam(uuid).await?;
     let (trigger, tripwire) = Tripwire::new();
     let trigger1 = Arc::new(Mutex::new(Some(trigger)));
     let trigger2 = trigger1.clone();
@@ -51,13 +52,7 @@ async fn pipe(device: String) -> Result<(), Box<dyn Error>> {
 
     let b = tokio::spawn(async move {
         while let Some(value) = bt_in.next().await {
-            println!(
-                "R: {}",
-                value
-                    .iter()
-                    .map(|n| format!("{:02x}", n))
-                    .collect::<String>()
-            );
+            println!("R: {}", packet::stringify(&value));
         }
         println!("Device stream done.");
         trigger2.lock().await.take();
@@ -75,17 +70,16 @@ async fn pipe(device: String) -> Result<(), Box<dyn Error>> {
 }
 
 async fn monitor(turn_on: bool, device_name: String) -> Result<(), EcamError> {
-    let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
-    let ecam = Arc::new(ecam_bt::get_ecam(uuid).await?);
+    let ecam = Arc::new(ecam_subprocess::connect(&device_name).await?);
     let timeout = Duration::from_millis(100);
     if turn_on {
-        ecam.send(Request::State(StateRequest::TurnOn).encode())
+        ecam.write(Request::State(StateRequest::TurnOn).encode())
             .await?;
     }
     let ecam2 = ecam.clone();
     let a = tokio::spawn(async move {
         loop {
-            match tokio::time::timeout(timeout, ecam2.send(vec![0x75, 0x0f])).await {
+            match tokio::time::timeout(timeout, ecam2.write(vec![0x75, 0x0f])).await {
                 Ok(x) => {}
                 Err(x) => {
                     println!("timeout");

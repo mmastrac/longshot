@@ -19,6 +19,13 @@ pub fn packetize(buffer: &[u8]) -> Vec<u8> {
     out
 }
 
+pub fn stringify(buffer: &[u8]) -> String {
+    buffer
+        .iter()
+        .map(|n| format!("{:02x}", n))
+        .collect::<String>()
+}
+
 #[cfg(test)]
 pub mod test {
     use super::{checksum, packetize};
