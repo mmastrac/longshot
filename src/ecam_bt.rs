@@ -1,6 +1,7 @@
 use async_stream::stream;
 use btleplug::api::{
     Central, CharPropFlags, Characteristic, Manager as _, Peripheral as _, ScanFilter,
+    ValueNotification,
 };
 use btleplug::platform::{Adapter, Manager, PeripheralId};
 use futures::future::FutureExt;
@@ -17,7 +18,7 @@ use tokio_stream::StreamExt;
 use uuid::Uuid;
 
 use crate::command::Response;
-use crate::ecam::{Ecam, EcamError, EcamOutput};
+use crate::ecam::{Ecam, EcamError, EcamOutput, EcamPacketReceiver};
 use crate::packet::{self, packetize};
 
 const SERVICE_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000300);
@@ -29,7 +30,7 @@ type Peripheral = <Adapter as Central>::Peripheral;
 pub struct EcamBT {
     peripheral: Peripheral,
     characteristic: Characteristic,
-    notifications: Arc<Mutex<Pin<Box<Receiver<EcamOutput>>>>>,
+    notifications: EcamPacketReceiver,
 }
 
 impl EcamBT {
@@ -73,7 +74,7 @@ impl Ecam for EcamBT {
         self: &'a Self,
     ) -> Pin<Box<dyn std::future::Future<Output = Result<Option<EcamOutput>, EcamError>> + Send + 'a>>
     {
-        Box::pin(async { Result::Ok(self.notifications.lock().await.recv().await) })
+        Box::pin(self.notifications.recv())
     }
 
     fn write<'a>(
@@ -83,7 +84,9 @@ impl Ecam for EcamBT {
         Box::pin(self.send(data))
     }
 
-    fn scan<'a>() -> Pin<Box<dyn std::future::Future<Output = Result<(String, Uuid), EcamError>> + Send + 'a>> {
+    fn scan<'a>(
+    ) -> Pin<Box<dyn std::future::Future<Output = Result<(String, Uuid), EcamError>> + Send + 'a>>
+    {
         Box::pin(scan())
     }
 }
@@ -95,7 +98,10 @@ async fn scan() -> Result<(String, Uuid), EcamError> {
         if let Ok(Some((s, p, c))) = get_ecam_from_adapter(&adapter).await {
             // Icky, but we don't have a PeripheralId to UUID function
             let uuid = format!("{:?}", p.id())[13..49].to_owned();
-            return Ok((s, Uuid::parse_str(&uuid).expect("failed to parse UUID from debug string")));
+            return Ok((
+                s,
+                Uuid::parse_str(&uuid).expect("failed to parse UUID from debug string"),
+            ));
         }
     }
 
@@ -110,7 +116,7 @@ pub async fn get_ecam(uuid: Uuid) -> Result<EcamBT, EcamError> {
 async fn get_notifications_from_peripheral(
     peripheral: &Peripheral,
     characteristic: &Characteristic,
-) -> Result<Receiver<EcamOutput>, EcamError> {
+) -> Result<EcamPacketReceiver, EcamError> {
     peripheral.subscribe(characteristic).await?;
     let peripheral2 = peripheral.clone();
     let (trigger, tripwire) = Tripwire::new();
@@ -123,25 +129,15 @@ async fn get_notifications_from_peripheral(
     });
 
     // Use a forwarding task to make this stream Sync
-    let mut n = peripheral.notifications().await?.take_until_if(tripwire);
-    let (tx, mut rx) = mpsc::channel(100);
-    tokio::spawn(async move {
-        tx.send(EcamOutput::Ready)
-            .await
-            .expect("Failed to forward notification");
-        while let Some(m) = n.next().await {
-            tx.send(EcamOutput::Packet(Response::decode(
-                &m.value[2..m.value.len() - 2].to_vec(),
-            )))
-            .await
-            .expect("Failed to forward notification");
-        }
-        tx.send(EcamOutput::Done)
-            .await
-            .expect("Failed to forward notification");
-    });
-
-    Result::Ok(rx)
+    let f = |m: ValueNotification| {
+        EcamOutput::Packet(Response::decode(&m.value[2..m.value.len() - 2].to_vec()))
+    };
+    let n = peripheral
+        .notifications()
+        .await?
+        .map(f)
+        .take_until_if(tripwire);
+    Ok(EcamPacketReceiver::from_stream(n))
 }
 
 async fn get_ecam_from_manager(manager: &Manager, uuid: Uuid) -> Result<EcamBT, EcamError> {
@@ -168,15 +164,13 @@ async fn get_ecam_from_manager(manager: &Manager, uuid: Uuid) -> Result<EcamBT, 
                             | CharPropFlags::READ
                             | CharPropFlags::INDICATE,
                     };
-                    let n = Box::pin(
-                        get_notifications_from_peripheral(&peripheral, &characteristic).await?,
-                    );
+                    let n = get_notifications_from_peripheral(&peripheral, &characteristic).await?;
                     // Ignore errors here -- we just want the first peripheral that connects
                     let _ = tx
                         .send(EcamBT {
                             peripheral,
                             characteristic,
-                            notifications: Arc::new(Mutex::new(n)),
+                            notifications: n,
                         })
                         .await;
                     break;
@@ -208,7 +202,11 @@ async fn get_ecam_from_adapter(
         for peripheral in peripherals.iter() {
             let r = validate_peripheral(peripheral).await?;
             if let Some((local_name, characteristic)) = r {
-                return Result::Ok(Some((local_name, peripheral.clone(), characteristic.clone())));
+                return Result::Ok(Some((
+                    local_name,
+                    peripheral.clone(),
+                    characteristic.clone(),
+                )));
             }
         }
     }
@@ -216,7 +214,9 @@ async fn get_ecam_from_adapter(
     Result::Err(EcamError::NotFound)
 }
 
-async fn validate_peripheral(peripheral: &Peripheral) -> Result<Option<(String, Characteristic)>, EcamError> {
+async fn validate_peripheral(
+    peripheral: &Peripheral,
+) -> Result<Option<(String, Characteristic)>, EcamError> {
     let properties = peripheral.properties().await?;
     let is_connected = peripheral.is_connected().await?;
     let properties = properties.unwrap();

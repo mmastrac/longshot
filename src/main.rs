@@ -154,8 +154,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             )
             .await?;
 
-            let mut r = Box::pin(ecam.read().await?);
-            while let Some(s) = r.next().await {
+            while let Some(s) = ecam.read().await? {
                 println!("{:?}", s);
             }
         }

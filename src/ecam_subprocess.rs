@@ -6,7 +6,7 @@ use tokio_stream::{wrappers::LinesStream, Stream, StreamExt};
 
 use crate::{
     command::Response,
-    ecam::{EcamError, EcamOutput},
+    ecam::{AsyncFuture, Ecam, EcamError, EcamOutput},
 };
 
 pub struct EcamSubprocess {
@@ -14,7 +14,7 @@ pub struct EcamSubprocess {
 }
 
 impl EcamSubprocess {
-    pub async fn read(self: &mut Self) -> Result<impl Stream<Item = EcamOutput>, EcamError> {
+    pub async fn stream(self: &mut Self) -> Result<impl Stream<Item = EcamOutput>, EcamError> {
         let mut child = self.child.take().expect("child was missing");
         let mut stderr = LinesStream::new(
             BufReader::new(child.stderr.take().expect("stderr was missing")).lines(),
@@ -50,6 +50,23 @@ impl EcamSubprocess {
         };
 
         Result::Ok(stdout.merge(stderr).merge(termination))
+    }
+}
+
+impl Ecam for EcamSubprocess {
+    fn read<'a>(self: &'a Self) -> AsyncFuture<'a, Option<EcamOutput>> {
+        unimplemented!()
+    }
+
+    fn write<'a>(self: &'a Self, data: Vec<u8>) -> AsyncFuture<'a, ()> {
+        unimplemented!()
+    }
+
+    fn scan<'a>() -> AsyncFuture<'a, (String, uuid::Uuid)>
+    where
+        Self: Sized,
+    {
+        unimplemented!()
     }
 }
 
