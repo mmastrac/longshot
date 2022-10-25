@@ -2,9 +2,10 @@ use async_stream::stream;
 use btleplug::api::{Central, Characteristic, Manager as _, Peripheral as _, ScanFilter, CharPropFlags};
 use btleplug::platform::{Adapter, Manager, PeripheralId};
 use futures::future::FutureExt;
+use tokio::sync::Mutex;
 use std::pin::Pin;
 use std::result::Result;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
 use std::time::Duration;
 use stream_cancel::{StreamExt as _, Tripwire};
 use tokio::sync::mpsc::{self, Receiver};
@@ -26,7 +27,7 @@ type Peripheral = <Adapter as Central>::Peripheral;
 pub struct EcamBT {
     peripheral: Peripheral,
     characteristic: Characteristic,
-    notifications: Pin<Box<Receiver<EcamOutput>>>,
+    notifications: Arc<Mutex<Pin<Box<Receiver<EcamOutput>>>>>,
 }
 
 impl EcamBT {
@@ -69,14 +70,14 @@ impl EcamBT {
 
 impl Ecam for EcamBT {
     fn read<'a>(
-        self: &'a mut Self,
+        self: &'a Self,
     ) -> Pin<Box<dyn std::future::Future<Output = Result<Option<EcamOutput>, EcamError>> + Send + 'a>>
     {
-        Box::pin(async { Result::Ok(self.notifications.recv().await) })
+        Box::pin(async { Result::Ok(self.notifications.lock().await.recv().await) })
     }
 
     fn write<'a>(
-        self: &'a mut Self,
+        self: &'a Self,
         data: Vec<u8>,
     ) -> Pin<Box<dyn std::future::Future<Output = Result<(), EcamError>> + Send + 'a>> {
         Box::pin(self.send(data))
@@ -154,7 +155,7 @@ async fn get_ecam_from_manager(manager: &Manager, uuid: Uuid) -> Result<EcamBT, 
     for adapter in adapter_list.into_iter() {
         adapter.start_scan(ScanFilter::default()).await?;
         let tx = tx.clone();
-        tokio::spawn(async move {
+        let _ = tokio::spawn(async move {
             println!("Looking for peripheral {}", uuid);
             loop {
                 if let Ok(peripheral) = adapter.peripheral(&PeripheralId::from(uuid)).await {
@@ -167,7 +168,7 @@ async fn get_ecam_from_manager(manager: &Manager, uuid: Uuid) -> Result<EcamBT, 
                     let _ = tx.send(EcamBT {
                         peripheral,
                         characteristic,
-                        notifications: n,
+                        notifications: Arc::new(Mutex::new(n)),
                     }).await;
                     break;
                 }

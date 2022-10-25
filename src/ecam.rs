@@ -37,12 +37,12 @@ pub enum EcamStatus {
 pub trait Ecam {
     /// Read one item from the ECAM.
     fn read<'a>(
-        self: &'a mut Self,
+        self: &'a Self,
     ) -> Pin<Box<dyn Future<Output = Result<Option<EcamOutput>, EcamError>> + Send + 'a>>;
 
     /// Write one item to the ECAM.
     fn write<'a>(
-        self: &'a mut Self,
+        self: &'a Self,
         data: Vec<u8>,
     ) -> Pin<Box<dyn Future<Output = Result<(), EcamError>> + Send + 'a>>;
 
@@ -58,11 +58,12 @@ mod test {
     use crate::command::*;
     use futures::Future;
     use std::pin::Pin;
+    use std::sync::{Arc, Mutex};
 
     #[derive(Default)]
     struct EcamTest {
-        pub read_items: Vec<EcamOutput>,
-        pub write_items: Vec<Vec<u8>>,
+        pub read_items: Arc<Mutex<Vec<EcamOutput>>>,
+        pub write_items: Arc<Mutex<Vec<Vec<u8>>>>,
     }
 
     impl EcamTest {
@@ -72,31 +73,31 @@ mod test {
             read_items.extend(items);
             read_items.push(EcamOutput::Done);
             EcamTest {
-                read_items,
-                write_items: vec![],
+                read_items: Arc::new(Mutex::new(read_items)),
+                write_items: Arc::new(Mutex::new(vec![])),
             }
         }
     }
 
     impl Ecam for EcamTest {
         fn read<'a>(
-            self: &'a mut Self,
+            self: &'a Self,
         ) -> Pin<Box<dyn Future<Output = Result<Option<EcamOutput>, EcamError>> + Send + 'a>>
         {
             Box::pin(async {
-                if self.read_items.is_empty() {
+                if self.read_items.lock().unwrap().is_empty() {
                     Ok(None)
                 } else {
-                    Ok(Some(self.read_items.remove(0)))
+                    Ok(Some(self.read_items.lock().unwrap().remove(0)))
                 }
             })
         }
 
         fn write<'a>(
-            self: &'a mut Self,
+            self: &'a Self,
             data: Vec<u8>,
         ) -> Pin<Box<dyn Future<Output = Result<(), EcamError>> + Send + 'a>> {
-            self.write_items.push(data);
+            self.write_items.lock().unwrap().push(data);
             Box::pin(async { Ok(()) })
         }
 

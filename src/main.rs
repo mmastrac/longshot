@@ -76,20 +76,16 @@ async fn pipe(device: String) -> Result<(), Box<dyn Error>> {
 
 async fn monitor(turn_on: bool, device_name: String) -> Result<(), EcamError> {
     let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
-    let ecam = Arc::new(Mutex::new(ecam_bt::get_ecam(uuid).await?));
+    let ecam = Arc::new(ecam_bt::get_ecam(uuid).await?);
     let timeout = Duration::from_millis(100);
     if turn_on {
-        ecam.lock()
-            .await
-            .send(Request::State(StateRequest::TurnOn).encode())
+        ecam.send(Request::State(StateRequest::TurnOn).encode())
             .await?;
     }
     let ecam2 = ecam.clone();
     let a = tokio::spawn(async move {
         loop {
-            let ecam2 = ecam2.clone();
-            let g = ecam2.lock().await;
-            match tokio::time::timeout(timeout, g.send(vec![0x75, 0x0f])).await {
+            match tokio::time::timeout(timeout, ecam2.send(vec![0x75, 0x0f])).await {
                 Ok(x) => {
                 }
                 Err(x) => {
@@ -102,7 +98,7 @@ async fn monitor(turn_on: bool, device_name: String) -> Result<(), EcamError> {
     });
 
     loop {
-        match tokio::time::timeout(timeout, ecam.lock().await.read()).await {
+        match tokio::time::timeout(timeout, ecam.read()).await {
             Ok(Ok(Some(x))) => {
                 println!("{:?}", x);
             }
