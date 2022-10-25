@@ -47,7 +47,9 @@ pub trait Ecam {
     ) -> Pin<Box<dyn Future<Output = Result<(), EcamError>> + Send + 'a>>;
 
     /// Scan for the first matching device.
-    fn scan<'a>() -> Pin<Box<dyn Future<Output = Result<Uuid, EcamError>> + Send + 'a>> where Self: Sized;
+    fn scan<'a>() -> Pin<Box<dyn Future<Output = Result<Uuid, EcamError>> + Send + 'a>>
+    where
+        Self: Sized;
 }
 
 async fn ecam_wait_for_status(ecam: &mut dyn Ecam, status: EcamStatus) {}
@@ -101,8 +103,7 @@ mod test {
             Box::pin(async { Ok(()) })
         }
 
-        fn scan<'a>(
-            ) -> Pin<Box<dyn Future<Output = Result<uuid::Uuid, EcamError>> + Send + 'a>> {
+        fn scan<'a>() -> Pin<Box<dyn Future<Output = Result<uuid::Uuid, EcamError>> + Send + 'a>> {
             Box::pin(async { Err(EcamError::NotFound) })
         }
     }

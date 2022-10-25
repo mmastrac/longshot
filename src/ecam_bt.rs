@@ -1,14 +1,16 @@
 use async_stream::stream;
-use btleplug::api::{Central, Characteristic, Manager as _, Peripheral as _, ScanFilter, CharPropFlags};
+use btleplug::api::{
+    Central, CharPropFlags, Characteristic, Manager as _, Peripheral as _, ScanFilter,
+};
 use btleplug::platform::{Adapter, Manager, PeripheralId};
 use futures::future::FutureExt;
-use tokio::sync::Mutex;
 use std::pin::Pin;
 use std::result::Result;
-use std::sync::{Arc};
+use std::sync::Arc;
 use std::time::Duration;
 use stream_cancel::{StreamExt as _, Tripwire};
 use tokio::sync::mpsc::{self, Receiver};
+use tokio::sync::Mutex;
 use tokio::time;
 use tokio_stream::Stream;
 use tokio_stream::StreamExt;
@@ -33,8 +35,7 @@ pub struct EcamBT {
 impl EcamBT {
     /// Send a packet to the ECAM
     pub async fn send(self: &Self, data: Vec<u8>) -> Result<(), EcamError> {
-        let (peripheral, characteristic) 
-            = (self.peripheral.clone(), self.characteristic.clone());
+        let (peripheral, characteristic) = (self.peripheral.clone(), self.characteristic.clone());
         Result::Ok(
             peripheral
                 .write(
@@ -48,8 +49,7 @@ impl EcamBT {
 
     /// Create a stream that outputs the packets from the ECAM
     pub async fn stream(self: &Self) -> Result<impl Stream<Item = Vec<u8>> + Send, EcamError> {
-        let (peripheral, characteristic) 
-            = (self.peripheral.clone(), self.characteristic.clone());
+        let (peripheral, characteristic) = (self.peripheral.clone(), self.characteristic.clone());
         peripheral.subscribe(&characteristic).await?;
         let (trigger, tripwire) = Tripwire::new();
         let peripheral2 = peripheral.clone();
@@ -83,8 +83,8 @@ impl Ecam for EcamBT {
         Box::pin(self.send(data))
     }
 
-    fn scan<'a>(
-    ) -> Pin<Box<dyn std::future::Future<Output = Result<Uuid, EcamError>> + Send + 'a>> {
+    fn scan<'a>() -> Pin<Box<dyn std::future::Future<Output = Result<Uuid, EcamError>> + Send + 'a>>
+    {
         Box::pin(scan())
     }
 }
@@ -96,7 +96,7 @@ async fn scan() -> Result<Uuid, EcamError> {
         if let Ok(Some((p, c))) = get_ecam_from_adapter(&adapter).await {
             // Icky, but we don't have a PeripheralId to UUID function
             let uuid = format!("{:?}", p.id())[13..49].to_owned();
-            return Ok(Uuid::parse_str(&uuid).expect("failed to parse UUID from debug string"))
+            return Ok(Uuid::parse_str(&uuid).expect("failed to parse UUID from debug string"));
         }
     }
 
@@ -162,19 +162,30 @@ async fn get_ecam_from_manager(manager: &Manager, uuid: Uuid) -> Result<EcamBT, 
                     println!("Got peripheral");
                     peripheral.connect().await?;
                     println!("Connected");
-                    let characteristic = Characteristic { uuid: CHARACTERISTIC_UUID, service_uuid: SERVICE_UUID, properties: CharPropFlags::WRITE | CharPropFlags::READ | CharPropFlags::NOTIFY };
-                    let n = Box::pin(get_notifications_from_peripheral(&peripheral, &characteristic).await?);
+                    let characteristic = Characteristic {
+                        uuid: CHARACTERISTIC_UUID,
+                        service_uuid: SERVICE_UUID,
+                        properties: CharPropFlags::WRITE
+                            | CharPropFlags::READ
+                            | CharPropFlags::NOTIFY,
+                    };
+                    let n = Box::pin(
+                        get_notifications_from_peripheral(&peripheral, &characteristic).await?,
+                    );
                     // Ignore errors here -- we just want the first peripheral that connects
-                    let _ = tx.send(EcamBT {
-                        peripheral,
-                        characteristic,
-                        notifications: Arc::new(Mutex::new(n)),
-                    }).await;
+                    let _ = tx
+                        .send(EcamBT {
+                            peripheral,
+                            characteristic,
+                            notifications: Arc::new(Mutex::new(n)),
+                        })
+                        .await;
                     break;
                 }
             }
             Result::<_, EcamError>::Ok(())
-        }).await;
+        })
+        .await;
     }
 
     Ok(rx.recv().await.expect("Failed to receive anything"))

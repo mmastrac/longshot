@@ -69,45 +69,45 @@ pub enum Accessory {
 }
 
 pub enum BeverageTasteType {
-    Delete, // 0
-    Save, // 1
-    Prepare, // 2
-    PrepareAndSave, // 3
-    SaveInversion, // 5
-    PrepareInversion, // 6
+    Delete,                  // 0
+    Save,                    // 1
+    Prepare,                 // 2
+    PrepareAndSave,          // 3
+    SaveInversion,           // 5
+    PrepareInversion,        // 6
     PrepareAndSaveInversion, // 7
 }
 
 pub enum Ingredients {
-    TEMP, //(0),
-    COFFEE, //(1),
-    TASTE, //(2),
-    GRANULOMETRY, //(3),
-    BLEND, //(4),
-    INFUSION_SPEED, //(5),
-    PREINFUSIONE, //(6),
-    CREMA, //(7),
-    DUExPER, //(8),
-    MILK, //(9),
-    MILK_TEMP, //(10),
-    MILK_FROTH, //(11),
-    INVERSION, //(12),
-    THE_TEMP, //(13),
-    THE_PROFILE, //(14),
-    HOT_WATER, //(15),
-    MIX_VELOCITY, //(16),
-    MIX_DURATION, //(17),
+    TEMP,                   //(0),
+    COFFEE,                 //(1),
+    TASTE,                  //(2),
+    GRANULOMETRY,           //(3),
+    BLEND,                  //(4),
+    INFUSION_SPEED,         //(5),
+    PREINFUSIONE,           //(6),
+    CREMA,                  //(7),
+    DUExPER,                //(8),
+    MILK,                   //(9),
+    MILK_TEMP,              //(10),
+    MILK_FROTH,             //(11),
+    INVERSION,              //(12),
+    THE_TEMP,               //(13),
+    THE_PROFILE,            //(14),
+    HOT_WATER,              //(15),
+    MIX_VELOCITY,           //(16),
+    MIX_DURATION,           //(17),
     DENSITY_MULTI_BEVERAGE, //(18),
-    TEMP_MULTI_BEVERAGE, //(19),
-    DECALC_TYPE, //(20),
-    TEMP_RISCIACQUO, //(21),
-    WATER_RISCIACQUO, //(22),
-    CLEAN_TYPE, //(23),
-    PROGRAMABLE, //(24),
-    VISIBLE, //(25),
+    TEMP_MULTI_BEVERAGE,    //(19),
+    DECALC_TYPE,            //(20),
+    TEMP_RISCIACQUO,        //(21),
+    WATER_RISCIACQUO,       //(22),
+    CLEAN_TYPE,             //(23),
+    PROGRAMABLE,            //(24),
+    VISIBLE,                //(25),
     VISIBLE_IN_PROGRAMMING, //(26),
-    INDEX_LENGTH, //(27),
-    ACCESSORIO, //(28);
+    INDEX_LENGTH,           //(27),
+    ACCESSORIO,             //(28);
 }
 
 #[derive(Debug, PartialEq)]
@@ -137,14 +137,14 @@ impl BrewRequest {
     pub fn encode(self: &Self) -> Vec<u8> {
         // dispense request, 0xf0, beverage type, trigger, parameters*, taste type
         // parameter: coffee quantity, coffee aroma, water quantity, milk quantity, froth
-    // COFFEE, 1
-    // MILK, 2
-    // WATER, 3
-    // AROMA, 4
-    // TEMPERATURE 5
-    // FROTH, 6
-    // COFFEE_TYPE, 7
-    // COFFEE_GRINDING,
+        // COFFEE, 1
+        // MILK, 2
+        // WATER, 3
+        // AROMA, 4
+        // TEMPERATURE 5
+        // FROTH, 6
+        // COFFEE_TYPE, 7
+        // COFFEE_GRINDING,
 
         match *self {
             BrewRequest::Coffee() => {
@@ -201,7 +201,7 @@ impl Response {
 impl MonitorState {
     pub fn decode(data: &[u8]) -> Self {
         /* accessory, sw0, sw1, sw2, sw3, function, function progress, percentage, ?, load0, load1, sw, water */
-        
+
         // Handle ready/working overlap
         let mut state = MachineState::decode(data[5]);
         if state == MachineState::Ready && data[6] != 0 {

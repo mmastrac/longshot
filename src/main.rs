@@ -1,7 +1,6 @@
 use clap::{arg, command, value_parser, ArgAction};
 use command::{Request, StateRequest};
 use ecam_bt::EcamBT;
-use uuid::Uuid;
 use std::future::{self, Future};
 use std::time::Duration;
 use std::{error::Error, sync::Arc};
@@ -10,6 +9,7 @@ use tokio::sync::Mutex;
 use tokio::try_join;
 use tokio_stream::{Stream, StreamExt as _};
 use tuples::*;
+use uuid::Uuid;
 
 mod command;
 mod ecam;
@@ -86,8 +86,7 @@ async fn monitor(turn_on: bool, device_name: String) -> Result<(), EcamError> {
     let a = tokio::spawn(async move {
         loop {
             match tokio::time::timeout(timeout, ecam2.send(vec![0x75, 0x0f])).await {
-                Ok(x) => {
-                }
+                Ok(x) => {}
                 Err(x) => {
                     println!("timeout");
                 }
@@ -102,9 +101,7 @@ async fn monitor(turn_on: bool, device_name: String) -> Result<(), EcamError> {
             Ok(Ok(Some(x))) => {
                 println!("{:?}", x);
             }
-            Err(x) => {
-
-            }
+            Err(x) => {}
             x => {
                 println!("{:?}", x);
                 break;
