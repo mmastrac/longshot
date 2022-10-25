@@ -4,24 +4,16 @@ use async_stream::stream;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_stream::{wrappers::LinesStream, Stream, StreamExt};
 
-use crate::ecam::EcamError;
+use crate::{ecam::{EcamError, EcamOutput}, command::Response};
 
 pub struct EcamSubprocess {
     child: Option<tokio::process::Child>,
 }
 
-#[derive(Debug)]
-pub enum EcamSubprocessOutput {
-    Ready,
-    Packet(Vec<u8>),
-    Logging(String),
-    Done,
-}
-
 impl EcamSubprocess {
     pub async fn read(
         self: &mut Self,
-    ) -> Result<impl Stream<Item = EcamSubprocessOutput>, EcamError> {
+    ) -> Result<impl Stream<Item = EcamOutput>, EcamError> {
         let mut child = self.child.take().expect("child was missing");
         let mut stderr = LinesStream::new(
             BufReader::new(child.stderr.take().expect("stderr was missing")).lines(),
@@ -33,27 +25,27 @@ impl EcamSubprocess {
         let stdout = stream! {
             while let Some(Ok(s)) = stdout.next().await {
                 if s == "R: READY" {
-                    yield EcamSubprocessOutput::Ready;
+                    yield EcamOutput::Ready;
                 } else if s.starts_with("R: ") {
                     if let Ok(bytes) = hex::decode(&s[3..]) {
-                        yield EcamSubprocessOutput::Packet(bytes);
+                        yield EcamOutput::Packet(Response::decode(&bytes));
                     } else {
-                        yield EcamSubprocessOutput::Logging(format!("Failed to decode '{}'", s));
+                        yield EcamOutput::Logging(format!("Failed to decode '{}'", s));
                     }
                 } else {
-                    yield EcamSubprocessOutput::Logging(s);
+                    yield EcamOutput::Logging(s);
                 }
             }
         };
         let stderr = stream! {
             while let Some(Ok(s)) = stderr.next().await {
-                yield EcamSubprocessOutput::Logging(s);
+                yield EcamOutput::Logging(s);
             }
         };
 
         let termination = stream! {
             let _ = child.wait().await;
-            yield EcamSubprocessOutput::Done
+            yield EcamOutput::Done
         };
 
         Result::Ok(stdout.merge(stderr).merge(termination))

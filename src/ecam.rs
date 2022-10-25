@@ -8,6 +8,7 @@ use crate::command::Response;
 pub enum EcamOutput {
     Ready,
     Packet(Response),
+    Logging(String),
     Done,
 }
 
