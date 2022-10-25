@@ -150,7 +150,7 @@ async fn get_ecam_from_adapter(
         .start_scan(filter)
         .await
         .expect("Can't scan BLE adapter for connected devices...");
-    time::sleep(Duration::from_secs(5)).await;
+    time::sleep(Duration::from_secs(2)).await;
     let peripherals = adapter.peripherals().await?;
     for peripheral in peripherals.iter() {
         let r = validate_peripheral(peripheral).await?;
