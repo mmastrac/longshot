@@ -1,25 +1,19 @@
-use async_stream::stream;
 use btleplug::api::{
     Central, CharPropFlags, Characteristic, Manager as _, Peripheral as _, ScanFilter,
     ValueNotification,
 };
 use btleplug::platform::{Adapter, Manager, PeripheralId};
-use futures::future::FutureExt;
 use std::pin::Pin;
 use std::result::Result;
-use std::sync::Arc;
 use std::time::Duration;
 use stream_cancel::{StreamExt as _, Tripwire};
-use tokio::sync::mpsc::{self, Receiver};
-use tokio::sync::Mutex;
 use tokio::time;
-use tokio_stream::Stream;
-use tokio_stream::StreamExt;
+use tokio_stream::{Stream, StreamExt};
 use uuid::Uuid;
 
 use crate::command::Response;
 use crate::ecam::{Ecam, EcamError, EcamOutput, EcamPacketReceiver};
-use crate::packet::{self, packetize};
+use crate::packet::packetize;
 
 const SERVICE_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000300);
 const CHARACTERISTIC_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000301);

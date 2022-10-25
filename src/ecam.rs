@@ -63,9 +63,15 @@ impl EcamPacketReceiver {
     ) -> Self {
         let (tx, rx) = tokio::sync::mpsc::channel(100);
         tokio::spawn(async move {
+            tx.send(EcamOutput::Ready)
+                .await
+                .expect("Failed to forward notification");
             while let Some(m) = stream.next().await {
                 tx.send(m).await.expect("Failed to forward notification");
             }
+            tx.send(EcamOutput::Done)
+                .await
+                .expect("Failed to forward notification");
         });
 
         EcamPacketReceiver {
