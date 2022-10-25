@@ -1,9 +1,10 @@
 use clap::{arg, command, value_parser, ArgAction};
+use command::{Request, StateRequest};
 use std::future::{self, Future};
-use std::sync::Mutex;
 use std::time::Duration;
 use std::{error::Error, sync::Arc};
 use stream_cancel::{StreamExt as _, Tripwire};
+use tokio::sync::Mutex;
 use tokio::try_join;
 use tokio_stream::{Stream, StreamExt as _};
 use tuples::*;
@@ -42,7 +43,7 @@ async fn pipe(device: String) -> Result<(), Box<dyn Error>> {
             ecam.send(value).await?;
         }
         println!("Packet stream done.");
-        trigger1.lock().unwrap().take();
+        trigger1.lock().await.take();
         Result::<(), EcamError>::Ok(())
     });
 
@@ -57,7 +58,7 @@ async fn pipe(device: String) -> Result<(), Box<dyn Error>> {
             );
         }
         println!("Device stream done.");
-        trigger2.lock().unwrap().take();
+        trigger2.lock().await.take();
         Result::<(), EcamError>::Ok(())
     });
 
@@ -71,16 +72,52 @@ async fn pipe(device: String) -> Result<(), Box<dyn Error>> {
     Result::Ok(())
 }
 
+async fn monitor(turn_on: bool, device_name: String) -> Result<(), EcamError> {
+    let ecam = Arc::new(Mutex::new(ecam_bt::get_ecam().await?));
+    if turn_on {
+        ecam.lock()
+            .await
+            .send(Request::State(StateRequest::TurnOn).encode())
+            .await?;
+    }
+    let ecam2 = ecam.clone();
+    let a = tokio::spawn(async move {
+        loop {
+            let g = ecam2.lock().await;
+            let g = g.send(vec![0x75, 0x0f]);
+            g.await?;
+            tokio::time::sleep(Duration::from_millis(250)).await;
+        }
+        Result::<(), EcamError>::Ok(())
+    });
+
+    while let Some(m) = ecam.lock().await.read().await? {
+        println!("{:?}", m);
+    }
+
+    a.abort();
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     pretty_env_logger::init();
 
     let device_name = arg!(--"device-name" <name>).help("Provides the name of the device");
+    let turn_on = arg!(--"turn-on").help("Turn on the machine before running this operation");
     let matches = command!()
         .subcommand(
             command!("brew")
                 .about("Brew a coffee")
-                .arg(device_name.clone()),
+                .arg(device_name.clone())
+                .arg(turn_on.clone()),
+        )
+        .subcommand(
+            command!("monitor")
+                .about("Monitor the status of the device")
+                .arg(device_name.clone())
+                .arg(turn_on.clone()),
         )
         .subcommand(command!("list").about("List all supported devices"))
         .subcommand(
@@ -107,6 +144,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
             while let Some(s) = r.next().await {
                 println!("{:?}", s);
             }
+        }
+        Some(("monitor", cmd)) => {
+            monitor(
+                cmd.get_flag("turn-on"),
+                cmd.get_one::<String>("device-name")
+                    .expect("Device name required")
+                    .clone(),
+            )
+            .await?;
         }
         Some(("list", cmd)) => {
             println!("{:?}", cmd);

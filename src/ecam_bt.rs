@@ -13,6 +13,7 @@ use tokio_stream::Stream;
 use tokio_stream::StreamExt;
 use uuid::Uuid;
 
+use crate::command::Response;
 use crate::ecam::{Ecam, EcamError, EcamOutput};
 use crate::packet::{self, packetize};
 
@@ -103,9 +104,11 @@ async fn get_notifications_from_peripheral(
             .await
             .expect("Failed to forward notification");
         while let Some(m) = n.next().await {
-            tx.send(EcamOutput::Packet(m.value[2..m.value.len() - 2].to_vec()))
-                .await
-                .expect("Failed to forward notification");
+            tx.send(EcamOutput::Packet(Response::decode(
+                &m.value[2..m.value.len() - 2].to_vec(),
+            )))
+            .await
+            .expect("Failed to forward notification");
         }
         tx.send(EcamOutput::Done)
             .await
@@ -147,7 +150,7 @@ async fn get_ecam_from_adapter(
         .start_scan(filter)
         .await
         .expect("Can't scan BLE adapter for connected devices...");
-    time::sleep(Duration::from_secs(10)).await;
+    time::sleep(Duration::from_secs(5)).await;
     let peripherals = adapter.peripherals().await?;
     for peripheral in peripherals.iter() {
         let r = validate_peripheral(peripheral).await?;

@@ -2,10 +2,12 @@ use std::{future::Future, pin::Pin};
 
 use thiserror::Error;
 
+use crate::command::Response;
+
 #[derive(Debug, PartialEq)]
 pub enum EcamOutput {
     Ready,
-    Packet(Vec<u8>),
+    Packet(Response),
     Done,
 }
 
@@ -19,6 +21,11 @@ pub enum EcamError {
     IOError(#[from] std::io::Error),
     #[error("Unknown error")]
     Unknown,
+}
+
+pub enum EcamStatus {
+    Off,
+    Ready,
 }
 
 /// Async-ish traits for read/write. See https://smallcultfollowing.com/babysteps/blog/2019/10/26/async-fn-in-traits-are-hard/
@@ -35,9 +42,12 @@ pub trait Ecam {
     ) -> Pin<Box<dyn Future<Output = Result<(), EcamError>> + Send + 'a>>;
 }
 
+async fn ecam_wait_for_status(ecam: &mut dyn Ecam, status: EcamStatus) {}
+
 #[cfg(test)]
 mod test {
     use super::{Ecam, EcamError, EcamOutput};
+    use crate::command::*;
     use futures::Future;
     use std::pin::Pin;
 
@@ -85,13 +95,13 @@ mod test {
 
     #[tokio::test]
     async fn test_read() -> Result<(), EcamError> {
-        let mut test = EcamTest::new(vec![EcamOutput::Packet(vec![])]);
+        let mut test = EcamTest::new(vec![EcamOutput::Packet(Response::Raw(vec![]))]);
         assert_eq!(
             EcamOutput::Ready,
             test.read().await?.expect("expected item")
         );
         assert_eq!(
-            EcamOutput::Packet(vec![]),
+            EcamOutput::Packet(Response::Raw(vec![])),
             test.read().await?.expect("expected item")
         );
         assert_eq!(EcamOutput::Done, test.read().await?.expect("expected item"));
