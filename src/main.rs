@@ -169,7 +169,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await?;
         }
         Some(("list", cmd)) => {
-            println!("{:?}", EcamBT::scan().await?);
+            let (s, uuid) = EcamBT::scan().await?;
+            println!("{}  {}", s, uuid);
         }
         Some(("x-internal-pipe", cmd)) => {
             pipe(

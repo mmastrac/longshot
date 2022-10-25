@@ -83,20 +83,19 @@ impl Ecam for EcamBT {
         Box::pin(self.send(data))
     }
 
-    fn scan<'a>() -> Pin<Box<dyn std::future::Future<Output = Result<Uuid, EcamError>> + Send + 'a>>
-    {
+    fn scan<'a>() -> Pin<Box<dyn std::future::Future<Output = Result<(String, Uuid), EcamError>> + Send + 'a>> {
         Box::pin(scan())
     }
 }
 
-async fn scan() -> Result<Uuid, EcamError> {
+async fn scan() -> Result<(String, Uuid), EcamError> {
     let manager = Manager::new().await?;
     let adapter_list = manager.adapters().await?;
     for adapter in adapter_list.into_iter() {
-        if let Ok(Some((p, c))) = get_ecam_from_adapter(&adapter).await {
+        if let Ok(Some((s, p, c))) = get_ecam_from_adapter(&adapter).await {
             // Icky, but we don't have a PeripheralId to UUID function
             let uuid = format!("{:?}", p.id())[13..49].to_owned();
-            return Ok(Uuid::parse_str(&uuid).expect("failed to parse UUID from debug string"));
+            return Ok((s, Uuid::parse_str(&uuid).expect("failed to parse UUID from debug string")));
         }
     }
 
@@ -167,7 +166,7 @@ async fn get_ecam_from_manager(manager: &Manager, uuid: Uuid) -> Result<EcamBT, 
                         service_uuid: SERVICE_UUID,
                         properties: CharPropFlags::WRITE
                             | CharPropFlags::READ
-                            | CharPropFlags::NOTIFY,
+                            | CharPropFlags::INDICATE,
                     };
                     let n = Box::pin(
                         get_notifications_from_peripheral(&peripheral, &characteristic).await?,
@@ -193,7 +192,7 @@ async fn get_ecam_from_manager(manager: &Manager, uuid: Uuid) -> Result<EcamBT, 
 
 async fn get_ecam_from_adapter(
     adapter: &Adapter,
-) -> Result<Option<(Peripheral, Characteristic)>, EcamError> {
+) -> Result<Option<(String, Peripheral, Characteristic)>, EcamError> {
     println!("Starting scan on {}...", adapter.adapter_info().await?);
     let filter = ScanFilter {
         services: vec![SERVICE_UUID],
@@ -202,41 +201,35 @@ async fn get_ecam_from_adapter(
         .start_scan(filter)
         .await
         .expect("Can't scan BLE adapter for connected devices...");
-    time::sleep(Duration::from_secs(2)).await;
-    let peripherals = adapter.peripherals().await?;
-    for peripheral in peripherals.iter() {
-        let r = validate_peripheral(peripheral).await?;
-        if let Some(characteristic) = r {
-            return Result::Ok(Some((peripheral.clone(), characteristic.clone())));
+
+    for _ in 0..10 {
+        time::sleep(Duration::from_secs(1)).await;
+        let peripherals = adapter.peripherals().await?;
+        for peripheral in peripherals.iter() {
+            let r = validate_peripheral(peripheral).await?;
+            if let Some((local_name, characteristic)) = r {
+                return Result::Ok(Some((local_name, peripheral.clone(), characteristic.clone())));
+            }
         }
     }
 
     Result::Err(EcamError::NotFound)
 }
 
-async fn validate_peripheral(peripheral: &Peripheral) -> Result<Option<Characteristic>, EcamError> {
+async fn validate_peripheral(peripheral: &Peripheral) -> Result<Option<(String, Characteristic)>, EcamError> {
     let properties = peripheral.properties().await?;
     let is_connected = peripheral.is_connected().await?;
     let properties = properties.unwrap();
     if let Some(local_name) = properties.local_name {
-        println!(
-            "Peripheral {:?} is connected: {:?}",
-            local_name, is_connected
-        );
         if !is_connected {
-            println!("Connecting to peripheral {:?}...", &local_name);
             peripheral.connect().await?
         }
-        let is_connected = peripheral.is_connected().await?;
-        println!(
-            "Now connected ({:?}) to peripheral {:?}...",
-            is_connected, &local_name
-        );
+        peripheral.is_connected().await?;
         peripheral.discover_services().await?;
         for service in peripheral.services() {
             for characteristic in service.characteristics {
                 if characteristic.uuid == CHARACTERISTIC_UUID {
-                    return Result::Ok(Some(characteristic));
+                    return Result::Ok(Some((local_name, characteristic)));
                 }
             }
         }
