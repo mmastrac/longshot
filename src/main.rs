@@ -1,5 +1,7 @@
 use clap::{arg, command, value_parser, ArgAction};
 use command::{Request, StateRequest};
+use ecam_bt::EcamBT;
+use uuid::Uuid;
 use std::future::{self, Future};
 use std::time::Duration;
 use std::{error::Error, sync::Arc};
@@ -30,7 +32,7 @@ fn get_update_packet_stream(d: Duration) -> impl Stream<Item = Vec<u8>> {
 }
 
 async fn pipe(device: String) -> Result<(), Box<dyn Error>> {
-    let mut ecam = ecam_bt::get_ecam().await?;
+    let mut ecam = ecam_bt::get_ecam(Uuid::nil()).await?;
     let (trigger, tripwire) = Tripwire::new();
     let trigger1 = Arc::new(Mutex::new(Some(trigger)));
     let trigger2 = trigger1.clone();
@@ -73,7 +75,9 @@ async fn pipe(device: String) -> Result<(), Box<dyn Error>> {
 }
 
 async fn monitor(turn_on: bool, device_name: String) -> Result<(), EcamError> {
-    let ecam = Arc::new(Mutex::new(ecam_bt::get_ecam().await?));
+    let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
+    let ecam = Arc::new(Mutex::new(ecam_bt::get_ecam(uuid).await?));
+    let timeout = Duration::from_millis(100);
     if turn_on {
         ecam.lock()
             .await
@@ -83,16 +87,33 @@ async fn monitor(turn_on: bool, device_name: String) -> Result<(), EcamError> {
     let ecam2 = ecam.clone();
     let a = tokio::spawn(async move {
         loop {
+            let ecam2 = ecam2.clone();
             let g = ecam2.lock().await;
-            let g = g.send(vec![0x75, 0x0f]);
-            g.await?;
+            match tokio::time::timeout(timeout, g.send(vec![0x75, 0x0f])).await {
+                Ok(x) => {
+                }
+                Err(x) => {
+                    println!("timeout");
+                }
+            }
             tokio::time::sleep(Duration::from_millis(250)).await;
         }
-        Result::<(), EcamError>::Ok(())
+        // Result::<(), EcamError>::Ok(())
     });
 
-    while let Some(m) = ecam.lock().await.read().await? {
-        println!("{:?}", m);
+    loop {
+        match tokio::time::timeout(timeout, ecam.lock().await.read()).await {
+            Ok(Ok(Some(x))) => {
+                println!("{:?}", x);
+            }
+            Err(x) => {
+
+            }
+            x => {
+                println!("{:?}", x);
+                break;
+            }
+        }
     }
 
     a.abort();
@@ -155,7 +176,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await?;
         }
         Some(("list", cmd)) => {
-            println!("{:?}", cmd);
+            println!("{:?}", EcamBT::scan().await?);
         }
         Some(("x-internal-pipe", cmd)) => {
             pipe(

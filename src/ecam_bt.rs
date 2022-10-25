@@ -1,6 +1,6 @@
 use async_stream::stream;
-use btleplug::api::{Central, Characteristic, Manager as _, Peripheral as _, ScanFilter};
-use btleplug::platform::{Adapter, Manager};
+use btleplug::api::{Central, Characteristic, Manager as _, Peripheral as _, ScanFilter, CharPropFlags};
+use btleplug::platform::{Adapter, Manager, PeripheralId};
 use futures::future::FutureExt;
 use std::pin::Pin;
 use std::result::Result;
@@ -32,10 +32,12 @@ pub struct EcamBT {
 impl EcamBT {
     /// Send a packet to the ECAM
     pub async fn send(self: &Self, data: Vec<u8>) -> Result<(), EcamError> {
+        let (peripheral, characteristic) 
+            = (self.peripheral.clone(), self.characteristic.clone());
         Result::Ok(
-            self.peripheral
+            peripheral
                 .write(
-                    &self.characteristic,
+                    &characteristic,
                     &packetize(&data),
                     btleplug::api::WriteType::WithoutResponse,
                 )
@@ -45,16 +47,18 @@ impl EcamBT {
 
     /// Create a stream that outputs the packets from the ECAM
     pub async fn stream(self: &Self) -> Result<impl Stream<Item = Vec<u8>> + Send, EcamError> {
-        self.peripheral.subscribe(&self.characteristic).await?;
-        let peripheral = self.peripheral.clone();
+        let (peripheral, characteristic) 
+            = (self.peripheral.clone(), self.characteristic.clone());
+        peripheral.subscribe(&characteristic).await?;
         let (trigger, tripwire) = Tripwire::new();
+        let peripheral2 = peripheral.clone();
         tokio::spawn(async move {
-            while peripheral.is_connected().await.unwrap_or_default() {}
+            while peripheral2.is_connected().await.unwrap_or_default() {}
             drop(trigger);
         });
         // Trim the header and CRC
         Result::Ok(
-            self.peripheral
+            peripheral
                 .notifications()
                 .await?
                 .map(|m| m.value[2..m.value.len() - 2].to_vec())
@@ -77,11 +81,30 @@ impl Ecam for EcamBT {
     ) -> Pin<Box<dyn std::future::Future<Output = Result<(), EcamError>> + Send + 'a>> {
         Box::pin(self.send(data))
     }
+
+    fn scan<'a>(
+    ) -> Pin<Box<dyn std::future::Future<Output = Result<Uuid, EcamError>> + Send + 'a>> {
+        Box::pin(scan())
+    }
 }
 
-pub async fn get_ecam() -> Result<EcamBT, EcamError> {
+async fn scan() -> Result<Uuid, EcamError> {
     let manager = Manager::new().await?;
-    get_ecam_from_manager(&manager).await
+    let adapter_list = manager.adapters().await?;
+    for adapter in adapter_list.into_iter() {
+        if let Ok(Some((p, c))) = get_ecam_from_adapter(&adapter).await {
+            // Icky, but we don't have a PeripheralId to UUID function
+            let uuid = format!("{:?}", p.id())[13..49].to_owned();
+            return Ok(Uuid::parse_str(&uuid).expect("failed to parse UUID from debug string"))
+        }
+    }
+
+    Err(EcamError::NotFound)
+}
+
+pub async fn get_ecam(uuid: Uuid) -> Result<EcamBT, EcamError> {
+    let manager = Manager::new().await?;
+    get_ecam_from_manager(&manager, uuid).await
 }
 
 async fn get_notifications_from_peripheral(
@@ -92,7 +115,10 @@ async fn get_notifications_from_peripheral(
     let peripheral2 = peripheral.clone();
     let (trigger, tripwire) = Tripwire::new();
     tokio::spawn(async move {
-        while peripheral2.is_connected().await.unwrap_or_default() {}
+        while peripheral2.is_connected().await.unwrap_or_default() {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+        println!("disconnected");
         drop(trigger);
     });
 
@@ -118,25 +144,39 @@ async fn get_notifications_from_peripheral(
     Result::Ok(rx)
 }
 
-async fn get_ecam_from_manager(manager: &Manager) -> Result<EcamBT, EcamError> {
+async fn get_ecam_from_manager(manager: &Manager, uuid: Uuid) -> Result<EcamBT, EcamError> {
     let adapter_list = manager.adapters().await?;
     if adapter_list.is_empty() {
         return Result::Err(EcamError::NotFound);
     }
 
-    for adapter in adapter_list.iter() {
-        let res = get_ecam_from_adapter(adapter).await?;
-        if let Some((p, c)) = res {
-            let n = Box::pin(get_notifications_from_peripheral(&p, &c).await?);
-            return Ok(EcamBT {
-                peripheral: p,
-                characteristic: c,
-                notifications: n,
-            });
-        }
+    let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+    for adapter in adapter_list.into_iter() {
+        adapter.start_scan(ScanFilter::default()).await?;
+        let tx = tx.clone();
+        tokio::spawn(async move {
+            println!("Looking for peripheral {}", uuid);
+            loop {
+                if let Ok(peripheral) = adapter.peripheral(&PeripheralId::from(uuid)).await {
+                    println!("Got peripheral");
+                    peripheral.connect().await?;
+                    println!("Connected");
+                    let characteristic = Characteristic { uuid: CHARACTERISTIC_UUID, service_uuid: SERVICE_UUID, properties: CharPropFlags::WRITE | CharPropFlags::READ | CharPropFlags::NOTIFY };
+                    let n = Box::pin(get_notifications_from_peripheral(&peripheral, &characteristic).await?);
+                    // Ignore errors here -- we just want the first peripheral that connects
+                    let _ = tx.send(EcamBT {
+                        peripheral,
+                        characteristic,
+                        notifications: n,
+                    }).await;
+                    break;
+                }
+            }
+            Result::<_, EcamError>::Ok(())
+        }).await;
     }
 
-    Result::Err(EcamError::NotFound)
+    Ok(rx.recv().await.expect("Failed to receive anything"))
 }
 
 async fn get_ecam_from_adapter(

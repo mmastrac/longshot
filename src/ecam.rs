@@ -1,6 +1,7 @@
 use std::{future::Future, pin::Pin};
 
 use thiserror::Error;
+use uuid::Uuid;
 
 use crate::command::Response;
 
@@ -16,6 +17,8 @@ pub enum EcamOutput {
 pub enum EcamError {
     #[error("not found")]
     NotFound,
+    #[error("timed out")]
+    Timeout,
     #[error(transparent)]
     BTError(#[from] btleplug::Error),
     #[error(transparent)]
@@ -36,11 +39,15 @@ pub trait Ecam {
     fn read<'a>(
         self: &'a mut Self,
     ) -> Pin<Box<dyn Future<Output = Result<Option<EcamOutput>, EcamError>> + Send + 'a>>;
+
     /// Write one item to the ECAM.
     fn write<'a>(
         self: &'a mut Self,
         data: Vec<u8>,
     ) -> Pin<Box<dyn Future<Output = Result<(), EcamError>> + Send + 'a>>;
+
+    /// Scan for the first matching device.
+    fn scan<'a>() -> Pin<Box<dyn Future<Output = Result<Uuid, EcamError>> + Send + 'a>> where Self: Sized;
 }
 
 async fn ecam_wait_for_status(ecam: &mut dyn Ecam, status: EcamStatus) {}
@@ -91,6 +98,11 @@ mod test {
         ) -> Pin<Box<dyn Future<Output = Result<(), EcamError>> + Send + 'a>> {
             self.write_items.push(data);
             Box::pin(async { Ok(()) })
+        }
+
+        fn scan<'a>(
+            ) -> Pin<Box<dyn Future<Output = Result<uuid::Uuid, EcamError>> + Send + 'a>> {
+            Box::pin(async { Err(EcamError::NotFound) })
         }
     }
 
