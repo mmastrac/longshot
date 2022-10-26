@@ -1,7 +1,8 @@
-use crate::prelude::*;
+use crate::{ecam::EcamOutput, prelude::*};
 
 use clap::{arg, command};
 use stream_cancel::{StreamExt as _, Tripwire};
+use tokio::select;
 use tokio::sync::Mutex;
 use tokio::try_join;
 use tuples::*;
@@ -19,46 +20,43 @@ use ecam::{ecam_scan, get_ecam_bt, get_ecam_subprocess, Ecam, EcamDriver, EcamEr
 async fn pipe(device_name: String) -> Result<(), Box<dyn std::error::Error>> {
     let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
     let ecam = get_ecam_bt(uuid).await?;
-    let (trigger, tripwire) = Tripwire::new();
-    let trigger1 = Arc::new(Mutex::new(Some(trigger)));
-    let trigger2 = trigger1.clone();
 
-    let mut bt_in = ecam.stream().await?.take_until_if(tripwire.clone());
-    let mut bt_out = Box::pin(packet_stream::packet_stdio_stream().take_until_if(tripwire.clone()));
+    let mut bt_in = ecam.stream().await?;
+    let mut bt_out = Box::pin(packet_stream::packet_stdio_stream());
 
-    let a = tokio::spawn(async move {
-        while let Some(value) = bt_out.next().await {
-            ecam.send(value).await?;
+    loop {
+        select! {
+            input = bt_in.next() => {
+                if let Some(value) = input {
+                    println!("R: {}", packet::stringify(&value));
+                } else {
+                    println!("Device closed");
+                    break;
+                }
+            },
+            out = bt_out.next() => {
+                if let Some(value) = out {
+                    ecam.send(value).await?;
+                } else {
+                    println!("Input closed");
+                    break;
+                }
+            }
         }
-        println!("Packet stream done.");
-        trigger1.lock().await.take();
-        Result::<(), EcamError>::Ok(())
-    });
+    }
 
-    let b = tokio::spawn(async move {
-        while let Some(value) = bt_in.next().await {
-            println!("R: {}", packet::stringify(&value));
-        }
-        println!("Device stream done.");
-        trigger2.lock().await.take();
-        Result::<(), EcamError>::Ok(())
-    });
-
-    // iterator_try_collect will probably simplify this
-    try_join!(a, b)?
-        .into_iter()
-        .collect::<Result<Vec<_>, _>>()?;
-
-    // TODO: Figure out where tokio is getting stuck and failing to terminate the process
-    // std::process::exit(0);
     Result::Ok(())
 }
 
 async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
     let mut tap = ecam.packet_tap().await?;
+    let ecam = ecam.clone();
     let handle = tokio::spawn(async move {
         while let Some(packet) = tap.next().await {
             println!("{:?}", packet);
+            if packet == EcamOutput::Done {
+                break;
+            }
         }
     });
     let state = ecam.current_state().await?;

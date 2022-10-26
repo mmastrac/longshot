@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+/// Wraps a machine enumeration that may have unknown values.
 #[derive(Copy, Clone, PartialEq, PartialOrd)]
 pub enum MachineEnum<T> {
     Value(T),
