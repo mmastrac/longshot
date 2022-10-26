@@ -68,48 +68,6 @@ pub enum Accessory {
     Unknown(u8),
 }
 
-pub enum BeverageTasteType {
-    Delete,                  // 0
-    Save,                    // 1
-    Prepare,                 // 2
-    PrepareAndSave,          // 3
-    SaveInversion,           // 5
-    PrepareInversion,        // 6
-    PrepareAndSaveInversion, // 7
-}
-
-pub enum Ingredients {
-    Temp = 0,                  // TEMP
-    Coffee = 1,                // COFFEE
-    Taste = 2,                 // TASTE
-    Granulometry = 3,          // GRANULOMETRY
-    Blend = 4,                 // BLEND
-    InfusionSpeed = 5,         // INFUSION_SPEED
-    Preinfusion = 6,           // PREINFUSIONE
-    Crema = 7,                 // CREMA
-    DueXPer = 8,               // DUExPER
-    Milk = 9,                  // MILK
-    MilkTemp = 10,             // MILK_TEMP
-    MilkFroth = 11,            // MILK_FROTH
-    Inversion = 12,            // INVERSION
-    TheTemp = 13,              // THE_TEMP
-    TheProfile = 14,           // THE_PROFILE
-    HotWater = 15,             // HOT_WATER
-    MixVelocity = 16,          // MIX_VELOCITY
-    MixDuration = 17,          // MIX_DURATION
-    DensityMultiBeverage = 18, // DENSITY_MULTI_BEVERAGE
-    TempMultiBeverage = 19,    // TEMP_MULTI_BEVERAGE
-    DecalcType = 20,           // DECALC_TYPE
-    TempRisciaquo = 21,        // TEMP_RISCIACQUO
-    WaterRisciaquo = 22,       // WATER_RISCIACQUO
-    CleanType = 23,            // CLEAN_TYPE
-    Programmable = 24,         // PROGRAMABLE
-    Visible = 25,              // VISIBLE
-    VisibleInProgramming = 26, // VISIBLE_IN_PROGRAMMING
-    IndexLength = 27,          // INDEX_LENGTH
-    Accessorio = 28,           // ACCESSORIO
-}
-
 #[derive(Debug, PartialEq)]
 pub struct MonitorState {
     pub state: MachineState,
