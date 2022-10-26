@@ -78,37 +78,37 @@ pub enum BeverageTasteType {
     PrepareAndSaveInversion, // 7
 }
 
-// pub enum Ingredients {
-//     TEMP,                   //(0),
-//     COFFEE,                 //(1),
-//     TASTE,                  //(2),
-//     GRANULOMETRY,           //(3),
-//     BLEND,                  //(4),
-//     INFUSION_SPEED,         //(5),
-//     PREINFUSIONE,           //(6),
-//     CREMA,                  //(7),
-//     DUExPER,                //(8),
-//     MILK,                   //(9),
-//     MILK_TEMP,              //(10),
-//     MILK_FROTH,             //(11),
-//     INVERSION,              //(12),
-//     THE_TEMP,               //(13),
-//     THE_PROFILE,            //(14),
-//     HOT_WATER,              //(15),
-//     MIX_VELOCITY,           //(16),
-//     MIX_DURATION,           //(17),
-//     DENSITY_MULTI_BEVERAGE, //(18),
-//     TEMP_MULTI_BEVERAGE,    //(19),
-//     DECALC_TYPE,            //(20),
-//     TEMP_RISCIACQUO,        //(21),
-//     WATER_RISCIACQUO,       //(22),
-//     CLEAN_TYPE,             //(23),
-//     PROGRAMABLE,            //(24),
-//     VISIBLE,                //(25),
-//     VISIBLE_IN_PROGRAMMING, //(26),
-//     INDEX_LENGTH,           //(27),
-//     ACCESSORIO,             //(28);
-// }
+pub enum Ingredients {
+    Temp = 0,                  // TEMP
+    Coffee = 1,                // COFFEE
+    Taste = 2,                 // TASTE
+    Granulometry = 3,          // GRANULOMETRY
+    Blend = 4,                 // BLEND
+    InfusionSpeed = 5,         // INFUSION_SPEED
+    Preinfusion = 6,           // PREINFUSIONE
+    Crema = 7,                 // CREMA
+    DueXPer = 8,               // DUExPER
+    Milk = 9,                  // MILK
+    MilkTemp = 10,             // MILK_TEMP
+    MilkFroth = 11,            // MILK_FROTH
+    Inversion = 12,            // INVERSION
+    TheTemp = 13,              // THE_TEMP
+    TheProfile = 14,           // THE_PROFILE
+    HotWater = 15,             // HOT_WATER
+    MixVelocity = 16,          // MIX_VELOCITY
+    MixDuration = 17,          // MIX_DURATION
+    DensityMultiBeverage = 18, // DENSITY_MULTI_BEVERAGE
+    TempMultiBeverage = 19,    // TEMP_MULTI_BEVERAGE
+    DecalcType = 20,           // DECALC_TYPE
+    TempRisciaquo = 21,        // TEMP_RISCIACQUO
+    WaterRisciaquo = 22,       // WATER_RISCIACQUO
+    CleanType = 23,            // CLEAN_TYPE
+    Programmable = 24,         // PROGRAMABLE
+    Visible = 25,              // VISIBLE
+    VisibleInProgramming = 26, // VISIBLE_IN_PROGRAMMING
+    IndexLength = 27,          // INDEX_LENGTH
+    Accessorio = 28,           // ACCESSORIO
+}
 
 #[derive(Debug, PartialEq)]
 pub struct MonitorState {
@@ -137,19 +137,10 @@ impl BrewRequest {
     pub fn encode(&self) -> Vec<u8> {
         // dispense request, 0xf0, beverage type, trigger, parameters*, taste type
         // parameter: coffee quantity, coffee aroma, water quantity, milk quantity, froth
-        // COFFEE, 1
-        // MILK, 2
-        // WATER, 3
-        // AROMA, 4
-        // TEMPERATURE 5
-        // FROTH, 6
-        // COFFEE_TYPE, 7
-        // COFFEE_GRINDING,
-
         match *self {
             BrewRequest::Coffee => {
                 vec![
-                    0x83, 0xf0, 0x02, 0x01, 0, 0x00, 0x67, 0x02, 0x02, 0x00, 0x00, 0x06,
+                    0x83, 0xf0, 0x02, 0x01, 0x01, 0x00, 0x67, 0x02, 0x02, 0x00, 0x00, 0x06,
                 ]
             }
         }
