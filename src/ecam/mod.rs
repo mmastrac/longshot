@@ -9,6 +9,18 @@ use crate::command::*;
 
 pub type AsyncFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, EcamError>> + Send + 'a>>;
 
+mod ecam_bt;
+mod ecam_subprocess;
+
+pub use ecam_bt::get_ecam as get_ecam_bt;
+pub use ecam_subprocess::connect as get_ecam_subprocess;
+
+use self::ecam_bt::EcamBT;
+
+pub async fn ecam_scan() -> Result<(String, Uuid), EcamError> {
+    EcamBT::scan().await
+}
+
 #[derive(Debug, PartialEq)]
 pub enum EcamOutput {
     Ready,

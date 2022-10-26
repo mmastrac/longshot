@@ -1,6 +1,4 @@
 use clap::{arg, command};
-use command::*;
-use ecam_bt::EcamBT;
 use std::time::Duration;
 use std::{error::Error, sync::Arc};
 use stream_cancel::{StreamExt as _, Tripwire};
@@ -12,12 +10,11 @@ use uuid::Uuid;
 
 mod command;
 mod ecam;
-mod ecam_bt;
-mod ecam_subprocess;
 mod packet;
 mod packet_stream;
 
-use ecam::{Ecam, EcamDriver, EcamError, EcamStatus};
+use command::*;
+use ecam::{ecam_scan, get_ecam_bt, get_ecam_subprocess, Ecam, EcamDriver, EcamError, EcamStatus};
 
 fn get_update_packet_stream(d: Duration) -> impl Stream<Item = Vec<u8>> {
     let mut interval = tokio::time::interval(d);
@@ -32,7 +29,7 @@ fn get_update_packet_stream(d: Duration) -> impl Stream<Item = Vec<u8>> {
 
 async fn pipe(device_name: String) -> Result<(), Box<dyn Error>> {
     let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
-    let ecam = ecam_bt::get_ecam(uuid).await?;
+    let ecam = get_ecam_bt(uuid).await?;
     let (trigger, tripwire) = Tripwire::new();
     let trigger1 = Arc::new(Mutex::new(Some(trigger)));
     let trigger2 = trigger1.clone();
@@ -69,7 +66,7 @@ async fn pipe(device_name: String) -> Result<(), Box<dyn Error>> {
 }
 
 async fn monitor(turn_on: bool, device_name: String) -> Result<(), EcamError> {
-    let ecam = Arc::new(ecam_subprocess::connect(&device_name).await?);
+    let ecam = Arc::new(get_ecam_subprocess(&device_name).await?);
     let timeout = Duration::from_millis(100);
     if turn_on {
         ecam.write(Request::State(StateRequest::TurnOn).encode())
@@ -145,7 +142,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .get_one::<String>("device-name")
                 .expect("Device name required")
                 .clone();
-            let ecam: Box<dyn EcamDriver> = Box::new(ecam_subprocess::connect(device_name).await?);
+            let ecam: Box<dyn EcamDriver> = Box::new(get_ecam_subprocess(device_name).await?);
             let ecam = Ecam::new(ecam).await;
             match ecam.current_state().await? {
                 EcamStatus::Ready => {}
@@ -181,7 +178,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await?;
         }
         Some(("list", _cmd)) => {
-            let (s, uuid) = EcamBT::scan().await?;
+            let (s, uuid) = ecam_scan().await?;
             println!("{}  {}", s, uuid);
         }
         Some(("x-internal-pipe", cmd)) => {
