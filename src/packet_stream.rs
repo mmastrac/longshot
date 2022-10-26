@@ -9,8 +9,8 @@ enum InputResult {
 }
 
 fn parse_line(s: &str) -> Option<InputResult> {
-    if s.starts_with("S: ") {
-        if let Ok(bytes) = hex::decode(&s[3..]) {
+    if let Some(s) = s.strip_prefix("S: ") {
+        if let Ok(bytes) = hex::decode(&s) {
             Some(InputResult::Packet(bytes))
         } else {
             None
