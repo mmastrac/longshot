@@ -33,10 +33,12 @@ impl EcamStatus {
 pub struct Ecam {
     driver: Arc<Box<dyn EcamDriver>>,
     internals: Arc<Mutex<EcamInternals>>,
+    alive: Arc<std::sync::Mutex<bool>>,
 }
 
 struct EcamInternals {
     last_status: tokio::sync::watch::Receiver<Option<MonitorState>>,
+    packet_tap: Arc<tokio::sync::broadcast::Sender<EcamOutput>>,
     ready_lock: Arc<tokio::sync::Semaphore>,
 }
 
@@ -44,6 +46,7 @@ impl Ecam {
     pub async fn new(driver: Box<dyn EcamDriver>) -> Self {
         let driver = Arc::new(driver);
         let (tx, rx) = tokio::sync::watch::channel(None);
+        let (txb, _) = tokio::sync::broadcast::channel(100);
 
         // We want to lock the status until we've received at least one packet
         let ready_lock = Arc::new(tokio::sync::Semaphore::new(1));
@@ -57,46 +60,65 @@ impl Ecam {
 
         let internals = Arc::new(Mutex::new(EcamInternals {
             last_status: rx,
+            packet_tap: Arc::new(txb),
             ready_lock,
         }));
-        let ecam = Ecam { driver, internals };
-        let driver = ecam.driver.clone();
+        let ecam_result = Ecam {
+            driver,
+            internals,
+            alive: Arc::new(true.into()),
+        };
 
+        let ecam = ecam_result.clone();
         tokio::spawn(async move {
-            loop {
-                if tx.is_closed() {
-                    break;
-                }
-                match driver.read().await? {
-                    Some(EcamOutput::Packet(Response::State(x))) => {
-                        // println!("{:?}", x);
+            let txb = ecam.internals.lock().await.packet_tap.clone();
+            while ecam.is_alive() && !tx.is_closed() {
+                // Treat end-of-stream as EcamOutput::Done, but we might want to reconsider this in the future
+                let packet = ecam.driver.read().await?.unwrap_or(EcamOutput::Done);
+                let _ = txb.send(packet.clone());
+                match packet {
+                    EcamOutput::Done => {
+                        break;
+                    }
+                    EcamOutput::Packet(Response::State(x)) => {
                         if tx.send(Some(x)).is_err() {
                             break;
                         }
                         ready_lock_semaphore.take();
                     }
-                    Some(EcamOutput::Done) => {
-                        break;
-                    }
-                    x => {
-                        println!("{:?}", x);
-                    }
+                    _ => {}
                 }
             }
             println!("Closed");
+            ecam.deaden();
             Result::<(), EcamError>::Ok(())
         });
-        let driver = ecam.driver.clone();
+
+        let ecam = ecam_result.clone();
         tokio::spawn(async move {
-            loop {
-                driver
-                    .write(Request::Monitor(MonitorRequestVersion::V2).encode())
-                    .await?;
-                tokio::time::sleep(Duration::from_millis(250)).await;
+            let status_request = Request::Monitor(MonitorRequestVersion::V2).encode();
+            while ecam.is_alive() {
+                match tokio::time::timeout(
+                    Duration::from_millis(250),
+                    ecam.driver.write(status_request.clone()),
+                )
+                .await
+                {
+                    Ok(Err(_)) => {
+                        println!("Warning: failed to request status");
+                    }
+                    Err(_) => {
+                        println!("Warning: status request send timeout");
+                    }
+                    _ => {
+                        tokio::time::sleep(Duration::from_millis(250)).await;
+                    }
+                }
             }
+            ecam.deaden();
             Result::<(), EcamError>::Ok(())
         });
-        ecam
+        ecam_result
     }
 
     pub async fn wait_for_state(&self, state: EcamStatus) -> Result<(), EcamError> {
@@ -133,5 +155,25 @@ impl Ecam {
 
     pub async fn write(&self, request: Request) -> Result<(), EcamError> {
         self.driver.write(request.encode()).await
+    }
+
+    pub fn is_alive(&self) -> bool {
+        if let Ok(alive) = self.alive.lock() {
+            *alive
+        } else {
+            false
+        }
+    }
+
+    fn deaden(&self) {
+        if let Ok(mut alive) = self.alive.lock() {
+            *alive = false;
+        }
+    }
+}
+
+impl Drop for Ecam {
+    fn drop(&mut self) {
+        self.deaden()
     }
 }

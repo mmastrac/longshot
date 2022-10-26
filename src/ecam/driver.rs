@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 use uuid::Uuid;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum EcamOutput {
     Ready,
     Packet(crate::command::Response),

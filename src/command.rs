@@ -10,7 +10,7 @@ pub enum Request {
     Raw(Vec<u8>),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Response {
     State(MonitorState),
     Raw(Vec<u8>),
@@ -43,7 +43,7 @@ pub enum Strength {}
 
 pub enum Size {}
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct MonitorState {
     pub state: MachineEnum<EcamMachineState>,
     pub accessory: MachineEnum<EcamAccessory>,
