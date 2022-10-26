@@ -108,6 +108,7 @@ impl Ecam {
         ecam_result
     }
 
+    /// Blocks until the device state reaches our desired state.
     pub async fn wait_for_state(&self, state: EcamStatus) -> Result<(), EcamError> {
         let mut rx = self.internals.lock().await.last_status.clone();
         loop {
@@ -121,6 +122,7 @@ impl Ecam {
         }
     }
 
+    /// Returns the current state, or blocks if we don't know what the current state is yet.
     pub async fn current_state(&self) -> Result<EcamStatus, EcamError> {
         let internals = self.internals.lock().await;
         let rx = internals.last_status.clone();
@@ -158,6 +160,7 @@ impl Ecam {
         }
     }
 
+    /// The monitor loop is booted when the underlying driver reports that it is ready.
     async fn write_monitor_loop(self) -> Result<(), EcamError> {
         let status_request = Request::Monitor(MonitorRequestVersion::V2).encode();
         while self.is_alive() {
@@ -180,7 +183,7 @@ impl Ecam {
         }
         println!("Sending loop died.");
         self.deaden();
-        Result::<(), EcamError>::Ok(())
+        Ok(())
     }
 
     fn deaden(&self) {
