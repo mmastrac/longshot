@@ -1,7 +1,7 @@
 use crate::{ecam::EcamOutput, prelude::*};
 
 use clap::{arg, command};
-use stream_cancel::{StreamExt as _, Tripwire};
+
 use tokio::select;
 use uuid::Uuid;
 
