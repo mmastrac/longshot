@@ -16,17 +16,6 @@ mod prelude;
 use command::*;
 use ecam::{ecam_scan, get_ecam_bt, get_ecam_subprocess, Ecam, EcamDriver, EcamError, EcamStatus};
 
-fn get_update_packet_stream(d: Duration) -> impl Stream<Item = Vec<u8>> {
-    let mut interval = tokio::time::interval(d);
-    let update_stream = async_stream::stream! {
-        loop {
-            interval.tick().await;
-            yield command::Request::Monitor(command::MonitorRequestVersion::V2).encode();
-        }
-    };
-    update_stream
-}
-
 async fn pipe(device_name: String) -> Result<(), Box<dyn std::error::Error>> {
     let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
     let ecam = get_ecam_bt(uuid).await?;
@@ -65,41 +54,19 @@ async fn pipe(device_name: String) -> Result<(), Box<dyn std::error::Error>> {
     Result::Ok(())
 }
 
-async fn monitor(turn_on: bool, device_name: String) -> Result<(), EcamError> {
-    let ecam = Arc::new(get_ecam_subprocess(&device_name).await?);
-    let timeout = Duration::from_millis(100);
-    if turn_on {
-        ecam.write(Request::State(StateRequest::TurnOn).encode())
-            .await?;
-    }
-    let ecam2 = ecam.clone();
-    let a = tokio::spawn(async move {
-        loop {
-            match tokio::time::timeout(timeout, ecam2.write(vec![0x75, 0x0f])).await {
-                Ok(_x) => {}
-                Err(_x) => {
-                    println!("timeout");
-                }
-            }
-            tokio::time::sleep(Duration::from_millis(250)).await;
+async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
+    let mut tap = ecam.packet_tap().await?;
+    let handle = tokio::spawn(async move {
+        while let Some(packet) = tap.next().await {
+            println!("{:?}", packet);
         }
-        // Result::<(), EcamError>::Ok(())
     });
-
-    loop {
-        match tokio::time::timeout(timeout, ecam.read()).await {
-            Ok(Ok(Some(x))) => {
-                println!("{:?}", x);
-            }
-            Err(_x) => {}
-            x => {
-                println!("{:?}", x);
-                break;
-            }
-        }
+    let state = ecam.current_state().await?;
+    if turn_on && state == EcamStatus::StandBy {
+        ecam.write(Request::State(StateRequest::TurnOn)).await?;
     }
 
-    a.abort();
+    let _ = handle.await;
 
     Ok(())
 }
@@ -169,13 +136,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Waiting for ready done...");
         }
         Some(("monitor", cmd)) => {
-            monitor(
-                cmd.get_flag("turn-on"),
-                cmd.get_one::<String>("device-name")
-                    .expect("Device name required")
-                    .clone(),
-            )
-            .await?;
+            let turn_on = cmd.get_flag("turn-on");
+            let device_name = &cmd
+                .get_one::<String>("device-name")
+                .expect("Device name required")
+                .clone();
+            let ecam: Box<dyn EcamDriver> = Box::new(get_ecam_subprocess(device_name).await?);
+            let ecam = Ecam::new(ecam).await;
+
+            monitor(ecam, turn_on).await?;
         }
         Some(("list", _cmd)) => {
             let (s, uuid) = ecam_scan().await?;

@@ -1,6 +1,8 @@
 use crate::prelude::*;
 
 use tokio::sync::Mutex;
+use tokio_stream::wrappers::{BroadcastStream, ReceiverStream};
+use tuples::TupleCloned;
 
 use crate::command::*;
 use crate::ecam::{hardware_enums::EcamMachineState, EcamDriver, EcamError, EcamOutput};
@@ -71,12 +73,21 @@ impl Ecam {
 
         let ecam = ecam_result.clone();
         tokio::spawn(async move {
-            let txb = ecam.internals.lock().await.packet_tap.clone();
-            while ecam.is_alive() && !tx.is_closed() {
+            let packet_tap_sender = ecam.internals.lock().await.packet_tap.clone();
+            let mut started = false;
+            while ecam.is_alive() {
                 // Treat end-of-stream as EcamOutput::Done, but we might want to reconsider this in the future
                 let packet = ecam.driver.read().await?.unwrap_or(EcamOutput::Done);
-                let _ = txb.send(packet.clone());
+                let _ = packet_tap_sender.send(packet.clone());
                 match packet {
+                    EcamOutput::Ready => {
+                        if started {
+                            println!("Warning: got multiple start requests");
+                        } else {
+                            tokio::spawn(ecam.clone().write_monitor_loop());
+                            started = true;
+                        }
+                    }
                     EcamOutput::Done => {
                         break;
                     }
@@ -94,30 +105,6 @@ impl Ecam {
             Result::<(), EcamError>::Ok(())
         });
 
-        let ecam = ecam_result.clone();
-        tokio::spawn(async move {
-            let status_request = Request::Monitor(MonitorRequestVersion::V2).encode();
-            while ecam.is_alive() {
-                match tokio::time::timeout(
-                    Duration::from_millis(250),
-                    ecam.driver.write(status_request.clone()),
-                )
-                .await
-                {
-                    Ok(Err(_)) => {
-                        println!("Warning: failed to request status");
-                    }
-                    Err(_) => {
-                        println!("Warning: status request send timeout");
-                    }
-                    _ => {
-                        tokio::time::sleep(Duration::from_millis(250)).await;
-                    }
-                }
-            }
-            ecam.deaden();
-            Result::<(), EcamError>::Ok(())
-        });
         ecam_result
     }
 
@@ -137,10 +124,10 @@ impl Ecam {
     pub async fn current_state(&self) -> Result<EcamStatus, EcamError> {
         let internals = self.internals.lock().await;
         let rx = internals.last_status.clone();
+        let ready_lock = internals.ready_lock.clone();
+        drop(internals);
         drop(
-            internals
-                .ready_lock
-                .clone()
+            ready_lock
                 .acquire_owned()
                 .await
                 .map_err(|_| EcamError::Unknown)?,
@@ -157,12 +144,43 @@ impl Ecam {
         self.driver.write(request.encode()).await
     }
 
+    pub async fn packet_tap(&self) -> Result<impl Stream<Item = EcamOutput>, EcamError> {
+        let internals = self.internals.lock().await;
+        Ok(BroadcastStream::new(internals.packet_tap.subscribe())
+            .map(|x| x.expect("Unexpected receive error")))
+    }
+
     pub fn is_alive(&self) -> bool {
         if let Ok(alive) = self.alive.lock() {
             *alive
         } else {
             false
         }
+    }
+
+    async fn write_monitor_loop(self) -> Result<(), EcamError> {
+        let status_request = Request::Monitor(MonitorRequestVersion::V2).encode();
+        while self.is_alive() {
+            match tokio::time::timeout(
+                Duration::from_millis(250),
+                self.driver.write(status_request.clone()),
+            )
+            .await
+            {
+                Ok(Err(_)) => {
+                    println!("Warning: failed to request status");
+                }
+                Err(_) => {
+                    println!("Warning: status request send timeout");
+                }
+                _ => {
+                    tokio::time::sleep(Duration::from_millis(250)).await;
+                }
+            }
+        }
+        println!("Sending loop died.");
+        self.deaden();
+        Result::<(), EcamError>::Ok(())
     }
 
     fn deaden(&self) {
