@@ -34,7 +34,7 @@ pub enum ParameterRequest {
 }
 
 pub enum ParameterId {
-    WATER_HARDNESS,
+    WaterHardness,
 }
 
 pub enum Strength {}
@@ -78,37 +78,37 @@ pub enum BeverageTasteType {
     PrepareAndSaveInversion, // 7
 }
 
-pub enum Ingredients {
-    TEMP,                   //(0),
-    COFFEE,                 //(1),
-    TASTE,                  //(2),
-    GRANULOMETRY,           //(3),
-    BLEND,                  //(4),
-    INFUSION_SPEED,         //(5),
-    PREINFUSIONE,           //(6),
-    CREMA,                  //(7),
-    DUExPER,                //(8),
-    MILK,                   //(9),
-    MILK_TEMP,              //(10),
-    MILK_FROTH,             //(11),
-    INVERSION,              //(12),
-    THE_TEMP,               //(13),
-    THE_PROFILE,            //(14),
-    HOT_WATER,              //(15),
-    MIX_VELOCITY,           //(16),
-    MIX_DURATION,           //(17),
-    DENSITY_MULTI_BEVERAGE, //(18),
-    TEMP_MULTI_BEVERAGE,    //(19),
-    DECALC_TYPE,            //(20),
-    TEMP_RISCIACQUO,        //(21),
-    WATER_RISCIACQUO,       //(22),
-    CLEAN_TYPE,             //(23),
-    PROGRAMABLE,            //(24),
-    VISIBLE,                //(25),
-    VISIBLE_IN_PROGRAMMING, //(26),
-    INDEX_LENGTH,           //(27),
-    ACCESSORIO,             //(28);
-}
+// pub enum Ingredients {
+//     TEMP,                   //(0),
+//     COFFEE,                 //(1),
+//     TASTE,                  //(2),
+//     GRANULOMETRY,           //(3),
+//     BLEND,                  //(4),
+//     INFUSION_SPEED,         //(5),
+//     PREINFUSIONE,           //(6),
+//     CREMA,                  //(7),
+//     DUExPER,                //(8),
+//     MILK,                   //(9),
+//     MILK_TEMP,              //(10),
+//     MILK_FROTH,             //(11),
+//     INVERSION,              //(12),
+//     THE_TEMP,               //(13),
+//     THE_PROFILE,            //(14),
+//     HOT_WATER,              //(15),
+//     MIX_VELOCITY,           //(16),
+//     MIX_DURATION,           //(17),
+//     DENSITY_MULTI_BEVERAGE, //(18),
+//     TEMP_MULTI_BEVERAGE,    //(19),
+//     DECALC_TYPE,            //(20),
+//     TEMP_RISCIACQUO,        //(21),
+//     WATER_RISCIACQUO,       //(22),
+//     CLEAN_TYPE,             //(23),
+//     PROGRAMABLE,            //(24),
+//     VISIBLE,                //(25),
+//     VISIBLE_IN_PROGRAMMING, //(26),
+//     INDEX_LENGTH,           //(27),
+//     ACCESSORIO,             //(28);
+// }
 
 #[derive(Debug, PartialEq)]
 pub struct MonitorState {

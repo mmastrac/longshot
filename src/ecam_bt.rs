@@ -12,7 +12,7 @@ use tokio_stream::{Stream, StreamExt};
 use uuid::Uuid;
 
 use crate::command::Response;
-use crate::ecam::{Ecam, EcamError, EcamOutput, EcamPacketReceiver};
+use crate::ecam::{EcamDriver, EcamError, EcamOutput, EcamPacketReceiver};
 use crate::packet::packetize;
 
 const SERVICE_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000300);
@@ -63,7 +63,7 @@ impl EcamBT {
     }
 }
 
-impl Ecam for EcamBT {
+impl EcamDriver for EcamBT {
     fn read<'a>(
         &'a self,
     ) -> Pin<Box<dyn std::future::Future<Output = Result<Option<EcamOutput>, EcamError>> + Send + 'a>>

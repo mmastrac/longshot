@@ -11,7 +11,7 @@ use tokio_stream::{wrappers::LinesStream, StreamExt};
 
 use crate::{
     command::Response,
-    ecam::{AsyncFuture, Ecam, EcamError, EcamOutput, EcamPacketReceiver},
+    ecam::{AsyncFuture, EcamDriver, EcamError, EcamOutput, EcamPacketReceiver},
     packet,
 };
 
@@ -32,7 +32,7 @@ impl EcamSubprocess {
     }
 }
 
-impl Ecam for EcamSubprocess {
+impl EcamDriver for EcamSubprocess {
     fn read<'a>(&'a self) -> AsyncFuture<'a, Option<EcamOutput>> {
         Box::pin(self.receiver.recv())
     }

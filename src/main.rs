@@ -17,7 +17,7 @@ mod ecam_subprocess;
 mod packet;
 mod packet_stream;
 
-use ecam::{Ecam, EcamError};
+use ecam::{EcamDriver, EcamError};
 
 fn get_update_packet_stream(d: Duration) -> impl Stream<Item = Vec<u8>> {
     let mut interval = tokio::time::interval(d);

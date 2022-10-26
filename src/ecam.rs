@@ -38,7 +38,7 @@ pub enum EcamStatus {
 
 /// Async-ish traits for read/write. See https://smallcultfollowing.com/babysteps/blog/2019/10/26/async-fn-in-traits-are-hard/
 /// for some tips on making async trait functions.
-pub trait Ecam: Send + Sync {
+pub trait EcamDriver: Send + Sync {
     /// Read one item from the ECAM.
     fn read<'a>(&'a self) -> AsyncFuture<'a, Option<EcamOutput>>;
 
@@ -51,7 +51,7 @@ pub trait Ecam: Send + Sync {
         Self: Sized;
 }
 
-pub async fn ecam_wait_for_status<T: Ecam>(_ecam: T, _status: EcamStatus) -> Result<(), EcamError> {
+pub async fn ecam_wait_for_status<T: EcamDriver>(_ecam: T, _status: EcamStatus) -> Result<(), EcamError> {
     Ok(())
 }
 
@@ -94,7 +94,7 @@ impl EcamPacketReceiver {
 
 #[cfg(test)]
 mod test {
-    use super::{Ecam, EcamError, EcamOutput};
+    use super::{EcamDriver, EcamError, EcamOutput};
     use crate::command::*;
     use futures::Future;
     use std::pin::Pin;
@@ -119,7 +119,7 @@ mod test {
         }
     }
 
-    impl Ecam for EcamTest {
+    impl EcamDriver for EcamTest {
         fn read<'a>(
             &'a self,
         ) -> Pin<Box<dyn Future<Output = Result<Option<EcamOutput>, EcamError>> + Send + 'a>>
