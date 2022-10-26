@@ -1,4 +1,4 @@
-use std::{sync::WaitTimeoutResult, vec::Vec};
+use std::{vec::Vec};
 
 pub enum Request {
     Brew(BrewRequest),
@@ -121,7 +121,7 @@ pub struct MonitorState {
 }
 
 impl Request {
-    pub fn encode(self: &Self) -> Vec<u8> {
+    pub fn encode(&self) -> Vec<u8> {
         match self {
             Request::Brew(r) => r.encode(),
             Request::Monitor(r) => r.encode(),
@@ -134,7 +134,7 @@ impl Request {
 }
 
 impl BrewRequest {
-    pub fn encode(self: &Self) -> Vec<u8> {
+    pub fn encode(&self) -> Vec<u8> {
         // dispense request, 0xf0, beverage type, trigger, parameters*, taste type
         // parameter: coffee quantity, coffee aroma, water quantity, milk quantity, froth
         // COFFEE, 1
@@ -157,7 +157,7 @@ impl BrewRequest {
 }
 
 impl MonitorRequestVersion {
-    pub fn encode(self: &Self) -> Vec<u8> {
+    pub fn encode(&self) -> Vec<u8> {
         match *self {
             MonitorRequestVersion::V0 => {
                 vec![0x60, 0x0f]
@@ -173,13 +173,13 @@ impl MonitorRequestVersion {
 }
 
 impl ParameterRequest {
-    pub fn encode(self: &Self) -> Vec<u8> {
+    pub fn encode(&self) -> Vec<u8> {
         unimplemented!();
     }
 }
 
 impl StateRequest {
-    pub fn encode(self: &Self) -> Vec<u8> {
+    pub fn encode(&self) -> Vec<u8> {
         match *self {
             StateRequest::TurnOn => {
                 vec![0x84, 0x0f, 0x02, 0x01]

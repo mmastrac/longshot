@@ -1,4 +1,4 @@
-use std::{future::Future, pin::Pin, sync::Arc, time::Duration};
+use std::{future::Future, pin::Pin, sync::Arc};
 
 use thiserror::Error;
 use tokio::sync::{mpsc::Receiver, Mutex};
@@ -40,10 +40,10 @@ pub enum EcamStatus {
 /// for some tips on making async trait functions.
 pub trait Ecam: Send + Sync {
     /// Read one item from the ECAM.
-    fn read<'a>(self: &'a Self) -> AsyncFuture<'a, Option<EcamOutput>>;
+    fn read<'a>(&'a self) -> AsyncFuture<'a, Option<EcamOutput>>;
 
     /// Write one item to the ECAM.
-    fn write<'a>(self: &'a Self, data: Vec<u8>) -> AsyncFuture<'a, ()>;
+    fn write<'a>(&'a self, data: Vec<u8>) -> AsyncFuture<'a, ()>;
 
     /// Scan for the first matching device.
     fn scan<'a>() -> AsyncFuture<'a, (String, Uuid)>
@@ -51,7 +51,7 @@ pub trait Ecam: Send + Sync {
         Self: Sized;
 }
 
-pub async fn ecam_wait_for_status<T: Ecam>(ecam: T, status: EcamStatus) -> Result<(), EcamError> {
+pub async fn ecam_wait_for_status<T: Ecam>(_ecam: T, _status: EcamStatus) -> Result<(), EcamError> {
     Ok(())
 }
 
@@ -87,7 +87,7 @@ impl EcamPacketReceiver {
         }
     }
 
-    pub async fn recv(self: &Self) -> Result<Option<EcamOutput>, EcamError> {
+    pub async fn recv(&self) -> Result<Option<EcamOutput>, EcamError> {
         Ok(self.rx.lock().await.recv().await)
     }
 }
@@ -121,7 +121,7 @@ mod test {
 
     impl Ecam for EcamTest {
         fn read<'a>(
-            self: &'a Self,
+            &'a self,
         ) -> Pin<Box<dyn Future<Output = Result<Option<EcamOutput>, EcamError>> + Send + 'a>>
         {
             Box::pin(async {
@@ -134,7 +134,7 @@ mod test {
         }
 
         fn write<'a>(
-            self: &'a Self,
+            &'a self,
             data: Vec<u8>,
         ) -> Pin<Box<dyn Future<Output = Result<(), EcamError>> + Send + 'a>> {
             self.write_items.lock().unwrap().push(data);
@@ -150,7 +150,7 @@ mod test {
 
     #[tokio::test]
     async fn test_read() -> Result<(), EcamError> {
-        let mut test = EcamTest::new(vec![EcamOutput::Packet(Response::Raw(vec![]))]);
+        let test = EcamTest::new(vec![EcamOutput::Packet(Response::Raw(vec![]))]);
         assert_eq!(
             EcamOutput::Ready,
             test.read().await?.expect("expected item")

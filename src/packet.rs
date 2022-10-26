@@ -7,7 +7,7 @@ pub fn checksum(buffer: &[u8]) -> [u8; 2] {
         i = i5 ^ ((i5 & 255) << 5);
     }
 
-    return [(i >> 8) as u8, (i & 0xff) as u8];
+    [(i >> 8) as u8, (i & 0xff) as u8]
 }
 
 pub fn packetize(buffer: &[u8]) -> Vec<u8> {
@@ -31,7 +31,7 @@ pub mod test {
     use super::{checksum, packetize};
 
     pub fn from_hex_str(s: &str) -> Vec<u8> {
-        hex::decode(s.replace(" ", "")).unwrap()
+        hex::decode(s.replace(' ', "")).unwrap()
     }
 
     #[test]

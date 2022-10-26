@@ -1,4 +1,4 @@
-use clap::{arg, command, value_parser, ArgAction};
+use clap::{arg, command};
 use command::*;
 use ecam_bt::EcamBT;
 use std::time::Duration;
@@ -17,7 +17,7 @@ mod ecam_subprocess;
 mod packet;
 mod packet_stream;
 
-use ecam::{ecam_wait_for_status, Ecam, EcamError, EcamStatus};
+use ecam::{Ecam, EcamError};
 
 fn get_update_packet_stream(d: Duration) -> impl Stream<Item = Vec<u8>> {
     let mut interval = tokio::time::interval(d);
@@ -32,7 +32,7 @@ fn get_update_packet_stream(d: Duration) -> impl Stream<Item = Vec<u8>> {
 
 async fn pipe(device_name: String) -> Result<(), Box<dyn Error>> {
     let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
-    let mut ecam = ecam_bt::get_ecam(uuid).await?;
+    let ecam = ecam_bt::get_ecam(uuid).await?;
     let (trigger, tripwire) = Tripwire::new();
     let trigger1 = Arc::new(Mutex::new(Some(trigger)));
     let trigger2 = trigger1.clone();
@@ -79,8 +79,8 @@ async fn monitor(turn_on: bool, device_name: String) -> Result<(), EcamError> {
     let a = tokio::spawn(async move {
         loop {
             match tokio::time::timeout(timeout, ecam2.write(vec![0x75, 0x0f])).await {
-                Ok(x) => {}
-                Err(x) => {
+                Ok(_x) => {}
+                Err(_x) => {
                     println!("timeout");
                 }
             }
@@ -94,7 +94,7 @@ async fn monitor(turn_on: bool, device_name: String) -> Result<(), EcamError> {
             Ok(Ok(Some(x))) => {
                 println!("{:?}", x);
             }
-            Err(x) => {}
+            Err(_x) => {}
             x => {
                 println!("{:?}", x);
                 break;
@@ -141,7 +141,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Some(("brew", cmd)) => {
             println!("{:?}", cmd);
             let turn_on = cmd.get_flag("turn-on");
-            let mut ecam = ecam_subprocess::connect(
+            let ecam = ecam_subprocess::connect(
                 &cmd.get_one::<String>("device-name")
                     .expect("Device name required")
                     .clone(),
@@ -167,7 +167,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             )
             .await?;
         }
-        Some(("list", cmd)) => {
+        Some(("list", _cmd)) => {
             let (s, uuid) = EcamBT::scan().await?;
             println!("{}  {}", s, uuid);
         }

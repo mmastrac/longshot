@@ -21,7 +21,7 @@ pub struct EcamSubprocess {
 }
 
 impl EcamSubprocess {
-    async fn write_stdin(self: &Self, data: Vec<u8>) -> Result<(), EcamError> {
+    async fn write_stdin(&self, data: Vec<u8>) -> Result<(), EcamError> {
         self.stdin
             .lock()
             .await
@@ -33,11 +33,11 @@ impl EcamSubprocess {
 }
 
 impl Ecam for EcamSubprocess {
-    fn read<'a>(self: &'a Self) -> AsyncFuture<'a, Option<EcamOutput>> {
+    fn read<'a>(&'a self) -> AsyncFuture<'a, Option<EcamOutput>> {
         Box::pin(self.receiver.recv())
     }
 
-    fn write<'a>(self: &'a Self, data: Vec<u8>) -> AsyncFuture<'a, ()> {
+    fn write<'a>(&'a self, data: Vec<u8>) -> AsyncFuture<'a, ()> {
         Box::pin(self.write_stdin(data))
     }
 

@@ -29,7 +29,7 @@ pub struct EcamBT {
 
 impl EcamBT {
     /// Send a packet to the ECAM
-    pub async fn send(self: &Self, data: Vec<u8>) -> Result<(), EcamError> {
+    pub async fn send(&self, data: Vec<u8>) -> Result<(), EcamError> {
         let (peripheral, characteristic) = (self.peripheral.clone(), self.characteristic.clone());
         Result::Ok(
             peripheral
@@ -43,7 +43,7 @@ impl EcamBT {
     }
 
     /// Create a stream that outputs the packets from the ECAM
-    pub async fn stream(self: &Self) -> Result<impl Stream<Item = Vec<u8>> + Send, EcamError> {
+    pub async fn stream(&self) -> Result<impl Stream<Item = Vec<u8>> + Send, EcamError> {
         let (peripheral, characteristic) = (self.peripheral.clone(), self.characteristic.clone());
         peripheral.subscribe(&characteristic).await?;
         let (trigger, tripwire) = Tripwire::new();
@@ -65,14 +65,14 @@ impl EcamBT {
 
 impl Ecam for EcamBT {
     fn read<'a>(
-        self: &'a Self,
+        &'a self,
     ) -> Pin<Box<dyn std::future::Future<Output = Result<Option<EcamOutput>, EcamError>> + Send + 'a>>
     {
         Box::pin(self.notifications.recv())
     }
 
     fn write<'a>(
-        self: &'a Self,
+        &'a self,
         data: Vec<u8>,
     ) -> Pin<Box<dyn std::future::Future<Output = Result<(), EcamError>> + Send + 'a>> {
         Box::pin(self.send(data))
@@ -89,7 +89,7 @@ async fn scan() -> Result<(String, Uuid), EcamError> {
     let manager = Manager::new().await?;
     let adapter_list = manager.adapters().await?;
     for adapter in adapter_list.into_iter() {
-        if let Ok(Some((s, p, c))) = get_ecam_from_adapter(&adapter).await {
+        if let Ok(Some((s, p, _c))) = get_ecam_from_adapter(&adapter).await {
             // Icky, but we don't have a PeripheralId to UUID function
             let uuid = format!("{:?}", p.id())[13..49].to_owned();
             return Ok((
@@ -199,7 +199,7 @@ async fn get_ecam_from_adapter(
                 return Result::Ok(Some((
                     local_name,
                     peripheral.clone(),
-                    characteristic.clone(),
+                    characteristic,
                 )));
             }
         }
