@@ -26,6 +26,7 @@ pub enum MonitorRequestVersion {
 pub enum ProfileRequest {
     GetProfileNames(u8, u8),
     GetRecipeNames(u8, u8),
+    GetRecipeQuantities(u8, u8),
 }
 
 pub enum StateRequest {
@@ -118,6 +119,9 @@ impl ProfileRequest {
             Self::GetRecipeNames(a, b) => {
                 vec![EcamRequestId::RecipeNameRead.into(), 0xf0, *a, *b]
             }
+            Self::GetRecipeQuantities(a, b) => {
+                vec![EcamRequestId::RecipeQtyRead.into(), 0xf0, *a, *b]
+            }
         }
     }
 }
@@ -135,9 +139,16 @@ impl StateRequest {
 impl Response {
     pub fn decode(data: &[u8]) -> Self {
         if data[0] == 0x75 && data.len() > 10 {
-            Response::State(MonitorState::decode(&data[2..]))
+            Response::State(MonitorState::decode(&data))
         } else {
             Response::Raw(data.to_vec())
+        }
+    }
+
+    pub fn encode(&self) -> Vec<u8> {
+        match self {
+            Response::State(s) => s.raw.clone(),
+            Response::Raw(v) => v.clone(),
         }
     }
 }
@@ -145,7 +156,8 @@ impl Response {
 impl MonitorState {
     pub fn decode(data: &[u8]) -> Self {
         /* accessory, sw0, sw1, sw2, sw3, function, function progress, percentage, ?, load0, load1, sw, water */
-
+        let raw = data.to_vec();
+        let data = &data[2..];
         MonitorState {
             state: MachineEnum::decode(data[5]),
             accessory: MachineEnum::decode(data[0]),
@@ -153,7 +165,7 @@ impl MonitorState {
             percentage: data[7],
             load0: data[8],
             load1: data[9],
-            raw: data.to_vec(),
+            raw,
         }
 
         // progress 5 = water 3 = hot wter

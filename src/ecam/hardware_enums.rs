@@ -13,29 +13,29 @@ pub enum EcamIngredients {
     Taste = 2,                 // TASTE
     Granulometry = 3,          // GRANULOMETRY
     Blend = 4,                 // BLEND
-    InfusionSpeed = 5,         // INFUSION_SPEED
+    InfusionSpeed = 5,         // INFUSIONSPEED
     Preinfusion = 6,           // PREINFUSIONE
     Crema = 7,                 // CREMA
     DueXPer = 8,               // DUExPER
     Milk = 9,                  // MILK
-    MilkTemp = 10,             // MILK_TEMP
-    MilkFroth = 11,            // MILK_FROTH
+    MilkTemp = 10,             // MILKTEMP
+    MilkFroth = 11,            // MILKFROTH
     Inversion = 12,            // INVERSION
-    TheTemp = 13,              // THE_TEMP
-    TheProfile = 14,           // THE_PROFILE
-    HotWater = 15,             // HOT_WATER
-    MixVelocity = 16,          // MIX_VELOCITY
-    MixDuration = 17,          // MIX_DURATION
-    DensityMultiBeverage = 18, // DENSITY_MULTI_BEVERAGE
-    TempMultiBeverage = 19,    // TEMP_MULTI_BEVERAGE
-    DecalcType = 20,           // DECALC_TYPE
-    TempRisciaquo = 21,        // TEMP_RISCIACQUO
-    WaterRisciaquo = 22,       // WATER_RISCIACQUO
-    CleanType = 23,            // CLEAN_TYPE
+    TheTemp = 13,              // THETEMP
+    TheProfile = 14,           // THEPROFILE
+    HotWater = 15,             // HOTWATER
+    MixVelocity = 16,          // MIXVELOCITY
+    MixDuration = 17,          // MIXDURATION
+    DensityMultiBeverage = 18, // DENSITYMULTIBEVERAGE
+    TempMultiBeverage = 19,    // TEMPMULTIBEVERAGE
+    DecalcType = 20,           // DECALCTYPE
+    TempRisciaquo = 21,        // TEMPRISCIACQUO
+    WaterRisciaquo = 22,       // WATERRISCIACQUO
+    CleanType = 23,            // CLEANTYPE
     Programmable = 24,         // PROGRAMABLE
     Visible = 25,              // VISIBLE
-    VisibleInProgramming = 26, // VISIBLE_IN_PROGRAMMING
-    IndexLength = 27,          // INDEX_LENGTH
+    VisibleInProgramming = 26, // VISIBLEINPROGRAMMING
+    IndexLength = 27,          // INDEXLENGTH
     Accessorio = 28,           // ACCESSORIO
 }
 
@@ -58,7 +58,7 @@ pub enum EcamBeverageTasteType {
 pub enum EcamOperationTrigger {
     DontCare = 0,
     Start = 1,
-    /// This is START_PROGRAM and STOPV2, but only STOPV2 appears to be used.
+    /// This is STARTPROGRAM and STOPV2, but only STOPV2 appears to be used.
     StartProgramOrStopV2 = 2,
     NextStep = 3,
     Stop = 4,
@@ -127,4 +127,27 @@ pub enum EcamAccessory {
     Milk = 2,
     Chocolate = 3,
     MilkClean = 4,
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive)]
+pub enum EcamBeverageId {
+    EspressoCoffee = 1,
+    RegularCoffee = 2,
+    LongCoffee = 3,
+    EspressoCoffee2X = 4,
+    DoppioPlus = 5,
+    Americano = 6,
+    Cappuccino = 7,
+    LatteMacchiato = 8,
+    CaffeLatte = 9,
+    FlatWhite = 10,
+    EspressoMacchiato = 11,
+    HotMilk = 12,
+    CappuccinoDoppioPlus = 13,
+    ColdMilk = 14,
+    CappuccinoReverse = 15,
+    HotWater = 16,
+    Steam = 17,
+    Ciocco = 18,
 }

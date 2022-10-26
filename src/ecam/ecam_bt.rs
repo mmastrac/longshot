@@ -1,8 +1,8 @@
-use crate::prelude::*;
+use crate::{packet, prelude::*};
 
+use async_stream::stream;
 use btleplug::api::{
     Central, CharPropFlags, Characteristic, Manager as _, Peripheral as _, ScanFilter,
-    ValueNotification,
 };
 use btleplug::platform::{Adapter, Manager, PeripheralId};
 use stream_cancel::{StreamExt as _, Tripwire};
@@ -37,26 +37,6 @@ impl EcamBT {
                     btleplug::api::WriteType::WithoutResponse,
                 )
                 .await?,
-        )
-    }
-
-    /// Create a stream that outputs the packets from the ECAM
-    pub async fn stream(&self) -> Result<impl Stream<Item = Vec<u8>> + Send, EcamError> {
-        let (peripheral, characteristic) = (self.peripheral.clone(), self.characteristic.clone());
-        peripheral.subscribe(&characteristic).await?;
-        let (trigger, tripwire) = Tripwire::new();
-        let peripheral2 = peripheral.clone();
-        tokio::spawn(async move {
-            while peripheral2.is_connected().await.unwrap_or_default() {}
-            drop(trigger);
-        });
-        // Trim the header and CRC
-        Result::Ok(
-            peripheral
-                .notifications()
-                .await?
-                .map(|m| m.value[2..m.value.len() - 2].to_vec())
-                .take_until_if(tripwire),
         )
     }
 }
@@ -103,7 +83,7 @@ pub async fn get_ecam(uuid: Uuid) -> Result<EcamBT, EcamError> {
 async fn get_notifications_from_peripheral(
     peripheral: &Peripheral,
     characteristic: &Characteristic,
-) -> Result<EcamPacketReceiver, EcamError> {
+) -> Result<impl Stream<Item = Vec<u8>>, EcamError> {
     peripheral.subscribe(characteristic).await?;
     let peripheral2 = peripheral.clone();
     let (trigger, tripwire) = Tripwire::new();
@@ -115,17 +95,54 @@ async fn get_notifications_from_peripheral(
         drop(trigger);
     });
 
-    // Use a forwarding task to make this stream Sync
-    let f = |m: ValueNotification| {
-        println!("{:?}", m.value);
-        EcamOutput::Packet(Response::decode(&m.value[2..m.value.len() - 2].to_vec()))
+    let mut n = peripheral.notifications().await?;
+    let n = stream! {
+        while let Some(m) = n.next().await {
+            let mut b = m.value;
+            let (packet_header, packet_size) = (b[0], b[1]);
+            if packet_header == 0xd0 {
+                if (packet_size as usize) + 1 <= b.len() {
+                    // Single packet?
+                    yield b;
+                } else {
+                    // Accumulate
+                    println!("size={} len={}", packet_size, b.len());
+                    println!("Packet: {:?}", b);
+                    while let Some(mut m) = n.next().await {
+                        println!("Cont'd: {:?}", m.value);
+                        b.append(&mut m.value);
+                        if (packet_size as usize) + 1 <= b.len() {
+                            yield b;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                // Ignore malformed packet
+                println!("Ignoring spurious or malformed packet: {:?}", b);
+            }
+        }
     };
-    let n = peripheral
-        .notifications()
-        .await?
-        .map(f)
-        .take_until_if(tripwire);
-    Ok(EcamPacketReceiver::from_stream(n, true))
+
+    // Use a forwarding task to make this stream Sync
+    let f = |m: Vec<u8>| {
+        let c = packet::checksum(&m[..m.len() - 2]);
+        if m.len() - 1 != m[1].into() {
+            println!(
+                "Warning: Invalid packet length ({} vs {})",
+                m.len() + 1,
+                m[1]
+            );
+        }
+        if c != m[m.len() - 2..m.len()] {
+            println!("Warning: bad checksum! (expected={:?}) {:?}", c, m);
+            None
+        } else {
+            Some(m[2..m.len() - 2].to_vec())
+        }
+    };
+    let n = Box::pin(n.filter_map(f).take_until_if(tripwire));
+    Ok(n)
 }
 
 async fn get_ecam_from_manager(manager: &Manager, uuid: Uuid) -> Result<EcamBT, EcamError> {
@@ -153,6 +170,8 @@ async fn get_ecam_from_manager(manager: &Manager, uuid: Uuid) -> Result<EcamBT, 
                             | CharPropFlags::INDICATE,
                     };
                     let n = get_notifications_from_peripheral(&peripheral, &characteristic).await?;
+                    let n = n.map(|v| EcamOutput::Packet(Response::decode(&v)));
+                    let n = EcamPacketReceiver::from_stream(n, true);
                     // Ignore errors here -- we just want the first peripheral that connects
                     let _ = tx
                         .send(EcamBT {

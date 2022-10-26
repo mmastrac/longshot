@@ -18,14 +18,15 @@ async fn pipe(device_name: String) -> Result<(), Box<dyn std::error::Error>> {
     let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
     let ecam = get_ecam_bt(uuid).await?;
 
-    let mut bt_in = ecam.stream().await?;
     let mut bt_out = Box::pin(packet_stream::packet_stdio_stream());
 
     loop {
         select! {
-            input = bt_in.next() => {
-                if let Some(value) = input {
-                    println!("R: {}", packet::stringify(&value));
+            input = ecam.read() => {
+                if let Ok(Some(p)) = input {
+                    if let EcamOutput::Packet(value) = p {
+                        println!("R: {}", packet::stringify(&value.encode()));
+                    }
                 } else {
                     println!("Device closed");
                     break;
@@ -61,8 +62,16 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
         ecam.write(Request::State(StateRequest::TurnOn)).await?;
     }
 
-    ecam.write(Request::Profile(ProfileRequest::GetProfileNames(1, 3)))
-        .await?;
+    for i in 1..10 {
+        ecam.write(Request::Profile(ProfileRequest::GetRecipeQuantities(1, i)))
+            .await?;
+        tokio::time::sleep(Duration::from_millis(250)).await;
+    }
+    //     ecam.write(Request::Profile(ProfileRequest::GetProfileNames(3, 6)))
+    //     .await?;
+    // tokio::time::sleep(Duration::from_millis(250)).await;
+    // ecam.write(Request::Profile(ProfileRequest::GetRecipeNames(1, 3)))
+    //     .await?;
 
     let _ = handle.await;
 
