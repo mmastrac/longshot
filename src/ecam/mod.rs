@@ -11,10 +11,11 @@ pub type AsyncFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, EcamError>> 
 
 mod ecam_bt;
 mod ecam_subprocess;
+mod driver;
 
 pub use ecam_bt::get_ecam as get_ecam_bt;
 pub use ecam_subprocess::connect as get_ecam_subprocess;
-
+pub use driver::EcamDriver;
 use self::ecam_bt::EcamBT;
 
 pub async fn ecam_scan() -> Result<(String, Uuid), EcamError> {
@@ -65,21 +66,6 @@ impl EcamStatus {
     fn matches(&self, state: &MonitorState) -> bool {
         *self == Self::extract(state)
     }
-}
-
-/// Async-ish traits for read/write. See https://smallcultfollowing.com/babysteps/blog/2019/10/26/async-fn-in-traits-are-hard/
-/// for some tips on making async trait functions.
-pub trait EcamDriver: Send + Sync {
-    /// Read one item from the ECAM.
-    fn read<'a>(&'a self) -> AsyncFuture<'a, Option<EcamOutput>>;
-
-    /// Write one item to the ECAM.
-    fn write<'a>(&'a self, data: Vec<u8>) -> AsyncFuture<'a, ()>;
-
-    /// Scan for the first matching device.
-    fn scan<'a>() -> AsyncFuture<'a, (String, Uuid)>
-    where
-        Self: Sized;
 }
 
 #[derive(Clone)]

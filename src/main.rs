@@ -12,6 +12,7 @@ mod command;
 mod ecam;
 mod packet;
 mod packet_stream;
+mod prelude;
 
 use command::*;
 use ecam::{ecam_scan, get_ecam_bt, get_ecam_subprocess, Ecam, EcamDriver, EcamError, EcamStatus};
