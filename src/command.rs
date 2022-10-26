@@ -1,4 +1,4 @@
-use std::{vec::Vec};
+use std::vec::Vec;
 
 pub enum Request {
     Brew(BrewRequest),

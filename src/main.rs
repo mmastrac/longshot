@@ -17,7 +17,7 @@ mod ecam_subprocess;
 mod packet;
 mod packet_stream;
 
-use ecam::{EcamDriver, EcamError};
+use ecam::{Ecam, EcamDriver, EcamError, EcamStatus};
 
 fn get_update_packet_stream(d: Duration) -> impl Stream<Item = Vec<u8>> {
     let mut interval = tokio::time::interval(d);
@@ -141,22 +141,35 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Some(("brew", cmd)) => {
             println!("{:?}", cmd);
             let turn_on = cmd.get_flag("turn-on");
-            let ecam = ecam_subprocess::connect(
-                &cmd.get_one::<String>("device-name")
-                    .expect("Device name required")
-                    .clone(),
-            )
-            .await?;
-
-            // ecam_wait_for_status(ecam.borrow_ecam(), EcamStatus::Ready).await?;
-
-            if turn_on {
-                ecam.write(Request::State(StateRequest::TurnOn).encode())
-                    .await?;
-            } else {
-                ecam.write(Request::Brew(BrewRequest::Coffee).encode())
-                    .await?;
+            let device_name = &cmd
+                .get_one::<String>("device-name")
+                .expect("Device name required")
+                .clone();
+            let ecam: Box<dyn EcamDriver> = Box::new(ecam_subprocess::connect(device_name).await?);
+            let ecam = Ecam::new(ecam).await;
+            match ecam.current_state().await? {
+                EcamStatus::Ready => {}
+                EcamStatus::StandBy => {
+                    if !turn_on {
+                        println!(
+                            "Machine is not on, pass --turn-on to turn it on before operation"
+                        );
+                        return Ok(());
+                    }
+                    ecam.write(Request::State(StateRequest::TurnOn)).await?;
+                    ecam.wait_for_state(ecam::EcamStatus::Ready).await?;
+                }
+                s => {
+                    println!(
+                        "Machine is in state {:?}, so we will cowardly refuse to brew coffee",
+                        s
+                    );
+                    return Ok(());
+                }
             }
+            println!("Waiting for ready...");
+            ecam.wait_for_state(ecam::EcamStatus::Ready).await?;
+            println!("Waiting for ready done...");
         }
         Some(("monitor", cmd)) => {
             monitor(

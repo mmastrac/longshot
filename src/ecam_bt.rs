@@ -196,11 +196,7 @@ async fn get_ecam_from_adapter(
         for peripheral in peripherals.iter() {
             let r = validate_peripheral(peripheral).await?;
             if let Some((local_name, characteristic)) = r {
-                return Result::Ok(Some((
-                    local_name,
-                    peripheral.clone(),
-                    characteristic,
-                )));
+                return Result::Ok(Some((local_name, peripheral.clone(), characteristic)));
             }
         }
     }
