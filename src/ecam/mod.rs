@@ -1,18 +1,17 @@
 use crate::prelude::*;
 
 use thiserror::Error;
-use tokio::sync::Mutex;
 use uuid::Uuid;
 
-use crate::command::*;
-
 mod driver;
+mod ecam;
 mod ecam_bt;
 mod ecam_subprocess;
 mod packet_receiver;
 
 use self::ecam_bt::EcamBT;
 pub use driver::EcamDriver;
+pub use ecam::{Ecam, EcamStatus};
 pub use ecam_bt::get_ecam as get_ecam_bt;
 pub use ecam_subprocess::connect as get_ecam_subprocess;
 pub use packet_receiver::EcamPacketReceiver;
@@ -24,7 +23,7 @@ pub async fn ecam_scan() -> Result<(String, Uuid), EcamError> {
 #[derive(Debug, PartialEq)]
 pub enum EcamOutput {
     Ready,
-    Packet(Response),
+    Packet(crate::command::Response),
     Logging(String),
     Done,
 }
@@ -41,137 +40,6 @@ pub enum EcamError {
     IOError(#[from] std::io::Error),
     #[error("Unknown error")]
     Unknown,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum EcamStatus {
-    Unknown,
-    StandBy,
-    Ready,
-    Busy,
-}
-
-impl EcamStatus {
-    fn extract(state: &MonitorState) -> EcamStatus {
-        if state.state == MachineState::StandBy {
-            return EcamStatus::StandBy;
-        }
-        if state.state == MachineState::Ready {
-            return EcamStatus::Ready;
-        }
-        return EcamStatus::Busy;
-    }
-
-    fn matches(&self, state: &MonitorState) -> bool {
-        *self == Self::extract(state)
-    }
-}
-
-#[derive(Clone)]
-pub struct Ecam {
-    driver: Arc<Box<dyn EcamDriver>>,
-    internals: Arc<Mutex<EcamInternals>>,
-}
-
-struct EcamInternals {
-    last_status: tokio::sync::watch::Receiver<Option<MonitorState>>,
-    ready_lock: Arc<tokio::sync::Semaphore>,
-}
-
-impl Ecam {
-    pub async fn new(driver: Box<dyn EcamDriver>) -> Self {
-        let driver = Arc::new(driver);
-        let (tx, rx) = tokio::sync::watch::channel(None);
-        let ready_lock = Arc::new(tokio::sync::Semaphore::new(1));
-        let internals = Arc::new(Mutex::new(EcamInternals {
-            last_status: rx,
-            ready_lock,
-        }));
-        let ecam = Ecam { driver, internals };
-        let driver = ecam.driver.clone();
-        let internals = ecam.internals.clone();
-        let mut ready_lock_semaphore = Some(
-            internals
-                .lock()
-                .await
-                .ready_lock
-                .clone()
-                .acquire_owned()
-                .await
-                .unwrap(),
-        );
-        tokio::spawn(async move {
-            loop {
-                if tx.is_closed() {
-                    break;
-                }
-                match driver.read().await? {
-                    Some(EcamOutput::Packet(Response::State(x))) => {
-                        // println!("{:?}", x);
-                        if tx.send(Some(x)).is_err() {
-                            break;
-                        }
-                        ready_lock_semaphore.take();
-                    }
-                    Some(EcamOutput::Done) => {
-                        break;
-                    }
-                    x => {
-                        println!("{:?}", x);
-                    }
-                }
-            }
-            println!("Closed");
-            Result::<(), EcamError>::Ok(())
-        });
-        let driver = ecam.driver.clone();
-        tokio::spawn(async move {
-            loop {
-                driver
-                    .write(Request::Monitor(MonitorRequestVersion::V2).encode())
-                    .await?;
-                tokio::time::sleep(Duration::from_millis(250)).await;
-            }
-            Result::<(), EcamError>::Ok(())
-        });
-        ecam
-    }
-
-    pub async fn wait_for_state(&self, state: EcamStatus) -> Result<(), EcamError> {
-        let mut rx = self.internals.lock().await.last_status.clone();
-        loop {
-            if let Some(test) = rx.borrow().as_ref() {
-                if state.matches(test) {
-                    return Ok(());
-                }
-            }
-            // TODO: timeout
-            rx.changed().await.map_err(|_| EcamError::Unknown)?;
-        }
-    }
-
-    pub async fn current_state(&self) -> Result<EcamStatus, EcamError> {
-        let internals = self.internals.lock().await;
-        let rx = internals.last_status.clone();
-        drop(
-            internals
-                .ready_lock
-                .clone()
-                .acquire_owned()
-                .await
-                .map_err(|_| EcamError::Unknown)?,
-        );
-        let ret = if let Some(test) = rx.borrow().as_ref() {
-            Ok(EcamStatus::extract(test))
-        } else {
-            Err(EcamError::Unknown)
-        };
-        ret
-    }
-
-    pub async fn write(&self, request: Request) -> Result<(), EcamError> {
-        self.driver.write(request.encode()).await
-    }
 }
 
 #[cfg(test)]
