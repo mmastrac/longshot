@@ -30,7 +30,7 @@ impl<T: PartialEq> PartialEq<T> for MachineEnum<T> {
     fn eq(&self, other: &T) -> bool {
         match self {
             Self::Value(t) => t.eq(other),
-            Self::Unknown(v) => false,
+            Self::Unknown(_v) => false,
         }
     }
 }

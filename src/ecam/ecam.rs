@@ -1,8 +1,7 @@
 use crate::prelude::*;
 
 use tokio::sync::Mutex;
-use tokio_stream::wrappers::{BroadcastStream, ReceiverStream};
-use tuples::TupleCloned;
+use tokio_stream::wrappers::BroadcastStream;
 
 use crate::command::*;
 use crate::ecam::{hardware_enums::EcamMachineState, EcamDriver, EcamError, EcamOutput};
@@ -23,7 +22,7 @@ impl EcamStatus {
         if state.state == EcamMachineState::ReadyOrDispensing && state.progress == 0 {
             return EcamStatus::Ready;
         }
-        return EcamStatus::Busy;
+        EcamStatus::Busy
     }
 
     fn matches(&self, state: &MonitorState) -> bool {
