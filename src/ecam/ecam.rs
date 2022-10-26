@@ -3,7 +3,7 @@ use crate::prelude::*;
 use tokio::sync::Mutex;
 
 use crate::command::*;
-use crate::ecam::{EcamDriver, EcamError, EcamOutput};
+use crate::ecam::{hardware_enums::EcamMachineState, EcamDriver, EcamError, EcamOutput};
 
 #[derive(Debug, PartialEq)]
 pub enum EcamStatus {
@@ -15,10 +15,10 @@ pub enum EcamStatus {
 
 impl EcamStatus {
     fn extract(state: &MonitorState) -> EcamStatus {
-        if state.state == MachineState::StandBy {
+        if state.state == EcamMachineState::StandBy {
             return EcamStatus::StandBy;
         }
-        if state.state == MachineState::Ready {
+        if state.state == EcamMachineState::ReadyOrDispensing && state.progress == 0 {
             return EcamStatus::Ready;
         }
         return EcamStatus::Busy;

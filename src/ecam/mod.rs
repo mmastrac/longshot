@@ -7,8 +7,9 @@ mod driver;
 mod ecam;
 mod ecam_bt;
 mod ecam_subprocess;
+pub mod hardware_enums;
+pub mod machine_enum;
 mod packet_receiver;
-mod hardware_enums;
 
 use self::ecam_bt::EcamBT;
 pub use driver::{EcamDriver, EcamOutput};

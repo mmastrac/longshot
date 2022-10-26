@@ -1,4 +1,6 @@
-use std::vec::Vec;
+use crate::ecam::hardware_enums::*;
+use crate::ecam::machine_enum::MachineEnum;
+use std::{fmt::Debug, vec::Vec};
 
 pub enum Request {
     Brew(BrewRequest),
@@ -42,35 +44,9 @@ pub enum Strength {}
 pub enum Size {}
 
 #[derive(Debug, PartialEq)]
-pub enum MachineState {
-    StandBy,
-    TurningOn,
-    ShuttingDown,
-    Descaling,
-    SteamPreparation,
-    Recovery,
-    Ready,
-    /// Working is ready w/a function progress
-    Working,
-    Rinsing,
-    MilkPreparation,
-    HotWaterDelivery,
-    MilkCleaning,
-    Unknown(u8),
-}
-
-pub enum Accessory {
-    None,
-    Water,
-    Milk,
-    Chocolate,
-    MilkClean,
-    Unknown(u8),
-}
-
-#[derive(Debug, PartialEq)]
 pub struct MonitorState {
-    pub state: MachineState,
+    pub state: MachineEnum<EcamMachineState>,
+    pub accessory: MachineEnum<EcamAccessory>,
     pub progress: u8,
     pub percentage: u8,
     pub load0: u8,
@@ -151,14 +127,9 @@ impl MonitorState {
     pub fn decode(data: &[u8]) -> Self {
         /* accessory, sw0, sw1, sw2, sw3, function, function progress, percentage, ?, load0, load1, sw, water */
 
-        // Handle ready/working overlap
-        let mut state = MachineState::decode(data[5]);
-        if state == MachineState::Ready && data[6] != 0 {
-            state = MachineState::Working;
-        }
-
         MonitorState {
-            state: MachineState::decode(data[5]),
+            state: MachineEnum::decode(data[5]),
+            accessory: MachineEnum::decode(data[0]),
             progress: data[6],
             percentage: data[7],
             load0: data[8],
@@ -181,24 +152,5 @@ impl MonitorState {
             <string name="COFFEE_DISPENSING_STATUS_7">Water heating up</string>
             <string name="COFFEE_DISPENSING_STATUS_8">Pre-infusion</string>
         */
-    }
-}
-
-impl MachineState {
-    pub fn decode(data: u8) -> Self {
-        match data {
-            0 => MachineState::StandBy,
-            1 => MachineState::TurningOn,
-            2 => MachineState::ShuttingDown,
-            4 => MachineState::Descaling,
-            5 => MachineState::SteamPreparation,
-            6 => MachineState::Recovery,
-            7 => MachineState::Ready,
-            8 => MachineState::Rinsing,
-            10 => MachineState::MilkPreparation,
-            11 => MachineState::HotWaterDelivery,
-            12 => MachineState::MilkCleaning,
-            n => MachineState::Unknown(n),
-        }
     }
 }
