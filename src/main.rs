@@ -61,6 +61,9 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
         ecam.write(Request::State(StateRequest::TurnOn)).await?;
     }
 
+    ecam.write(Request::Profile(ProfileRequest::GetProfileNames(1, 3)))
+        .await?;
+
     let _ = handle.await;
 
     Ok(())

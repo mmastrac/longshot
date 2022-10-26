@@ -117,6 +117,7 @@ async fn get_notifications_from_peripheral(
 
     // Use a forwarding task to make this stream Sync
     let f = |m: ValueNotification| {
+        println!("{:?}", m.value);
         EcamOutput::Packet(Response::decode(&m.value[2..m.value.len() - 2].to_vec()))
     };
     let n = peripheral

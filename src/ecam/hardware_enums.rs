@@ -79,14 +79,18 @@ pub enum EcamRequestId {
     ParameterRead = 149,
     ParameterWrite = 144,
     ParameterReadExt = 161,
+    StatisticsRead = 162,
     Checksum = 163,
-    RecipeNameRead = 164,
-    RecipeNameWrite = 165,
+    ProfileNameRead = 164,
+    ProfileNameWrite = 165,
     RecipeQtyRead = 166,
     RecipePriorityRead = 168,
     ProfileSelection = 169,
+    RecipeNameRead = 170,
+    RecipeNameWrite = 171,
     PinActivation = 176,
     PinSet = 177,
+    SetTime = 226,
 }
 
 #[repr(u8)]

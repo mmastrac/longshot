@@ -7,6 +7,7 @@ pub enum Request {
     Monitor(MonitorRequestVersion),
     State(StateRequest),
     Parameter(ParameterRequest),
+    Profile(ProfileRequest),
     Raw(Vec<u8>),
 }
 
@@ -20,6 +21,11 @@ pub enum MonitorRequestVersion {
     V0,
     V1,
     V2,
+}
+
+pub enum ProfileRequest {
+    GetProfileNames(u8, u8),
+    GetRecipeNames(u8, u8),
 }
 
 pub enum StateRequest {
@@ -61,7 +67,7 @@ impl Request {
             Request::Monitor(r) => r.encode(),
             Request::State(r) => r.encode(),
             Request::Parameter(r) => r.encode(),
-
+            Request::Profile(r) => r.encode(),
             Request::Raw(r) => r.clone(),
         }
     }
@@ -100,6 +106,19 @@ impl MonitorRequestVersion {
 impl ParameterRequest {
     pub fn encode(&self) -> Vec<u8> {
         unimplemented!();
+    }
+}
+
+impl ProfileRequest {
+    pub fn encode(&self) -> Vec<u8> {
+        match self {
+            Self::GetProfileNames(a, b) => {
+                vec![EcamRequestId::ProfileNameRead.into(), 0xf0, *a, *b]
+            }
+            Self::GetRecipeNames(a, b) => {
+                vec![EcamRequestId::RecipeNameRead.into(), 0xf0, *a, *b]
+            }
+        }
     }
 }
 
