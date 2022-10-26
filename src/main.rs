@@ -3,9 +3,6 @@ use crate::{ecam::EcamOutput, prelude::*};
 use clap::{arg, command};
 use stream_cancel::{StreamExt as _, Tripwire};
 use tokio::select;
-use tokio::sync::Mutex;
-use tokio::try_join;
-use tuples::*;
 use uuid::Uuid;
 
 mod command;
