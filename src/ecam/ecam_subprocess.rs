@@ -1,4 +1,6 @@
-use std::{process::Stdio, sync::Arc};
+use crate::prelude::*;
+
+use std::process::Stdio;
 
 use async_stream::stream;
 use futures::TryFutureExt;
@@ -7,7 +9,7 @@ use tokio::{
     process::ChildStdin,
     sync::Mutex,
 };
-use tokio_stream::{wrappers::LinesStream, StreamExt};
+use tokio_stream::wrappers::LinesStream;
 
 use crate::{
     command::Response,

@@ -1,10 +1,9 @@
+use crate::prelude::*;
+
 use clap::{arg, command};
-use std::time::Duration;
-use std::{error::Error, sync::Arc};
 use stream_cancel::{StreamExt as _, Tripwire};
 use tokio::sync::Mutex;
 use tokio::try_join;
-use tokio_stream::{Stream, StreamExt as _};
 use tuples::*;
 use uuid::Uuid;
 
@@ -28,7 +27,7 @@ fn get_update_packet_stream(d: Duration) -> impl Stream<Item = Vec<u8>> {
     update_stream
 }
 
-async fn pipe(device_name: String) -> Result<(), Box<dyn Error>> {
+async fn pipe(device_name: String) -> Result<(), Box<dyn std::error::Error>> {
     let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
     let ecam = get_ecam_bt(uuid).await?;
     let (trigger, tripwire) = Tripwire::new();
@@ -106,7 +105,7 @@ async fn monitor(turn_on: bool, device_name: String) -> Result<(), EcamError> {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     pretty_env_logger::init();
 
     let device_name = arg!(--"device-name" <name>).help("Provides the name of the device");

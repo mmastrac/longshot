@@ -1,14 +1,12 @@
+use crate::prelude::*;
+
 use btleplug::api::{
     Central, CharPropFlags, Characteristic, Manager as _, Peripheral as _, ScanFilter,
     ValueNotification,
 };
 use btleplug::platform::{Adapter, Manager, PeripheralId};
-use std::pin::Pin;
-use std::result::Result;
-use std::time::Duration;
 use stream_cancel::{StreamExt as _, Tripwire};
 use tokio::time;
-use tokio_stream::{Stream, StreamExt};
 use uuid::Uuid;
 
 use crate::command::Response;
@@ -64,22 +62,17 @@ impl EcamBT {
 }
 
 impl EcamDriver for EcamBT {
-    fn read<'a>(
-        &'a self,
-    ) -> Pin<Box<dyn std::future::Future<Output = Result<Option<EcamOutput>, EcamError>> + Send + 'a>>
-    {
+    fn read<'a>(&'a self) -> crate::prelude::AsyncFuture<'a, Option<EcamOutput>> {
         Box::pin(self.notifications.recv())
     }
 
-    fn write<'a>(
-        &'a self,
-        data: Vec<u8>,
-    ) -> Pin<Box<dyn std::future::Future<Output = Result<(), EcamError>> + Send + 'a>> {
+    fn write<'a>(&'a self, data: Vec<u8>) -> crate::prelude::AsyncFuture<'a, ()> {
         Box::pin(self.send(data))
     }
 
-    fn scan<'a>(
-    ) -> Pin<Box<dyn std::future::Future<Output = Result<(String, Uuid), EcamError>> + Send + 'a>>
+    fn scan<'a>() -> crate::prelude::AsyncFuture<'a, (String, Uuid)>
+    where
+        Self: Sized,
     {
         Box::pin(scan())
     }
