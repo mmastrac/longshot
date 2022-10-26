@@ -1,4 +1,5 @@
-use std::{future::Future, pin::Pin, sync::Arc, time::Duration};
+use crate::prelude::*;
+use std::{pin::Pin, sync::Arc, time::Duration};
 
 use thiserror::Error;
 use tokio::sync::{mpsc::Receiver, Mutex};
@@ -7,16 +8,16 @@ use uuid::Uuid;
 
 use crate::command::*;
 
-pub type AsyncFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, EcamError>> + Send + 'a>>;
-
+mod driver;
 mod ecam_bt;
 mod ecam_subprocess;
-mod driver;
+mod packet_receiver;
 
+use self::ecam_bt::EcamBT;
+pub use driver::EcamDriver;
 pub use ecam_bt::get_ecam as get_ecam_bt;
 pub use ecam_subprocess::connect as get_ecam_subprocess;
-pub use driver::EcamDriver;
-use self::ecam_bt::EcamBT;
+pub use packet_receiver::EcamPacketReceiver;
 
 pub async fn ecam_scan() -> Result<(String, Uuid), EcamError> {
     EcamBT::scan().await
@@ -175,49 +176,10 @@ impl Ecam {
     }
 }
 
-/// Converts a stream into something that can be more easily awaited.
-pub struct EcamPacketReceiver {
-    rx: Arc<Mutex<Pin<Box<Receiver<EcamOutput>>>>>,
-}
-
-impl EcamPacketReceiver {
-    pub fn from_stream<T: futures::Stream<Item = EcamOutput> + Unpin + Send + 'static>(
-        mut stream: T,
-        wrap_start_end: bool,
-    ) -> Self {
-        let (tx, rx) = tokio::sync::mpsc::channel(100);
-        tokio::spawn(async move {
-            if wrap_start_end {
-                tx.send(EcamOutput::Ready)
-                    .await
-                    .expect("Failed to forward notification");
-            }
-            while let Some(m) = stream.next().await {
-                tx.send(m).await.expect("Failed to forward notification");
-            }
-            if wrap_start_end {
-                tx.send(EcamOutput::Done)
-                    .await
-                    .expect("Failed to forward notification");
-            }
-        });
-
-        EcamPacketReceiver {
-            rx: Arc::new(Mutex::new(Box::pin(rx))),
-        }
-    }
-
-    pub async fn recv(&self) -> Result<Option<EcamOutput>, EcamError> {
-        Ok(self.rx.lock().await.recv().await)
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::{EcamDriver, EcamError, EcamOutput};
     use crate::command::*;
-    use futures::Future;
-    use std::pin::Pin;
     use std::sync::{Arc, Mutex};
 
     #[derive(Default)]
@@ -240,10 +202,7 @@ mod test {
     }
 
     impl EcamDriver for EcamTest {
-        fn read<'a>(
-            &'a self,
-        ) -> Pin<Box<dyn Future<Output = Result<Option<EcamOutput>, EcamError>> + Send + 'a>>
-        {
+        fn read<'a>(&'a self) -> crate::prelude::AsyncFuture<'a, Option<EcamOutput>> {
             Box::pin(async {
                 if self.read_items.lock().unwrap().is_empty() {
                     Ok(None)
@@ -253,16 +212,14 @@ mod test {
             })
         }
 
-        fn write<'a>(
-            &'a self,
-            data: Vec<u8>,
-        ) -> Pin<Box<dyn Future<Output = Result<(), EcamError>> + Send + 'a>> {
+        fn write<'a>(&'a self, data: Vec<u8>) -> crate::prelude::AsyncFuture<'a, ()> {
             self.write_items.lock().unwrap().push(data);
             Box::pin(async { Ok(()) })
         }
 
-        fn scan<'a>(
-        ) -> Pin<Box<dyn Future<Output = Result<(String, uuid::Uuid), EcamError>> + Send + 'a>>
+        fn scan<'a>() -> crate::prelude::AsyncFuture<'a, (String, uuid::Uuid)>
+        where
+            Self: Sized,
         {
             Box::pin(async { Err(EcamError::NotFound) })
         }

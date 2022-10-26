@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
-use uuid::Uuid;
 use crate::ecam::EcamOutput;
+use uuid::Uuid;
 
 /// Async-ish traits for read/write. See https://smallcultfollowing.com/babysteps/blog/2019/10/26/async-fn-in-traits-are-hard/
 /// for some tips on making async trait functions.
