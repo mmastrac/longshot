@@ -44,24 +44,24 @@ impl Ecam {
     pub async fn new(driver: Box<dyn EcamDriver>) -> Self {
         let driver = Arc::new(driver);
         let (tx, rx) = tokio::sync::watch::channel(None);
+
+        // We want to lock the status until we've received at least one packet
         let ready_lock = Arc::new(tokio::sync::Semaphore::new(1));
+        let mut ready_lock_semaphore = Some(
+            ready_lock
+                .clone()
+                .acquire_owned()
+                .await
+                .expect("Failed to lock mutex"),
+        );
+
         let internals = Arc::new(Mutex::new(EcamInternals {
             last_status: rx,
             ready_lock,
         }));
         let ecam = Ecam { driver, internals };
         let driver = ecam.driver.clone();
-        let internals = ecam.internals.clone();
-        let mut ready_lock_semaphore = Some(
-            internals
-                .lock()
-                .await
-                .ready_lock
-                .clone()
-                .acquire_owned()
-                .await
-                .unwrap(),
-        );
+
         tokio::spawn(async move {
             loop {
                 if tx.is_closed() {
