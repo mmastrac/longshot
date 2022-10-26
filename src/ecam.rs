@@ -1,4 +1,4 @@
-use std::{future::Future, pin::Pin, sync::Arc};
+use std::{future::Future, pin::Pin, sync::Arc, time::Duration};
 
 use thiserror::Error;
 use tokio::sync::{mpsc::Receiver, Mutex};
@@ -38,7 +38,7 @@ pub enum EcamStatus {
 
 /// Async-ish traits for read/write. See https://smallcultfollowing.com/babysteps/blog/2019/10/26/async-fn-in-traits-are-hard/
 /// for some tips on making async trait functions.
-pub trait Ecam {
+pub trait Ecam: Send + Sync {
     /// Read one item from the ECAM.
     fn read<'a>(self: &'a Self) -> AsyncFuture<'a, Option<EcamOutput>>;
 
@@ -51,13 +51,15 @@ pub trait Ecam {
         Self: Sized;
 }
 
-async fn ecam_wait_for_status(ecam: &mut dyn Ecam, status: EcamStatus) {}
+pub async fn ecam_wait_for_status<T: Ecam>(ecam: T, status: EcamStatus) -> Result<(), EcamError> {
+    Ok(())
+}
 
+/// Converts a stream into something that can be more easily awaited.
 pub struct EcamPacketReceiver {
     rx: Arc<Mutex<Pin<Box<Receiver<EcamOutput>>>>>,
 }
 
-/// Converts a stream into something that can be more easily awaited.
 impl EcamPacketReceiver {
     pub fn from_stream<T: futures::Stream<Item = EcamOutput> + Unpin + Send + 'static>(
         mut stream: T,

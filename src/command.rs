@@ -25,7 +25,7 @@ pub enum StateRequest {
 }
 
 pub enum BrewRequest {
-    Coffee(),
+    Coffee,
 }
 
 pub enum ParameterRequest {
@@ -147,7 +147,7 @@ impl BrewRequest {
         // COFFEE_GRINDING,
 
         match *self {
-            BrewRequest::Coffee() => {
+            BrewRequest::Coffee => {
                 vec![
                     0x83, 0xf0, 0x02, 0x01, 0, 0x00, 0x67, 0x02, 0x02, 0x00, 0x00, 0x06,
                 ]
@@ -190,7 +190,7 @@ impl StateRequest {
 
 impl Response {
     pub fn decode(data: &[u8]) -> Self {
-        if data[0] == 0x75 {
+        if data[0] == 0x75 && data.len() > 10 {
             Response::State(MonitorState::decode(&data[2..]))
         } else {
             Response::Raw(data.to_vec())

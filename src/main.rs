@@ -1,7 +1,6 @@
 use clap::{arg, command, value_parser, ArgAction};
-use command::{Request, StateRequest};
+use command::*;
 use ecam_bt::EcamBT;
-use std::future::{self, Future};
 use std::time::Duration;
 use std::{error::Error, sync::Arc};
 use stream_cancel::{StreamExt as _, Tripwire};
@@ -18,7 +17,7 @@ mod ecam_subprocess;
 mod packet;
 mod packet_stream;
 
-use ecam::{Ecam, EcamError};
+use ecam::{ecam_wait_for_status, Ecam, EcamError, EcamStatus};
 
 fn get_update_packet_stream(d: Duration) -> impl Stream<Item = Vec<u8>> {
     let mut interval = tokio::time::interval(d);
@@ -141,6 +140,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     match subcommand {
         Some(("brew", cmd)) => {
             println!("{:?}", cmd);
+            let turn_on = cmd.get_flag("turn-on");
             let mut ecam = ecam_subprocess::connect(
                 &cmd.get_one::<String>("device-name")
                     .expect("Device name required")
@@ -148,8 +148,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
             )
             .await?;
 
-            while let Some(s) = ecam.read().await? {
-                println!("{:?}", s);
+            // ecam_wait_for_status(ecam.borrow_ecam(), EcamStatus::Ready).await?;
+
+            if turn_on {
+                ecam.write(Request::State(StateRequest::TurnOn).encode())
+                    .await?;
+            } else {
+                ecam.write(Request::Brew(BrewRequest::Coffee).encode())
+                    .await?;
             }
         }
         Some(("monitor", cmd)) => {
