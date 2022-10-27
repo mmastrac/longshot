@@ -14,6 +14,7 @@ pub enum Request {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Response {
     State(MonitorState),
+    Profile(ProfileResponse),
     Raw(Vec<u8>),
 }
 
@@ -54,6 +55,17 @@ pub enum Strength {}
 pub enum Size {}
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum ProfileResponse {
+    RecipeQuantities(u8, MachineEnum<EcamBeverageId>, Vec<RecipeData>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RecipeData {
+    pub ingredient: MachineEnum<EcamIngredients>,
+    pub value: u16,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct MonitorState {
     pub state: MachineEnum<EcamMachineState>,
     pub accessory: MachineEnum<EcamAccessory>,
@@ -74,6 +86,16 @@ impl Request {
             Request::Profile(r) => r.encode(),
             Request::Raw(r) => r.clone(),
         }
+    }
+}
+
+pub trait FromRef<T> {
+    fn from_ref(x: &T) -> Self;
+}
+
+impl FromRef<Request> for Vec<u8> {
+    fn from_ref(req: &Request) -> Self {
+        Request::encode(req)
     }
 }
 
@@ -142,19 +164,20 @@ impl StateRequest {
     }
 }
 
+impl<'a> From<&'a [u8]> for Response {
+    fn from(data: &[u8]) -> Self {
+        Response::decode(data)
+    }
+}
+
 impl Response {
     pub fn decode(data: &[u8]) -> Self {
         if data[0] == 0x75 && data.len() > 10 {
             Response::State(MonitorState::decode(&data))
+        } else if data[0] == EcamRequestId::RecipeQtyRead as u8 {
+            Response::Profile(ProfileResponse::decode(&data))
         } else {
             Response::Raw(data.to_vec())
-        }
-    }
-
-    pub fn encode(&self) -> Vec<u8> {
-        match self {
-            Response::State(s) => s.raw.clone(),
-            Response::Raw(v) => v.clone(),
         }
     }
 }
@@ -189,5 +212,12 @@ impl MonitorState {
             <string name="COFFEE_DISPENSING_STATUS_7">Water heating up</string>
             <string name="COFFEE_DISPENSING_STATUS_8">Pre-infusion</string>
         */
+    }
+}
+
+impl ProfileResponse {
+    pub fn decode(data: &[u8]) -> ProfileResponse {
+        let data = &data[2..];
+        ProfileResponse::RecipeQuantities(data[0], MachineEnum::decode(data[1]), vec![])
     }
 }

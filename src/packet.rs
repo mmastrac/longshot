@@ -1,3 +1,49 @@
+use std::ops::Deref;
+
+use crate::command::FromRef;
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct EcamPacket<T> {
+    pub representation: T,
+    pub bytes: Vec<u8>,
+}
+
+impl<T> EcamPacket<T> {
+    pub fn encode(&self) -> Vec<u8> {
+        self.bytes.clone()
+    }
+
+    pub fn stringify(&self) -> String {
+        stringify(&self.bytes)
+    }
+
+    pub fn packetize(&self) -> Vec<u8> {
+        packetize(&self.bytes)
+    }
+}
+
+impl<'a, T: From<&'a [u8]>> EcamPacket<T> {
+    pub fn from_bytes(bytes: &'a [u8]) -> EcamPacket<T> {
+        EcamPacket {
+            representation: bytes.into(),
+            bytes: bytes.into(),
+        }
+    }
+}
+
+impl<T> EcamPacket<T>
+where
+    Vec<u8>: FromRef<T>,
+{
+    pub fn from_represenation(representation: T) -> EcamPacket<T> {
+        let bytes = Vec::from_ref(&representation);
+        EcamPacket {
+            representation,
+            bytes,
+        }
+    }
+}
+
 pub fn checksum(buffer: &[u8]) -> [u8; 2] {
     let mut i: u16 = 7439;
     for x in buffer {

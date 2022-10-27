@@ -2,6 +2,7 @@ use crate::{ecam::EcamOutput, prelude::*};
 
 use clap::{arg, command};
 
+use packet::EcamPacket;
 use tokio::select;
 use uuid::Uuid;
 
@@ -25,7 +26,7 @@ async fn pipe(device_name: String) -> Result<(), Box<dyn std::error::Error>> {
             input = ecam.read() => {
                 if let Ok(Some(p)) = input {
                     if let EcamOutput::Packet(value) = p {
-                        println!("R: {}", packet::stringify(&value.encode()));
+                        println!("R: {}", value.stringify());
                     }
                 } else {
                     println!("Device closed");
@@ -59,12 +60,17 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
     });
     let state = ecam.current_state().await?;
     if turn_on && state == EcamStatus::StandBy {
-        ecam.write(Request::State(StateRequest::TurnOn)).await?;
+        ecam.write(EcamPacket::from_represenation(Request::State(
+            StateRequest::TurnOn,
+        )))
+        .await?;
     }
 
-    ecam.write(Request::Profile(ProfileRequest::GetRecipeNames(1, 2)))
-        .await?;
-    tokio::time::sleep(Duration::from_millis(250)).await;
+    loop {
+        // Poll for current state
+        let _ = ecam.current_state().await?;
+    }
+
     //     ecam.write(Request::Profile(ProfileRequest::GetProfileNames(3, 6)))
     //     .await?;
     // tokio::time::sleep(Duration::from_millis(250)).await;
@@ -72,6 +78,28 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
     //     .await?;
 
     let _ = handle.await;
+
+    Ok(())
+}
+
+async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
+    let mut tap = ecam.packet_tap().await?;
+    for i in 0..255 {
+        ecam.write(EcamPacket::from_represenation(Request::Profile(
+            ProfileRequest::GetRecipeQuantities(1, i),
+        )))
+        .await?;
+
+        let now = std::time::Instant::now();
+        while now.elapsed() < Duration::from_millis(250) {
+            match tokio::time::timeout(Duration::from_millis(50), tap.next()).await {
+                Err(_) => {}
+                Ok(x) => {
+                    println!("{:?}", x);
+                }
+            }
+        }
+    }
 
     Ok(())
 }
@@ -94,6 +122,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .about("Monitor the status of the device")
                 .arg(device_name.clone())
                 .arg(turn_on.clone()),
+        )
+        .subcommand(
+            command!("list-recipes")
+                .about("List recipes stored in the device")
+                .arg(device_name.clone()),
         )
         .subcommand(command!("list").about("List all supported devices"))
         .subcommand(
@@ -125,7 +158,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         );
                         return Ok(());
                     }
-                    ecam.write(Request::State(StateRequest::TurnOn)).await?;
+                    ecam.write(EcamPacket::from_represenation(Request::State(
+                        StateRequest::TurnOn,
+                    )))
+                    .await?;
                     ecam.wait_for_state(ecam::EcamStatus::Ready).await?;
                 }
                 s => {
@@ -154,6 +190,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(("list", _cmd)) => {
             let (s, uuid) = ecam_scan().await?;
             println!("{}  {}", s, uuid);
+        }
+        Some(("list-recipes", cmd)) => {
+            let device_name = &cmd
+                .get_one::<String>("device-name")
+                .expect("Device name required")
+                .clone();
+            let ecam: Box<dyn EcamDriver> = Box::new(get_ecam_subprocess(device_name).await?);
+            let ecam = Ecam::new(ecam).await;
+            list_recipes(ecam).await?;
         }
         Some(("x-internal-pipe", cmd)) => {
             pipe(

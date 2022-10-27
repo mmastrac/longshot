@@ -1,5 +1,7 @@
 use crate::{packet, prelude::*};
 
+use crate::ecam::{EcamDriver, EcamError, EcamOutput, EcamPacketReceiver};
+use crate::packet::{packetize, EcamPacket};
 use async_stream::stream;
 use btleplug::api::{
     Central, CharPropFlags, Characteristic, Manager as _, Peripheral as _, ScanFilter,
@@ -8,10 +10,6 @@ use btleplug::platform::{Adapter, Manager, PeripheralId};
 use stream_cancel::{StreamExt as _, Tripwire};
 use tokio::time;
 use uuid::Uuid;
-
-use crate::command::Response;
-use crate::ecam::{EcamDriver, EcamError, EcamOutput, EcamPacketReceiver};
-use crate::packet::packetize;
 
 const SERVICE_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000300);
 const CHARACTERISTIC_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000301);
@@ -170,7 +168,7 @@ async fn get_ecam_from_manager(manager: &Manager, uuid: Uuid) -> Result<EcamBT, 
                             | CharPropFlags::INDICATE,
                     };
                     let n = get_notifications_from_peripheral(&peripheral, &characteristic).await?;
-                    let n = n.map(|v| EcamOutput::Packet(Response::decode(&v)));
+                    let n = n.map(|v| EcamOutput::Packet(EcamPacket::from_bytes(&v)));
                     let n = EcamPacketReceiver::from_stream(n, true);
                     // Ignore errors here -- we just want the first peripheral that connects
                     let _ = tx

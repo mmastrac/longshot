@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{packet::EcamPacket, prelude::*};
 
 use std::process::Stdio;
 
@@ -65,7 +65,7 @@ pub async fn stream(
                 yield EcamOutput::Ready;
             } else if s.starts_with("R: ") {
                 if let Ok(bytes) = hex::decode(&s[3..]) {
-                    yield EcamOutput::Packet(Response::decode(&bytes));
+                    yield EcamOutput::Packet(EcamPacket::from_bytes(&bytes));
                 } else {
                     yield EcamOutput::Logging(format!("Failed to decode '{}'", s));
                 }

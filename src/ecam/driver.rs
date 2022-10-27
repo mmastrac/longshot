@@ -1,11 +1,11 @@
-use crate::prelude::*;
+use crate::{command::Response, packet::EcamPacket, prelude::*};
 
 use uuid::Uuid;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum EcamOutput {
     Ready,
-    Packet(crate::command::Response),
+    Packet(EcamPacket<Response>),
     Logging(String),
     Done,
 }
@@ -28,7 +28,6 @@ pub trait EcamDriver: Send + Sync {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::command::*;
     use crate::ecam::EcamError;
     use std::sync::Mutex;
 
@@ -77,13 +76,13 @@ mod test {
 
     #[tokio::test]
     async fn test_read() -> Result<(), EcamError> {
-        let test = EcamTest::new(vec![EcamOutput::Packet(Response::Raw(vec![]))]);
+        let test = EcamTest::new(vec![EcamOutput::Packet(EcamPacket::from_bytes(&[]))]);
         assert_eq!(
             EcamOutput::Ready,
             test.read().await?.expect("expected item")
         );
         assert_eq!(
-            EcamOutput::Packet(Response::Raw(vec![])),
+            EcamOutput::Packet(EcamPacket::from_bytes(&[])),
             test.read().await?.expect("expected item")
         );
         assert_eq!(EcamOutput::Done, test.read().await?.expect("expected item"));

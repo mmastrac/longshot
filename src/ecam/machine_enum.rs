@@ -17,6 +17,12 @@ impl<T: TryFrom<u8>> MachineEnum<T> {
     }
 }
 
+impl<T> From<T> for MachineEnum<T> {
+    fn from(t: T) -> Self {
+        MachineEnum::Value(t)
+    }
+}
+
 impl<T: Debug> Debug for MachineEnum<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

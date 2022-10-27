@@ -1,3 +1,4 @@
+use crate::packet::EcamPacket;
 use crate::prelude::*;
 
 use tokio::sync::Mutex;
@@ -30,6 +31,39 @@ impl EcamStatus {
     }
 }
 
+struct StatusInterest {
+    count: Arc<std::sync::Mutex<usize>>,
+}
+
+struct StatusInterestHandle {
+    count: Arc<std::sync::Mutex<usize>>,
+}
+
+impl StatusInterest {
+    fn new() -> Self {
+        StatusInterest {
+            count: Arc::new(std::sync::Mutex::new(0)),
+        }
+    }
+
+    fn lock(&mut self) -> StatusInterestHandle {
+        *self.count.lock().unwrap() += 1;
+        StatusInterestHandle {
+            count: self.count.clone(),
+        }
+    }
+
+    fn count(&self) -> usize {
+        *self.count.lock().unwrap()
+    }
+}
+
+impl Drop for StatusInterestHandle {
+    fn drop(&mut self) {
+        *self.count.lock().unwrap() -= 1;
+    }
+}
+
 #[derive(Clone)]
 pub struct Ecam {
     driver: Arc<Box<dyn EcamDriver>>,
@@ -41,6 +75,7 @@ struct EcamInternals {
     last_status: tokio::sync::watch::Receiver<Option<MonitorState>>,
     packet_tap: Arc<tokio::sync::broadcast::Sender<EcamOutput>>,
     ready_lock: Arc<tokio::sync::Semaphore>,
+    status_interest: StatusInterest,
 }
 
 impl Ecam {
@@ -63,6 +98,7 @@ impl Ecam {
             last_status: rx,
             packet_tap: Arc::new(txb),
             ready_lock,
+            status_interest: StatusInterest::new(),
         }));
         let ecam_result = Ecam {
             driver,
@@ -90,7 +126,10 @@ impl Ecam {
                     EcamOutput::Done => {
                         break;
                     }
-                    EcamOutput::Packet(Response::State(x)) => {
+                    EcamOutput::Packet(EcamPacket {
+                        representation: Response::State(x),
+                        ..
+                    }) => {
                         if tx.send(Some(x)).is_err() {
                             break;
                         }
@@ -109,10 +148,14 @@ impl Ecam {
 
     /// Blocks until the device state reaches our desired state.
     pub async fn wait_for_state(&self, state: EcamStatus) -> Result<(), EcamError> {
-        let mut rx = self.internals.lock().await.last_status.clone();
+        let mut internals = self.internals.lock().await;
+        let mut rx = internals.last_status.clone();
+        let status_interest = internals.status_interest.lock();
+        drop(internals);
         loop {
             if let Some(test) = rx.borrow().as_ref() {
                 if state.matches(test) {
+                    drop(status_interest);
                     return Ok(());
                 }
             }
@@ -123,7 +166,8 @@ impl Ecam {
 
     /// Returns the current state, or blocks if we don't know what the current state is yet.
     pub async fn current_state(&self) -> Result<EcamStatus, EcamError> {
-        let internals = self.internals.lock().await;
+        let mut internals = self.internals.lock().await;
+        let status_interest = internals.status_interest.lock();
         let rx = internals.last_status.clone();
         let ready_lock = internals.ready_lock.clone();
         drop(internals);
@@ -138,11 +182,12 @@ impl Ecam {
         } else {
             Err(EcamError::Unknown)
         };
+        drop(status_interest);
         ret
     }
 
-    pub async fn write(&self, request: Request) -> Result<(), EcamError> {
-        self.driver.write(request.encode()).await
+    pub async fn write(&self, packet: EcamPacket<Request>) -> Result<(), EcamError> {
+        self.driver.write(packet.encode()).await
     }
 
     pub async fn packet_tap(&self) -> Result<impl Stream<Item = EcamOutput>, EcamError> {
@@ -163,6 +208,12 @@ impl Ecam {
     async fn write_monitor_loop(self) -> Result<(), EcamError> {
         let status_request = Request::Monitor(MonitorRequestVersion::V2).encode();
         while self.is_alive() {
+            // Only send status update packets while there is status interest
+            if self.internals.lock().await.status_interest.count() == 0 {
+                tokio::time::sleep(Duration::from_millis(100)).await;
+                continue;
+            }
+
             match tokio::time::timeout(
                 Duration::from_millis(250),
                 self.driver.write(status_request.clone()),
