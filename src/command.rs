@@ -26,7 +26,10 @@ pub enum MonitorRequestVersion {
 pub enum ProfileRequest {
     GetProfileNames(u8, u8),
     GetRecipeNames(u8, u8),
+    /// Retrieves the quantity of ingredients for a given profile/recipe.
     GetRecipeQuantities(u8, u8),
+    /// Retrieve a list of recipes, in priority (most-used) order.
+    GetRecipePriority(u8),
 }
 
 pub enum StateRequest {
@@ -121,6 +124,9 @@ impl ProfileRequest {
             }
             Self::GetRecipeQuantities(a, b) => {
                 vec![EcamRequestId::RecipeQtyRead.into(), 0xf0, *a, *b]
+            }
+            Self::GetRecipePriority(a) => {
+                vec![EcamRequestId::RecipePriorityRead.into(), 0xf0, *a]
             }
         }
     }

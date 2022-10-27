@@ -76,6 +76,7 @@ pub enum EcamRequestId {
     Data1 = 112,
     Data2 = 117,
     BeverageDispensingMode = 130,
+    RefreshAppId = 132,
     ParameterRead = 149,
     ParameterWrite = 144,
     ParameterReadExt = 161,
