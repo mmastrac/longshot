@@ -14,7 +14,7 @@ pub enum Request {
 pub enum Response {
     State(MonitorState),
     Profile(ProfileResponse),
-    Raw(Vec<u8>),
+    Raw,
 }
 
 pub enum MonitorRequestVersion {
@@ -176,7 +176,7 @@ impl Response {
         } else if data[0] == EcamRequestId::RecipeQtyRead as u8 {
             Response::Profile(ProfileResponse::decode(&data))
         } else {
-            Response::Raw(data.to_vec())
+            Response::Raw
         }
     }
 }
