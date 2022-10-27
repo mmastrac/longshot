@@ -13,7 +13,10 @@ mod packet_stream;
 mod prelude;
 
 use command::*;
-use ecam::{ecam_scan, get_ecam_bt, get_ecam_subprocess, Ecam, EcamDriver, EcamError, EcamStatus};
+use ecam::{
+    ecam_scan, get_ecam_bt, get_ecam_subprocess, hardware_enums::EcamBeverageId, Ecam, EcamDriver,
+    EcamError, EcamStatus,
+};
 
 async fn pipe(device_name: String) -> Result<(), Box<dyn std::error::Error>> {
     let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
@@ -66,16 +69,16 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
         .await?;
     }
 
+    // ecam.write(Request::Profile(ProfileRequest::GetProfileNames(3, 6)))
+    //     .await?;
+    ecam.write(EcamPacket::from_represenation(Request::Profile(ProfileRequest::GetRecipeNames(1, 3))))
+        .await?;
+    tokio::time::sleep(Duration::from_millis(250)).await;
+
     loop {
         // Poll for current state
         let _ = ecam.current_state().await?;
     }
-
-    //     ecam.write(Request::Profile(ProfileRequest::GetProfileNames(3, 6)))
-    //     .await?;
-    // tokio::time::sleep(Duration::from_millis(250)).await;
-    // ecam.write(Request::Profile(ProfileRequest::GetRecipeNames(1, 3)))
-    //     .await?;
 
     let _ = handle.await;
 
@@ -84,18 +87,20 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
 
 async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
     let mut tap = ecam.packet_tap().await?;
-    for i in 0..255 {
-        ecam.write(EcamPacket::from_represenation(Request::Profile(
-            ProfileRequest::GetRecipeQuantities(1, i),
-        )))
-        .await?;
+    for i in 0..=255 {
+        if let Ok(_) = EcamBeverageId::try_from(i) {
+            ecam.write(EcamPacket::from_represenation(Request::Profile(
+                ProfileRequest::GetRecipeQuantities(1, i),
+            )))
+            .await?;
 
-        let now = std::time::Instant::now();
-        while now.elapsed() < Duration::from_millis(250) {
-            match tokio::time::timeout(Duration::from_millis(50), tap.next()).await {
-                Err(_) => {}
-                Ok(x) => {
-                    println!("{:?}", x);
+            let now = std::time::Instant::now();
+            while now.elapsed() < Duration::from_millis(250) {
+                match tokio::time::timeout(Duration::from_millis(50), tap.next()).await {
+                    Err(_) => {}
+                    Ok(x) => {
+                        println!("{:?}", x);
+                    }
                 }
             }
         }

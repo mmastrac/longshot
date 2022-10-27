@@ -56,7 +56,7 @@ pub enum Size {}
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ProfileResponse {
-    RecipeQuantities(u8, MachineEnum<EcamBeverageId>, Vec<RecipeData>),
+    RecipeQuantities(Option<(u8, MachineEnum<EcamBeverageId>, Vec<RecipeData>)>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -218,6 +218,48 @@ impl MonitorState {
 impl ProfileResponse {
     pub fn decode(data: &[u8]) -> ProfileResponse {
         let data = &data[2..];
-        ProfileResponse::RecipeQuantities(data[0], MachineEnum::decode(data[1]), vec![])
+        if data.len() < 2 {
+            ProfileResponse::RecipeQuantities(None)
+        } else {
+            println!("{:?}", data);
+            ProfileResponse::RecipeQuantities(Some((
+                data[0],
+                MachineEnum::decode(data[1]),
+                Self::decode_recipe_data(&data[2..]),
+            )))
+        }
+    }
+
+    pub fn decode_recipe_data(mut recipe: &[u8]) -> Vec<RecipeData> {
+        let mut ingredients = vec![];
+        while recipe.len() > 0 {
+            let ingredient = recipe[0].try_into().unwrap();
+            match ingredient {
+                EcamIngredients::Temp
+                | EcamIngredients::Taste
+                | EcamIngredients::Inversion
+                | EcamIngredients::DueXPer
+                | EcamIngredients::IndexLength
+                | EcamIngredients::Visible
+                | EcamIngredients::Accessorio => {
+                    ingredients.push(RecipeData {
+                        ingredient: ingredient.into(),
+                        value: recipe[1] as u16,
+                    });
+                    recipe = &recipe[2..]
+                }
+                EcamIngredients::Coffee | EcamIngredients::Milk | EcamIngredients::HotWater => {
+                    ingredients.push(RecipeData {
+                        ingredient: ingredient.into(),
+                        value: ((recipe[1] as u16) << 8) | recipe[2] as u16,
+                    });
+                    recipe = &recipe[3..]
+                }
+                x => {
+                    panic!("Unhandled ingredient {:?}", x)
+                }
+            }
+        }
+        ingredients
     }
 }
