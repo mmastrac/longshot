@@ -1,5 +1,4 @@
-use crate::ecam::hardware_enums::*;
-use crate::ecam::machine_enum::MachineEnum;
+use crate::protocol::*;
 use std::{fmt::Debug, vec::Vec};
 
 pub enum Request {

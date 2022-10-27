@@ -1,28 +1,22 @@
+use crate::prelude::*;
 use std::collections::HashMap;
-
-use crate::{
-    ecam::{machine_enum::MachineEnum, EcamOutput},
-    prelude::*,
-};
 
 use clap::{arg, command};
 
-use packet::EcamPacket;
 use tokio::select;
 use uuid::Uuid;
 
-mod command;
 mod ecam;
 mod logging;
-mod packet;
 mod packet_stream;
 mod prelude;
+mod protocol;
 
-use command::*;
 use ecam::{
-    ecam_scan, get_ecam_bt, get_ecam_subprocess, hardware_enums::EcamBeverageId, Ecam, EcamDriver,
-    EcamError, EcamStatus,
+    ecam_scan, get_ecam_bt, get_ecam_subprocess, Ecam, EcamDriver, EcamError, EcamOutput,
+    EcamStatus,
 };
+use protocol::*;
 
 async fn pipe(device_name: String) -> Result<(), Box<dyn std::error::Error>> {
     let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");

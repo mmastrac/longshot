@@ -1,6 +1,4 @@
-use std::ops::Deref;
-
-use crate::command::FromRef;
+use crate::protocol::FromRef;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct EcamPacket<T> {

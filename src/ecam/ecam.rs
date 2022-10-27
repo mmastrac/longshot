@@ -1,11 +1,10 @@
-use crate::packet::EcamPacket;
 use crate::prelude::*;
 
 use tokio::sync::Mutex;
 use tokio_stream::wrappers::BroadcastStream;
 
-use crate::command::*;
-use crate::ecam::{hardware_enums::EcamMachineState, EcamDriver, EcamError, EcamOutput};
+use crate::ecam::{EcamDriver, EcamError, EcamOutput};
+use crate::protocol::*;
 
 #[derive(Debug, PartialEq)]
 pub enum EcamStatus {

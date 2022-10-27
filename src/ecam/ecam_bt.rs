@@ -1,7 +1,8 @@
-use crate::{packet, prelude::*};
-
 use crate::ecam::{EcamDriver, EcamError, EcamOutput, EcamPacketReceiver};
-use crate::packet::{packetize, EcamPacket};
+use crate::{
+    prelude::*,
+    protocol::{self, *},
+};
 use async_stream::stream;
 use btleplug::api::{
     Central, CharPropFlags, Characteristic, Manager as _, Peripheral as _, ScanFilter,
@@ -125,7 +126,7 @@ async fn get_notifications_from_peripheral(
 
     // Use a forwarding task to make this stream Sync
     let f = |m: Vec<u8>| {
-        let c = packet::checksum(&m[..m.len() - 2]);
+        let c = protocol::checksum(&m[..m.len() - 2]);
         if m.len() - 1 != m[1].into() {
             trace_packet!(
                 "Warning: Invalid packet length ({} vs {})",

@@ -1,4 +1,4 @@
-use crate::{command::Response, packet::EcamPacket, prelude::*};
+use crate::{prelude::*, protocol::*};
 
 use uuid::Uuid;
 

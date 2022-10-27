@@ -1,4 +1,4 @@
-use crate::{packet::EcamPacket, prelude::*};
+use crate::{prelude::*, protocol};
 
 use std::process::Stdio;
 
@@ -12,9 +12,8 @@ use tokio::{
 use tokio_stream::wrappers::LinesStream;
 
 use crate::{
-    command::Response,
     ecam::{AsyncFuture, EcamDriver, EcamError, EcamOutput, EcamPacketReceiver},
-    packet,
+    protocol::*,
 };
 
 pub struct EcamSubprocess {
@@ -27,7 +26,7 @@ impl EcamSubprocess {
         self.stdin
             .lock()
             .await
-            .write(format!("S: {}\n", packet::stringify(&data)).as_bytes())
+            .write(format!("S: {}\n", protocol::stringify(&data)).as_bytes())
             .map_ok(|_| ())
             .await?;
         Ok(())
