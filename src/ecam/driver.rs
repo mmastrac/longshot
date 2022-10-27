@@ -10,6 +10,17 @@ pub enum EcamOutput {
     Done,
 }
 
+impl EcamOutput {
+    /// Gets the underlying packet, if it exists.
+    pub fn get_packet(&self) -> Option<&Response> {
+        if let Self::Packet(EcamPacket{ representation: r, .. }) = self {
+            Some(&r)
+        } else {
+            None
+        }
+    }
+}
+
 /// Async-ish traits for read/write. See https://smallcultfollowing.com/babysteps/blog/2019/10/26/async-fn-in-traits-are-hard/
 /// for some tips on making async trait functions.
 pub trait EcamDriver: Send + Sync {

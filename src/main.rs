@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{ecam::EcamOutput, prelude::*};
 
 use clap::{arg, command};
@@ -87,8 +89,9 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
 
 async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
     let mut tap = ecam.packet_tap().await?;
+    let mut m = HashMap::new();
     for i in 0..=255 {
-        if let Ok(_) = EcamBeverageId::try_from(i) {
+        if let Ok(beverage) = EcamBeverageId::try_from(i) {
             ecam.write(EcamPacket::from_represenation(Request::Profile(
                 ProfileRequest::GetRecipeQuantities(1, i),
             )))
@@ -98,9 +101,26 @@ async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
             while now.elapsed() < Duration::from_millis(250) {
                 match tokio::time::timeout(Duration::from_millis(50), tap.next()).await {
                     Err(_) => {}
-                    Ok(x) => {
+                    Ok(None) => {}
+                    Ok(Some(x)) => {
                         println!("{:?}", x);
+                        if let Some(Response::Profile(ProfileResponse::RecipeQuantities(x))) = x.get_packet() {
+                            m.insert(beverage, x.clone());
+                            break;
+                        }
                     }
+                }
+            }
+        }
+    }
+
+    for i in 0..=255 {
+        if let Ok(beverage) = EcamBeverageId::try_from(i) {
+            let response = m.get(&beverage);
+            if let Some(Some(response)) = response {
+                println!("{:?}", beverage);
+                for r in &response.2 {
+                    println!("  {:?}: {}", r.ingredient, r.value);
                 }
             }
         }
