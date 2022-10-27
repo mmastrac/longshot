@@ -6,7 +6,6 @@ use uuid::Uuid;
 pub enum EcamOutput {
     Ready,
     Packet(EcamPacket<Response>),
-    Logging(String),
     Done,
 }
 

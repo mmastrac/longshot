@@ -1,4 +1,4 @@
-use crate::{prelude::*, protocol};
+use crate::prelude::*;
 
 use std::process::Stdio;
 
@@ -13,6 +13,7 @@ use tokio_stream::wrappers::LinesStream;
 
 use crate::{
     ecam::{AsyncFuture, EcamDriver, EcamError, EcamOutput, EcamPacketReceiver},
+    protocol,
     protocol::*,
 };
 
@@ -66,18 +67,20 @@ pub async fn stream(
                 if let Ok(bytes) = hex::decode(&s[3..]) {
                     yield EcamOutput::Packet(EcamPacket::from_bytes(&bytes));
                 } else {
-                    yield EcamOutput::Logging(format!("Failed to decode '{}'", s));
+                    trace_packet!("Failed to decode '{}'", s);
                 }
             } else {
                 trace_packet!("{}", s);
-                yield EcamOutput::Logging(s);
             }
         }
     };
     let stderr = stream! {
         while let Some(Ok(s)) = stderr.next().await {
             trace_packet!("{}", s);
-            yield EcamOutput::Logging(s);
+        }
+        // TODO: we might have to spawn this
+        if false {
+            yield EcamOutput::Ready;
         }
     };
 
