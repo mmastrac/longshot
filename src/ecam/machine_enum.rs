@@ -23,6 +23,15 @@ impl<T> From<T> for MachineEnum<T> {
     }
 }
 
+impl<T> Into<Option<T>> for MachineEnum<T> {
+    fn into(self) -> Option<T> {
+        match self {
+            MachineEnum::Value(v) => Some(v),
+            _ => None,
+        }
+    }
+}
+
 impl<T: Debug> Debug for MachineEnum<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

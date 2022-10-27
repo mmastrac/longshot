@@ -89,7 +89,7 @@ async fn get_notifications_from_peripheral(
         while peripheral2.is_connected().await.unwrap_or_default() {
             tokio::time::sleep(Duration::from_millis(50)).await;
         }
-        println!("disconnected");
+        trace_packet!("disconnected");
         drop(trigger);
     });
 
@@ -104,10 +104,10 @@ async fn get_notifications_from_peripheral(
                     yield b;
                 } else {
                     // Accumulate
-                    println!("size={} len={}", packet_size, b.len());
-                    println!("Packet: {:?}", b);
+                    trace_packet!("size={} len={}", packet_size, b.len());
+                    trace_packet!("Packet: {:?}", b);
                     while let Some(mut m) = n.next().await {
-                        println!("Cont'd: {:?}", m.value);
+                        trace_packet!("Cont'd: {:?}", m.value);
                         b.append(&mut m.value);
                         if (packet_size as usize) + 1 <= b.len() {
                             yield b;
@@ -117,7 +117,7 @@ async fn get_notifications_from_peripheral(
                 }
             } else {
                 // Ignore malformed packet
-                println!("Ignoring spurious or malformed packet: {:?}", b);
+                trace_packet!("Ignoring spurious or malformed packet: {:?}", b);
             }
         }
     };
@@ -126,14 +126,14 @@ async fn get_notifications_from_peripheral(
     let f = |m: Vec<u8>| {
         let c = packet::checksum(&m[..m.len() - 2]);
         if m.len() - 1 != m[1].into() {
-            println!(
+            trace_packet!(
                 "Warning: Invalid packet length ({} vs {})",
                 m.len() + 1,
                 m[1]
             );
         }
         if c != m[m.len() - 2..m.len()] {
-            println!("Warning: bad checksum! (expected={:?}) {:?}", c, m);
+            trace_packet!("Warning: bad checksum! (expected={:?}) {:?}", c, m);
             None
         } else {
             Some(m[2..m.len() - 2].to_vec())
@@ -154,12 +154,12 @@ async fn get_ecam_from_manager(manager: &Manager, uuid: Uuid) -> Result<EcamBT, 
         adapter.start_scan(ScanFilter::default()).await?;
         let tx = tx.clone();
         let _ = tokio::spawn(async move {
-            println!("Looking for peripheral {}", uuid);
+            trace_packet!("Looking for peripheral {}", uuid);
             loop {
                 if let Ok(peripheral) = adapter.peripheral(&PeripheralId::from(uuid)).await {
-                    println!("Got peripheral");
+                    trace_packet!("Got peripheral");
                     peripheral.connect().await?;
-                    println!("Connected");
+                    trace_packet!("Connected");
                     let characteristic = Characteristic {
                         uuid: CHARACTERISTIC_UUID,
                         service_uuid: SERVICE_UUID,
@@ -192,7 +192,7 @@ async fn get_ecam_from_manager(manager: &Manager, uuid: Uuid) -> Result<EcamBT, 
 async fn get_ecam_from_adapter(
     adapter: &Adapter,
 ) -> Result<Option<(String, Peripheral, Characteristic)>, EcamError> {
-    println!("Starting scan on {}...", adapter.adapter_info().await?);
+    trace_packet!("Starting scan on {}...", adapter.adapter_info().await?);
     let filter = ScanFilter {
         services: vec![SERVICE_UUID],
     };

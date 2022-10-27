@@ -13,7 +13,10 @@ pub enum EcamOutput {
 impl EcamOutput {
     /// Gets the underlying packet, if it exists.
     pub fn get_packet(&self) -> Option<&Response> {
-        if let Self::Packet(EcamPacket{ representation: r, .. }) = self {
+        if let Self::Packet(EcamPacket {
+            representation: r, ..
+        }) = self
+        {
             Some(&r)
         } else {
             None

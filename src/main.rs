@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use crate::{ecam::EcamOutput, prelude::*};
+use crate::{
+    ecam::{machine_enum::MachineEnum, EcamOutput},
+    prelude::*,
+};
 
 use clap::{arg, command};
 
@@ -10,6 +13,7 @@ use uuid::Uuid;
 
 mod command;
 mod ecam;
+mod logging;
 mod packet;
 mod packet_stream;
 mod prelude;
@@ -73,8 +77,10 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
 
     // ecam.write(Request::Profile(ProfileRequest::GetProfileNames(3, 6)))
     //     .await?;
-    ecam.write(EcamPacket::from_represenation(Request::Profile(ProfileRequest::GetRecipeNames(1, 3))))
-        .await?;
+    ecam.write(EcamPacket::from_represenation(Request::Profile(
+        ProfileRequest::GetRecipeNames(1, 3),
+    )))
+    .await?;
     tokio::time::sleep(Duration::from_millis(250)).await;
 
     loop {
@@ -90,23 +96,26 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
 async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
     let mut tap = ecam.packet_tap().await?;
     let mut m = HashMap::new();
-    for i in 0..=255 {
-        if let Ok(beverage) = EcamBeverageId::try_from(i) {
-            ecam.write(EcamPacket::from_represenation(Request::Profile(
-                ProfileRequest::GetRecipeQuantities(1, i),
-            )))
-            .await?;
+    for beverage in enum_iterator::all() {
+        ecam.write(EcamPacket::from_represenation(Request::Profile(
+            ProfileRequest::GetRecipeQuantities(1, i),
+        )))
+        .await?;
 
-            let now = std::time::Instant::now();
-            while now.elapsed() < Duration::from_millis(250) {
-                match tokio::time::timeout(Duration::from_millis(50), tap.next()).await {
-                    Err(_) => {}
-                    Ok(None) => {}
-                    Ok(Some(x)) => {
-                        println!("{:?}", x);
-                        if let Some(Response::Profile(ProfileResponse::RecipeQuantities(x))) = x.get_packet() {
-                            m.insert(beverage, x.clone());
-                            break;
+        let now = std::time::Instant::now();
+        while now.elapsed() < Duration::from_millis(500) {
+            match tokio::time::timeout(Duration::from_millis(50), tap.next()).await {
+                Err(_) => {}
+                Ok(None) => {}
+                Ok(Some(x)) => {
+                    if let Some(Response::Profile(ProfileResponse::RecipeQuantities(x))) =
+                        x.get_packet()
+                    {
+                        if let Some((_, MachineEnum::Value(b), _)) = x {
+                            if *b == beverage {
+                                m.insert(beverage, x.clone());
+                                break;
+                            }
                         }
                     }
                 }
@@ -114,14 +123,12 @@ async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
         }
     }
 
-    for i in 0..=255 {
-        if let Ok(beverage) = EcamBeverageId::try_from(i) {
-            let response = m.get(&beverage);
-            if let Some(Some(response)) = response {
-                println!("{:?}", beverage);
-                for r in &response.2 {
-                    println!("  {:?}: {}", r.ingredient, r.value);
-                }
+    for beverage in enum_iterator::all() {
+        let response = m.get(&beverage);
+        if let Some(Some(response)) = response {
+            println!("{:?}", beverage);
+            for r in &response.2 {
+                println!("  {:?}: {}", r.ingredient, r.value);
             }
         }
     }

@@ -117,7 +117,7 @@ impl Ecam {
                 match packet {
                     EcamOutput::Ready => {
                         if started {
-                            println!("Warning: got multiple start requests");
+                            warning!("Got multiple start requests");
                         } else {
                             tokio::spawn(ecam.clone().write_monitor_loop());
                             started = true;
@@ -221,17 +221,17 @@ impl Ecam {
             .await
             {
                 Ok(Err(_)) => {
-                    println!("Warning: failed to request status");
+                    warning!("Failed to request status");
                 }
                 Err(_) => {
-                    println!("Warning: status request send timeout");
+                    warning!("Status request send timeout");
                 }
                 _ => {
                     tokio::time::sleep(Duration::from_millis(250)).await;
                 }
             }
         }
-        println!("Sending loop died.");
+        warning!("Sending loop died.");
         self.deaden();
         Ok(())
     }

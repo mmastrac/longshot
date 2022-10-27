@@ -221,7 +221,6 @@ impl ProfileResponse {
         if data.len() < 2 {
             ProfileResponse::RecipeQuantities(None)
         } else {
-            println!("{:?}", data);
             ProfileResponse::RecipeQuantities(Some((
                 data[0],
                 MachineEnum::decode(data[1]),

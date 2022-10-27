@@ -1,12 +1,15 @@
 #![allow(dead_code)]
 
+use enum_iterator::Sequence;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 ///! This file contains validated hardware enumerations and associated values.
 
 /// Ingredients used for brew operations.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash)]
+#[derive(
+    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+)]
 pub enum EcamIngredients {
     Temp = 0,                  // TEMP
     Coffee = 1,                // COFFEE
@@ -41,7 +44,9 @@ pub enum EcamIngredients {
 
 /// Beverage preparation mode.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash)]
+#[derive(
+    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+)]
 pub enum EcamBeverageTasteType {
     Delete = 0,
     Save = 1,
@@ -54,7 +59,9 @@ pub enum EcamBeverageTasteType {
 
 /// Operation mode.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash)]
+#[derive(
+    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+)]
 pub enum EcamOperationTrigger {
     DontCare = 0,
     Start = 1,
@@ -69,7 +76,9 @@ pub enum EcamOperationTrigger {
 
 /// Answer and request IDs for packets send to/from the machine.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash)]
+#[derive(
+    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+)]
 pub enum EcamRequestId {
     SetBtMode = 17,
     Data0 = 96,
@@ -95,7 +104,9 @@ pub enum EcamRequestId {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash)]
+#[derive(
+    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+)]
 pub enum EcamTemperature {
     Low = 0,
     Mid = 1,
@@ -104,7 +115,9 @@ pub enum EcamTemperature {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash)]
+#[derive(
+    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+)]
 pub enum EcamMachineState {
     StandBy = 0,
     TurningOn = 1,
@@ -121,7 +134,9 @@ pub enum EcamMachineState {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash)]
+#[derive(
+    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+)]
 pub enum EcamAccessory {
     None = 0,
     Water = 1,
@@ -131,7 +146,9 @@ pub enum EcamAccessory {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash)]
+#[derive(
+    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+)]
 pub enum EcamBeverageId {
     EspressoCoffee = 1,
     RegularCoffee = 2,
