@@ -76,6 +76,7 @@ struct EcamInternals {
     packet_tap: Arc<tokio::sync::broadcast::Sender<EcamOutput>>,
     ready_lock: Arc<tokio::sync::Semaphore>,
     status_interest: StatusInterest,
+    started: bool,
 }
 
 impl Ecam {
@@ -99,6 +100,7 @@ impl Ecam {
             packet_tap: Arc::new(txb),
             ready_lock,
             status_interest: StatusInterest::new(),
+            started: false,
         }));
         let ecam_result = Ecam {
             driver,
@@ -121,6 +123,7 @@ impl Ecam {
                         } else {
                             tokio::spawn(ecam.clone().write_monitor_loop());
                             started = true;
+                            ecam.internals.lock().await.started = true;
                         }
                     }
                     EcamOutput::Done => {
@@ -164,6 +167,12 @@ impl Ecam {
         }
     }
 
+    /// Wait for the connection to establish, but not any particular state.
+    pub async fn wait_for_connection(&self) -> Result<(), EcamError> {
+        let _ = self.current_state().await?;
+        Ok(())
+    }
+
     /// Returns the current state, or blocks if we don't know what the current state is yet.
     pub async fn current_state(&self) -> Result<EcamStatus, EcamError> {
         let mut internals = self.internals.lock().await;
@@ -187,6 +196,11 @@ impl Ecam {
     }
 
     pub async fn write(&self, packet: EcamPacket<Request>) -> Result<(), EcamError> {
+        let internals = self.internals.lock().await;
+        if !internals.started {
+            warning!("Packet sent before device was ready!");
+        }
+        drop(internals);
         self.driver.write(packet.encode()).await
     }
 

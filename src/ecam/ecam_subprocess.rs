@@ -70,12 +70,14 @@ pub async fn stream(
                     yield EcamOutput::Logging(format!("Failed to decode '{}'", s));
                 }
             } else {
+                trace_packet!("{}", s);
                 yield EcamOutput::Logging(s);
             }
         }
     };
     let stderr = stream! {
         while let Some(Ok(s)) = stderr.next().await {
+            trace_packet!("{}", s);
             yield EcamOutput::Logging(s);
         }
     };

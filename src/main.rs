@@ -94,16 +94,20 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
 }
 
 async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
+    // Wait for device to settle
+    ecam.wait_for_connection().await?;
+
+    // Get the tap we'll use for reading responses
     let mut tap = ecam.packet_tap().await?;
     let mut m = HashMap::new();
     for beverage in enum_iterator::all() {
         ecam.write(EcamPacket::from_represenation(Request::Profile(
-            ProfileRequest::GetRecipeQuantities(1, i),
+            ProfileRequest::GetRecipeQuantities(1, beverage as u8),
         )))
         .await?;
 
         let now = std::time::Instant::now();
-        while now.elapsed() < Duration::from_millis(500) {
+        'outer: while now.elapsed() < Duration::from_millis(500) {
             match tokio::time::timeout(Duration::from_millis(50), tap.next()).await {
                 Err(_) => {}
                 Ok(None) => {}
@@ -114,9 +118,12 @@ async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
                         if let Some((_, MachineEnum::Value(b), _)) = x {
                             if *b == beverage {
                                 m.insert(beverage, x.clone());
-                                break;
+                                break 'outer;
                             }
                         }
+                    }
+                    if x.get_packet().is_some() {
+                        println!("Spurious packet? {:?} {:?}", x, beverage)
                     }
                 }
             }

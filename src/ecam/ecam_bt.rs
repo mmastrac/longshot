@@ -100,7 +100,8 @@ async fn get_notifications_from_peripheral(
             let (packet_header, packet_size) = (b[0], b[1]);
             if packet_header == 0xd0 {
                 if (packet_size as usize) + 1 <= b.len() {
-                    // Single packet?
+                    // Single packet
+                    trace_packet!("Packet: {:?}", b);
                     yield b;
                 } else {
                     // Accumulate
