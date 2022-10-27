@@ -10,8 +10,8 @@ mod ecam_subprocess;
 mod packet_receiver;
 
 use self::ecam_bt::EcamBT;
-pub use driver::{EcamDriver, EcamOutput};
-pub use ecam::{Ecam, EcamStatus};
+pub use driver::{EcamDriver, EcamDriverOutput};
+pub use ecam::{Ecam, EcamOutput, EcamStatus};
 pub use ecam_bt::get_ecam as get_ecam_bt;
 pub use ecam_subprocess::connect as get_ecam_subprocess;
 pub use packet_receiver::EcamPacketReceiver;

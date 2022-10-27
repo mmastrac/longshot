@@ -12,8 +12,7 @@ use tokio::{
 use tokio_stream::wrappers::LinesStream;
 
 use crate::{
-    ecam::{AsyncFuture, EcamDriver, EcamError, EcamOutput, EcamPacketReceiver},
-    protocol,
+    ecam::{AsyncFuture, EcamDriver, EcamDriverOutput, EcamError, EcamPacketReceiver},
     protocol::*,
 };
 
@@ -23,11 +22,12 @@ pub struct EcamSubprocess {
 }
 
 impl EcamSubprocess {
-    async fn write_stdin(&self, data: Vec<u8>) -> Result<(), EcamError> {
+    async fn write_stdin(&self, data: EcamDriverPacket) -> Result<(), EcamError> {
+        let s = data.stringify();
         self.stdin
             .lock()
             .await
-            .write(format!("S: {}\n", protocol::stringify(&data)).as_bytes())
+            .write(format!("S: {}\n", s).as_bytes())
             .map_ok(|_| ())
             .await?;
         Ok(())
@@ -35,11 +35,11 @@ impl EcamSubprocess {
 }
 
 impl EcamDriver for EcamSubprocess {
-    fn read<'a>(&'a self) -> AsyncFuture<'a, Option<EcamOutput>> {
+    fn read<'a>(&'a self) -> AsyncFuture<'a, Option<EcamDriverOutput>> {
         Box::pin(self.receiver.recv())
     }
 
-    fn write<'a>(&'a self, data: Vec<u8>) -> AsyncFuture<'a, ()> {
+    fn write<'a>(&'a self, data: EcamDriverPacket) -> AsyncFuture<'a, ()> {
         Box::pin(self.write_stdin(data))
     }
 
@@ -53,7 +53,7 @@ impl EcamDriver for EcamSubprocess {
 
 pub async fn stream(
     mut child: tokio::process::Child,
-) -> Result<impl StreamExt<Item = EcamOutput>, EcamError> {
+) -> Result<impl StreamExt<Item = EcamDriverOutput>, EcamError> {
     let mut stderr =
         LinesStream::new(BufReader::new(child.stderr.take().expect("stderr was missing")).lines());
     let mut stdout =
@@ -62,10 +62,10 @@ pub async fn stream(
     let stdout = stream! {
         while let Some(Ok(s)) = stdout.next().await {
             if s == "R: READY" {
-                yield EcamOutput::Ready;
+                yield EcamDriverOutput::Ready;
             } else if s.starts_with("R: ") {
                 if let Ok(bytes) = hex::decode(&s[3..]) {
-                    yield EcamOutput::Packet(EcamPacket::from_bytes(&bytes));
+                    yield EcamDriverOutput::Packet(EcamDriverPacket::from_vec(bytes));
                 } else {
                     trace_packet!("Failed to decode '{}'", s);
                 }
@@ -80,13 +80,13 @@ pub async fn stream(
         }
         // TODO: we might have to spawn this
         if false {
-            yield EcamOutput::Ready;
+            yield EcamDriverOutput::Ready;
         }
     };
 
     let termination = stream! {
         let _ = child.wait().await;
-        yield EcamOutput::Done
+        yield EcamDriverOutput::Done
     };
 
     Result::Ok(stdout.merge(stderr).merge(termination))

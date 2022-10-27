@@ -3,7 +3,7 @@ use crate::prelude::*;
 use tokio::sync::Mutex;
 use tokio_stream::wrappers::BroadcastStream;
 
-use crate::ecam::{EcamDriver, EcamError, EcamOutput};
+use crate::ecam::{EcamDriver, EcamDriverOutput, EcamError};
 use crate::protocol::*;
 
 #[derive(Debug, PartialEq)]
@@ -12,6 +12,47 @@ pub enum EcamStatus {
     StandBy,
     Ready,
     Busy,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum EcamOutput {
+    Ready,
+    Packet(EcamPacket<Response>),
+    Done,
+}
+
+impl EcamOutput {
+    /// Gets the underlying packet, if it exists.
+    pub fn get_packet(&self) -> Option<&Response> {
+        if let Self::Packet(EcamPacket {
+            representation: r, ..
+        }) = self
+        {
+            Some(&r)
+        } else {
+            None
+        }
+    }
+}
+
+impl From<EcamDriverOutput> for EcamOutput {
+    fn from(other: EcamDriverOutput) -> Self {
+        match other {
+            EcamDriverOutput::Done => EcamOutput::Done,
+            EcamDriverOutput::Ready => EcamOutput::Ready,
+            EcamDriverOutput::Packet(p) => EcamOutput::Packet(EcamPacket::from_bytes(&p.bytes)),
+        }
+    }
+}
+
+impl Into<EcamDriverOutput> for EcamOutput {
+    fn into(self) -> EcamDriverOutput {
+        match self {
+            EcamOutput::Done => EcamDriverOutput::Done,
+            EcamOutput::Ready => EcamDriverOutput::Ready,
+            EcamOutput::Packet(p) => EcamDriverOutput::Packet(EcamDriverPacket::from_vec(p.bytes)),
+        }
+    }
 }
 
 impl EcamStatus {
@@ -113,7 +154,12 @@ impl Ecam {
             let mut started = false;
             while ecam.is_alive() {
                 // Treat end-of-stream as EcamOutput::Done, but we might want to reconsider this in the future
-                let packet = ecam.driver.read().await?.unwrap_or(EcamOutput::Done);
+                let packet: EcamOutput = ecam
+                    .driver
+                    .read()
+                    .await?
+                    .unwrap_or(EcamDriverOutput::Done)
+                    .into();
                 let _ = packet_tap_sender.send(packet.clone());
                 match packet {
                     EcamOutput::Ready => {
@@ -200,7 +246,9 @@ impl Ecam {
             warning!("Packet sent before device was ready!");
         }
         drop(internals);
-        self.driver.write(packet.encode()).await
+        self.driver
+            .write(EcamDriverPacket::from_vec(packet.bytes))
+            .await
     }
 
     pub async fn packet_tap(&self) -> Result<impl Stream<Item = EcamOutput>, EcamError> {
@@ -219,7 +267,8 @@ impl Ecam {
 
     /// The monitor loop is booted when the underlying driver reports that it is ready.
     async fn write_monitor_loop(self) -> Result<(), EcamError> {
-        let status_request = Request::Monitor(MonitorRequestVersion::V2).encode();
+        let status_request =
+            EcamDriverPacket::from_vec(Request::Monitor(MonitorRequestVersion::V2).encode());
         while self.is_alive() {
             // Only send status update packets while there is status interest
             if self.internals.lock().await.status_interest.count() == 0 {

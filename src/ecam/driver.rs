@@ -3,34 +3,20 @@ use crate::{prelude::*, protocol::*};
 use uuid::Uuid;
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum EcamOutput {
+pub enum EcamDriverOutput {
     Ready,
-    Packet(EcamPacket<Response>),
+    Packet(EcamDriverPacket),
     Done,
-}
-
-impl EcamOutput {
-    /// Gets the underlying packet, if it exists.
-    pub fn get_packet(&self) -> Option<&Response> {
-        if let Self::Packet(EcamPacket {
-            representation: r, ..
-        }) = self
-        {
-            Some(&r)
-        } else {
-            None
-        }
-    }
 }
 
 /// Async-ish traits for read/write. See https://smallcultfollowing.com/babysteps/blog/2019/10/26/async-fn-in-traits-are-hard/
 /// for some tips on making async trait functions.
 pub trait EcamDriver: Send + Sync {
     /// Read one item from the ECAM.
-    fn read<'a>(&'a self) -> AsyncFuture<'a, Option<EcamOutput>>;
+    fn read<'a>(&'a self) -> AsyncFuture<'a, Option<EcamDriverOutput>>;
 
     /// Write one item to the ECAM.
-    fn write<'a>(&'a self, data: Vec<u8>) -> AsyncFuture<'a, ()>;
+    fn write<'a>(&'a self, data: EcamDriverPacket) -> AsyncFuture<'a, ()>;
 
     /// Scan for the first matching device.
     fn scan<'a>() -> AsyncFuture<'a, (String, Uuid)>
@@ -46,16 +32,16 @@ mod test {
 
     #[derive(Default)]
     struct EcamTest {
-        pub read_items: Arc<Mutex<Vec<EcamOutput>>>,
-        pub write_items: Arc<Mutex<Vec<Vec<u8>>>>,
+        pub read_items: Arc<Mutex<Vec<EcamDriverOutput>>>,
+        pub write_items: Arc<Mutex<Vec<EcamDriverPacket>>>,
     }
 
     impl EcamTest {
-        pub fn new(items: Vec<EcamOutput>) -> EcamTest {
+        pub fn new(items: Vec<EcamDriverOutput>) -> EcamTest {
             let mut read_items = vec![];
-            read_items.push(EcamOutput::Ready);
+            read_items.push(EcamDriverOutput::Ready);
             read_items.extend(items);
-            read_items.push(EcamOutput::Done);
+            read_items.push(EcamDriverOutput::Done);
             EcamTest {
                 read_items: Arc::new(Mutex::new(read_items)),
                 write_items: Arc::new(Mutex::new(vec![])),
@@ -64,7 +50,7 @@ mod test {
     }
 
     impl EcamDriver for EcamTest {
-        fn read<'a>(&'a self) -> crate::prelude::AsyncFuture<'a, Option<EcamOutput>> {
+        fn read<'a>(&'a self) -> crate::prelude::AsyncFuture<'a, Option<EcamDriverOutput>> {
             Box::pin(async {
                 if self.read_items.lock().unwrap().is_empty() {
                     Ok(None)
@@ -74,7 +60,7 @@ mod test {
             })
         }
 
-        fn write<'a>(&'a self, data: Vec<u8>) -> crate::prelude::AsyncFuture<'a, ()> {
+        fn write<'a>(&'a self, data: EcamDriverPacket) -> crate::prelude::AsyncFuture<'a, ()> {
             self.write_items.lock().unwrap().push(data);
             Box::pin(async { Ok(()) })
         }
@@ -89,16 +75,21 @@ mod test {
 
     #[tokio::test]
     async fn test_read() -> Result<(), EcamError> {
-        let test = EcamTest::new(vec![EcamOutput::Packet(EcamPacket::from_bytes(&[]))]);
+        let test = EcamTest::new(vec![EcamDriverOutput::Packet(
+            EcamDriverPacket::from_slice(&[]),
+        )]);
         assert_eq!(
-            EcamOutput::Ready,
+            EcamDriverOutput::Ready,
             test.read().await?.expect("expected item")
         );
         assert_eq!(
-            EcamOutput::Packet(EcamPacket::from_bytes(&[])),
+            EcamDriverOutput::Packet(EcamDriverPacket::from_slice(&[])),
             test.read().await?.expect("expected item")
         );
-        assert_eq!(EcamOutput::Done, test.read().await?.expect("expected item"));
+        assert_eq!(
+            EcamDriverOutput::Done,
+            test.read().await?.expect("expected item")
+        );
         assert_eq!(None, test.read().await?);
         Ok(())
     }

@@ -1,4 +1,4 @@
-use crate::ecam::{EcamDriver, EcamError, EcamOutput, EcamPacketReceiver};
+use crate::ecam::{EcamDriver, EcamDriverOutput, EcamError, EcamPacketReceiver};
 use crate::{
     prelude::*,
     protocol::{self, *},
@@ -26,13 +26,15 @@ pub struct EcamBT {
 
 impl EcamBT {
     /// Send a packet to the ECAM
-    pub async fn send(&self, data: Vec<u8>) -> Result<(), EcamError> {
+    pub async fn send(&self, data: EcamDriverPacket) -> Result<(), EcamError> {
         let (peripheral, characteristic) = (self.peripheral.clone(), self.characteristic.clone());
+        drop(self);
+        let data = data.packetize();
         Result::Ok(
             peripheral
                 .write(
                     &characteristic,
-                    &packetize(&data),
+                    &data,
                     btleplug::api::WriteType::WithoutResponse,
                 )
                 .await?,
@@ -41,11 +43,11 @@ impl EcamBT {
 }
 
 impl EcamDriver for EcamBT {
-    fn read<'a>(&'a self) -> crate::prelude::AsyncFuture<'a, Option<EcamOutput>> {
+    fn read<'a>(&'a self) -> crate::prelude::AsyncFuture<'a, Option<EcamDriverOutput>> {
         Box::pin(self.notifications.recv())
     }
 
-    fn write<'a>(&'a self, data: Vec<u8>) -> crate::prelude::AsyncFuture<'a, ()> {
+    fn write<'a>(&'a self, data: EcamDriverPacket) -> crate::prelude::AsyncFuture<'a, ()> {
         Box::pin(self.send(data))
     }
 
@@ -170,7 +172,7 @@ async fn get_ecam_from_manager(manager: &Manager, uuid: Uuid) -> Result<EcamBT, 
                             | CharPropFlags::INDICATE,
                     };
                     let n = get_notifications_from_peripheral(&peripheral, &characteristic).await?;
-                    let n = n.map(|v| EcamOutput::Packet(EcamPacket::from_bytes(&v)));
+                    let n = n.map(|v| EcamDriverOutput::Packet(EcamDriverPacket::from_vec(v)));
                     let n = EcamPacketReceiver::from_stream(n, true);
                     // Ignore errors here -- we just want the first peripheral that connects
                     let _ = tx

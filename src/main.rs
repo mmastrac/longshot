@@ -13,8 +13,8 @@ mod prelude;
 mod protocol;
 
 use ecam::{
-    ecam_scan, get_ecam_bt, get_ecam_subprocess, Ecam, EcamDriver, EcamError, EcamOutput,
-    EcamStatus,
+    ecam_scan, get_ecam_bt, get_ecam_subprocess, Ecam, EcamDriver, EcamDriverOutput, EcamError,
+    EcamOutput, EcamStatus,
 };
 use protocol::*;
 
@@ -28,7 +28,7 @@ async fn pipe(device_name: String) -> Result<(), Box<dyn std::error::Error>> {
         select! {
             input = ecam.read() => {
                 if let Ok(Some(p)) = input {
-                    if let EcamOutput::Packet(value) = p {
+                    if let EcamDriverOutput::Packet(value) = p {
                         println!("R: {}", value.stringify());
                     }
                 } else {
@@ -38,7 +38,7 @@ async fn pipe(device_name: String) -> Result<(), Box<dyn std::error::Error>> {
             },
             out = bt_out.next() => {
                 if let Some(value) = out {
-                    ecam.send(value).await?;
+                    ecam.send(EcamDriverPacket::from_vec(value)).await?;
                 } else {
                     println!("Input closed");
                     break;
