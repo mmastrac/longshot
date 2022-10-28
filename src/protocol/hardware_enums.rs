@@ -100,6 +100,7 @@ pub enum EcamRequestId {
     RecipeNameRead = 170,
     RecipeNameWrite = 171,
     SetFavoriteBeverages = 173,
+    /// This may be a PIN operation in some other versions of the protocol.
     RecipeMinMaxSync = 176,
     PinSet = 177,
     BeanSystemSelect = 185,

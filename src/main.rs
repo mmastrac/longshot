@@ -76,8 +76,10 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
     // )))
     // .await?;
     // tokio::time::sleep(Duration::from_millis(250)).await;
-    ecam.write(EcamPacket::from_represenation(Request::Raw(vec![176, 0xf0, 1])))
-        .await?;
+    ecam.write(EcamPacket::from_represenation(Request::Raw(vec![
+        176, 0xf0, 1,
+    ])))
+    .await?;
     tokio::time::sleep(Duration::from_millis(250)).await;
 
     loop {
