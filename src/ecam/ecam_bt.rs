@@ -28,7 +28,6 @@ impl EcamBT {
     /// Send a packet to the ECAM
     pub async fn send(&self, data: EcamDriverPacket) -> Result<(), EcamError> {
         let (peripheral, characteristic) = (self.peripheral.clone(), self.characteristic.clone());
-        drop(self);
         let data = data.packetize();
         trace_packet!("SENDING {:?}", data);
         Result::Ok(
