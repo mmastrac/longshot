@@ -82,6 +82,7 @@ macro_rules! packet_definition {
             ( $( $resp_name:tt $resp_type:ty ),* $(,)? )
         ),* $(,)? ) => {
 
+        #[allow(dead_code)]
         #[derive(Clone, Debug, PartialEq)]
         pub enum Request {
             $(

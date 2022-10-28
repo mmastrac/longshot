@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use super::PartialEncode;
 
 #[derive(Clone, Debug, PartialEq)]
