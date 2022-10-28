@@ -28,7 +28,7 @@ impl EcamOutput {
             representation: r, ..
         }) = self
         {
-            Some(&r)
+            r.as_ref()
         } else {
             None
         }
@@ -56,7 +56,7 @@ impl Into<EcamDriverOutput> for EcamOutput {
 }
 
 impl EcamStatus {
-    fn extract(state: &MonitorState) -> EcamStatus {
+    fn extract(state: &MonitorV2Response) -> EcamStatus {
         if state.state == EcamMachineState::StandBy {
             return EcamStatus::StandBy;
         }
@@ -66,7 +66,7 @@ impl EcamStatus {
         EcamStatus::Busy
     }
 
-    fn matches(&self, state: &MonitorState) -> bool {
+    fn matches(&self, state: &MonitorV2Response) -> bool {
         *self == Self::extract(state)
     }
 }
@@ -112,7 +112,7 @@ pub struct Ecam {
 }
 
 struct EcamInternals {
-    last_status: tokio::sync::watch::Receiver<Option<MonitorState>>,
+    last_status: tokio::sync::watch::Receiver<Option<MonitorV2Response>>,
     packet_tap: Arc<tokio::sync::broadcast::Sender<EcamOutput>>,
     ready_lock: Arc<tokio::sync::Semaphore>,
     status_interest: StatusInterest,
@@ -175,7 +175,7 @@ impl Ecam {
                         break;
                     }
                     EcamOutput::Packet(EcamPacket {
-                        representation: Response::State(x),
+                        representation: Some(Response::MonitorV2(x)),
                         ..
                     }) => {
                         if tx.send(Some(x)).is_err() {
@@ -251,6 +251,11 @@ impl Ecam {
             .await
     }
 
+    /// Convenience method to skip the EcamPacket.
+    pub async fn write_request(&self, r: Request) -> Result<(), EcamError> {
+        self.write(EcamPacket::from_represenation(r)).await
+    }
+
     pub async fn packet_tap(&self) -> Result<impl Stream<Item = EcamOutput>, EcamError> {
         let internals = self.internals.lock().await;
         Ok(BroadcastStream::new(internals.packet_tap.subscribe())
@@ -268,7 +273,7 @@ impl Ecam {
     /// The monitor loop is booted when the underlying driver reports that it is ready.
     async fn write_monitor_loop(self) -> Result<(), EcamError> {
         let status_request =
-            EcamDriverPacket::from_vec(Request::Monitor(MonitorRequestVersion::V2).encode());
+            EcamDriverPacket::from_vec(EcamPacket::from_represenation(Request::MonitorV2()).bytes);
         while self.is_alive() {
             // Only send status update packets while there is status interest
             if self.internals.lock().await.status_interest.count() == 0 {

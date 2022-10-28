@@ -63,10 +63,8 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
     });
     let state = ecam.current_state().await?;
     if turn_on && state == EcamStatus::StandBy {
-        ecam.write(EcamPacket::from_represenation(Request::State(
-            StateRequest::TurnOn,
-        )))
-        .await?;
+        ecam.write_request(Request::AppControl(AppControl::TurnOn))
+            .await?;
     }
 
     // ecam.write(Request::Profile(ProfileRequest::GetProfileNames(3, 6)))
@@ -76,10 +74,8 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
     // )))
     // .await?;
     // tokio::time::sleep(Duration::from_millis(250)).await;
-    ecam.write(EcamPacket::from_represenation(Request::Raw(vec![
-        176, 0xf0, 1,
-    ])))
-    .await?;
+    ecam.write(EcamPacket::from_undecodeable_bytes(&vec![176, 0xf0, 1]))
+        .await?;
     tokio::time::sleep(Duration::from_millis(250)).await;
 
     loop {
@@ -100,9 +96,10 @@ async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
     let mut tap = ecam.packet_tap().await?;
     let mut m = HashMap::new();
     for beverage in enum_iterator::all() {
-        ecam.write(EcamPacket::from_represenation(Request::Profile(
-            ProfileRequest::GetRecipeQuantities(1, beverage as u8),
-        )))
+        ecam.write_request(Request::RecipeQuantityRead(
+            1 as u8,
+            MachineEnum::Value(beverage),
+        ))
         .await?;
 
         let now = std::time::Instant::now();
@@ -111,14 +108,11 @@ async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
                 Err(_) => {}
                 Ok(None) => {}
                 Ok(Some(x)) => {
-                    if let Some(Response::Profile(ProfileResponse::RecipeQuantities(x))) =
-                        x.get_packet()
-                    {
-                        if let Some((_, MachineEnum::Value(b), _)) = x {
-                            if *b == beverage {
-                                m.insert(beverage, x.clone());
-                                break 'outer;
-                            }
+                    println!("{:?}", x);
+                    if let Some(Response::RecipeQuantityRead(_, recipe, x)) = x.get_packet() {
+                        if *recipe == MachineEnum::Value(beverage) {
+                            m.insert(beverage, x.clone());
+                            break 'outer;
                         }
                     }
                     if x.get_packet().is_some() {
@@ -131,9 +125,9 @@ async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
 
     for beverage in enum_iterator::all() {
         let response = m.get(&beverage);
-        if let Some(Some(response)) = response {
+        if let Some(response) = response {
             println!("{:?}", beverage);
-            for r in &response.2 {
+            for r in response.iter() {
                 println!("  {:?}: {}", r.ingredient, r.value);
             }
         }
@@ -196,10 +190,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         );
                         return Ok(());
                     }
-                    ecam.write(EcamPacket::from_represenation(Request::State(
-                        StateRequest::TurnOn,
-                    )))
-                    .await?;
+                    ecam.write_request(Request::AppControl(AppControl::TurnOn))
+                        .await?;
                     ecam.wait_for_state(ecam::EcamStatus::Ready).await?;
                 }
                 s => {

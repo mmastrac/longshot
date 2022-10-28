@@ -1,12 +1,14 @@
 mod app_control;
 mod monitor;
+mod recipe;
 
 use super::{hardware_enums::*, MachineEnum};
-use app_control::*;
-use monitor::*;
+pub use app_control::*;
+pub use monitor::*;
+pub use recipe::*;
 
 /// Implements an encode/decode pair for a request or response.
-trait PartialEncode {
+pub trait PartialEncode {
     fn partial_encode(&self, out: &mut Vec<u8>);
 }
 
@@ -22,7 +24,17 @@ impl PartialEncode for &Vec<u8> {
     }
 }
 
-trait PartialDecode<T> {
+impl<T> PartialEncode for &MachineEnum<T>
+where
+    T: TryFrom<u8> + Copy,
+    u8: From<T>,
+{
+    fn partial_encode(&self, out: &mut Vec<u8>) {
+        out.push((**self).into())
+    }
+}
+
+pub trait PartialDecode<T> {
     fn partial_decode(input: &mut &[u8]) -> Option<T>;
 }
 
@@ -34,7 +46,11 @@ impl PartialDecode<Vec<u8>> for Vec<u8> {
     }
 }
 
-impl<T: TryFrom<u8>> PartialDecode<MachineEnum<T>> for MachineEnum<T> {
+impl<T> PartialDecode<MachineEnum<T>> for MachineEnum<T>
+where
+    T: TryFrom<u8> + Copy,
+    u8: From<T>,
+{
     fn partial_decode(input: &mut &[u8]) -> Option<Self> {
         let (head, tail) = input.split_first()?;
         *input = tail;
@@ -55,12 +71,6 @@ trait Decode {
     fn try_decode<'a>(bytes: &'a [u8]) -> Option<Self>
     where
         Self: Sized;
-}
-
-macro_rules! as_item {
-    ($i:item) => {
-        $i
-    };
 }
 
 macro_rules! packet_definition {
@@ -89,9 +99,15 @@ macro_rules! packet_definition {
                             ),*
                         ) => {
                             out.push(EcamRequestId::$name as u8);
-                            out.push(0x0f);
+                            if EcamRequestId::$name == EcamRequestId::AppControl ||
+                                EcamRequestId::$name == EcamRequestId::MonitorV0 ||
+                                EcamRequestId::$name == EcamRequestId::MonitorV1 ||
+                                EcamRequestId::$name == EcamRequestId::MonitorV2 {
+                                out.push(0x0f);
+                            } else {
+                                out.push(0xf0);
+                            }
                             $($req_name .partial_encode(&mut out); )*
-                            unimplemented!()
                         }
                     )*
                 }
@@ -147,7 +163,8 @@ packet_definition!(
     Checksum() => (),
     ProfileNameRead(start u8, end u8) => (),
     ProfileNameWrite() => (),
-    RecipeQuantityRead(recipe u8) => (),
+    RecipeQuantityRead(profile u8, recipe MachineEnum<EcamBeverageId>)
+        => (profile u8, recipe MachineEnum<EcamBeverageId>, ingredients Vec<RecipeInfo>),
     RecipePriorityRead() => (priorities Vec<u8>),
     ProfileSelection() => (),
     RecipeNameRead(start u8, end u8) => (),

@@ -1,7 +1,6 @@
-use crate::protocol::FromRef;
+use crate::protocol::request::{PartialDecode, PartialEncode};
 
 #[derive(Clone, Debug, PartialEq)]
-
 /// A simple byte-based driver packet, with header, length and checksum.
 pub struct EcamDriverPacket {
     pub(crate) bytes: Vec<u8>,
@@ -29,27 +28,38 @@ impl EcamDriverPacket {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct EcamPacket<T> {
-    pub representation: T,
+    pub representation: Option<T>,
     pub bytes: Vec<u8>,
 }
 
-impl<'a, T: From<&'a [u8]>> EcamPacket<T> {
-    pub fn from_bytes(bytes: &'a [u8]) -> EcamPacket<T> {
+impl<T> EcamPacket<T> {
+    pub fn from_undecodeable_bytes(input: &[u8]) -> EcamPacket<T> {
+        let bytes = input.to_vec();
         EcamPacket {
-            representation: bytes.into(),
-            bytes: bytes.into(),
+            representation: None,
+            bytes,
         }
     }
 }
 
-impl<T> EcamPacket<T>
-where
-    Vec<u8>: FromRef<T>,
-{
-    pub fn from_represenation(representation: T) -> EcamPacket<T> {
-        let bytes = Vec::from_ref(&representation);
+impl<T: PartialDecode<T>> EcamPacket<T> {
+    pub fn from_bytes(mut input: &[u8]) -> EcamPacket<T> {
+        let bytes = input.to_vec();
+        let input = &mut input;
+        let representation = <T>::partial_decode(input);
         EcamPacket {
             representation,
+            bytes,
+        }
+    }
+}
+
+impl<T: PartialEncode> EcamPacket<T> {
+    pub fn from_represenation(representation: T) -> EcamPacket<T> {
+        let mut bytes = vec![];
+        representation.partial_encode(&mut bytes);
+        EcamPacket {
+            representation: Some(representation),
             bytes,
         }
     }

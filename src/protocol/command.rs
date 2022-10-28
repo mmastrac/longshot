@@ -1,21 +1,6 @@
+use crate::protocol::request::*;
 use crate::protocol::*;
 use std::{fmt::Debug, vec::Vec};
-
-pub enum Request {
-    Brew(BrewRequest),
-    Monitor(MonitorRequestVersion),
-    State(StateRequest),
-    Parameter(ParameterRequest),
-    Profile(ProfileRequest),
-    Raw(Vec<u8>),
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum Response {
-    State(MonitorState),
-    Profile(ProfileResponse),
-    Raw,
-}
 
 pub enum MonitorRequestVersion {
     V0,
@@ -74,29 +59,6 @@ pub struct MonitorState {
     pub load0: u8,
     pub load1: u8,
     pub raw: Vec<u8>,
-}
-
-impl Request {
-    pub fn encode(&self) -> Vec<u8> {
-        match self {
-            Request::Brew(r) => r.encode(),
-            Request::Monitor(r) => r.encode(),
-            Request::State(r) => r.encode(),
-            Request::Parameter(r) => r.encode(),
-            Request::Profile(r) => r.encode(),
-            Request::Raw(r) => r.clone(),
-        }
-    }
-}
-
-pub trait FromRef<T> {
-    fn from_ref(x: &T) -> Self;
-}
-
-impl FromRef<Request> for Vec<u8> {
-    fn from_ref(req: &Request) -> Self {
-        Request::encode(req)
-    }
 }
 
 impl BrewRequest {
@@ -164,24 +126,6 @@ impl StateRequest {
                 // vec![0x84, 0x0f, 0x00, 0x00]
                 panic!()
             }
-        }
-    }
-}
-
-impl<'a> From<&'a [u8]> for Response {
-    fn from(data: &[u8]) -> Self {
-        Response::decode(data)
-    }
-}
-
-impl Response {
-    pub fn decode(data: &[u8]) -> Self {
-        if data[0] == 0x75 && data.len() > 10 {
-            Response::State(MonitorState::decode(&data))
-        } else if data[0] == EcamRequestId::RecipeQuantityRead as u8 {
-            Response::Profile(ProfileResponse::decode(&data))
-        } else {
-            Response::Raw
         }
     }
 }

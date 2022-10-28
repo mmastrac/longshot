@@ -30,6 +30,7 @@ impl EcamBT {
         let (peripheral, characteristic) = (self.peripheral.clone(), self.characteristic.clone());
         drop(self);
         let data = data.packetize();
+        trace_packet!("SENDING {:?}", data);
         Result::Ok(
             peripheral
                 .write(
