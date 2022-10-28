@@ -10,6 +10,12 @@ pub use recipe::*;
 /// Implements an encode/decode pair for a request or response.
 pub trait PartialEncode {
     fn partial_encode(&self, out: &mut Vec<u8>);
+
+    fn encode(&self) -> Vec<u8> {
+        let mut v = vec![];
+        self.partial_encode(&mut v);
+        v
+    }
 }
 
 impl PartialEncode for u8 {
@@ -107,7 +113,7 @@ macro_rules! packet_definition {
                             } else {
                                 out.push(0x0f);
                             }
-                            $($req_name .partial_encode(&mut out); )*
+                            $($req_name.partial_encode(&mut out); )*
                         }
                     )*
                 }
@@ -193,12 +199,6 @@ impl Request {
                 | Request::MonitorV1()
                 | Request::MonitorV2()
         )
-    }
-
-    fn encode(&self) -> Vec<u8> {
-        let mut v = vec![];
-        self.partial_encode(&mut v);
-        v
     }
 }
 

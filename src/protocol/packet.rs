@@ -57,8 +57,7 @@ impl<T: PartialDecode<T>> EcamPacket<T> {
 
 impl<T: PartialEncode> EcamPacket<T> {
     pub fn from_represenation(representation: T) -> EcamPacket<T> {
-        let mut bytes = vec![];
-        representation.partial_encode(&mut bytes);
+        let bytes = representation.encode();
         EcamPacket {
             representation: Some(representation),
             bytes,
