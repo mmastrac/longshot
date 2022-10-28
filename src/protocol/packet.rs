@@ -74,6 +74,18 @@ impl<T: PartialEncode> EcamPacket<T> {
     }
 }
 
+impl<T: PartialDecode<T>> From<EcamDriverPacket> for EcamPacket<T> {
+    fn from(packet: EcamDriverPacket) -> Self {
+        EcamPacket::from_bytes(&packet.bytes)
+    }
+}
+
+impl<T> From<EcamPacket<T>> for EcamDriverPacket {
+    fn from(packet: EcamPacket<T>) -> Self {
+        EcamDriverPacket::from_vec(packet.bytes)
+    }
+}
+
 pub fn checksum(buffer: &[u8]) -> [u8; 2] {
     let mut i: u16 = 7439;
     for x in buffer {
@@ -86,7 +98,7 @@ pub fn checksum(buffer: &[u8]) -> [u8; 2] {
     [(i >> 8) as u8, (i & 0xff) as u8]
 }
 
-pub fn packetize(buffer: &[u8]) -> Vec<u8> {
+fn packetize(buffer: &[u8]) -> Vec<u8> {
     let mut out: Vec<u8> = vec![
         0x0d,
         (buffer.len() + 3).try_into().expect("Packet too large"),
@@ -96,7 +108,7 @@ pub fn packetize(buffer: &[u8]) -> Vec<u8> {
     out
 }
 
-pub fn stringify(buffer: &[u8]) -> String {
+fn stringify(buffer: &[u8]) -> String {
     buffer
         .iter()
         .map(|n| format!("{:02x}", n))

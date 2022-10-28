@@ -39,7 +39,7 @@ impl From<EcamDriverOutput> for EcamOutput {
         match other {
             EcamDriverOutput::Done => EcamOutput::Done,
             EcamDriverOutput::Ready => EcamOutput::Ready,
-            EcamDriverOutput::Packet(p) => EcamOutput::Packet(EcamPacket::from_bytes(&p.bytes)),
+            EcamDriverOutput::Packet(p) => EcamOutput::Packet(p.into()),
         }
     }
 }
@@ -49,7 +49,7 @@ impl Into<EcamDriverOutput> for EcamOutput {
         match self {
             EcamOutput::Done => EcamDriverOutput::Done,
             EcamOutput::Ready => EcamDriverOutput::Ready,
-            EcamOutput::Packet(p) => EcamDriverOutput::Packet(EcamDriverPacket::from_vec(p.bytes)),
+            EcamOutput::Packet(p) => EcamDriverOutput::Packet(p.into()),
         }
     }
 }
@@ -245,9 +245,7 @@ impl Ecam {
             warning!("Packet sent before device was ready!");
         }
         drop(internals);
-        self.driver
-            .write(EcamDriverPacket::from_vec(packet.bytes))
-            .await
+        self.driver.write(packet.into()).await
     }
 
     /// Convenience method to skip the EcamPacket.
@@ -271,8 +269,7 @@ impl Ecam {
 
     /// The monitor loop is booted when the underlying driver reports that it is ready.
     async fn write_monitor_loop(self) -> Result<(), EcamError> {
-        let status_request =
-            EcamDriverPacket::from_vec(EcamPacket::from_represenation(Request::MonitorV2()).bytes);
+        let status_request = EcamDriverPacket::from_vec(Request::MonitorV2().encode());
         while self.is_alive() {
             // Only send status update packets while there is status interest
             if self.internals.lock().await.status_interest.count() == 0 {
