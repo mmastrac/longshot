@@ -96,11 +96,8 @@ async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
     let mut tap = ecam.packet_tap().await?;
     let mut m = HashMap::new();
     for beverage in enum_iterator::all() {
-        ecam.write_request(Request::RecipeQuantityRead(
-            1,
-            MachineEnum::Value(beverage),
-        ))
-        .await?;
+        ecam.write_request(Request::RecipeQuantityRead(1, MachineEnum::Value(beverage)))
+            .await?;
 
         let now = std::time::Instant::now();
         'outer: while now.elapsed() < Duration::from_millis(500) {

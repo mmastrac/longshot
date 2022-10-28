@@ -12,15 +12,17 @@ pub trait PartialEncode {
     fn partial_encode(&self, out: &mut Vec<u8>);
 }
 
-impl PartialEncode for &u8 {
+impl PartialEncode for u8 {
     fn partial_encode(&self, out: &mut Vec<u8>) {
-        out.push(**self);
+        out.push(*self);
     }
 }
 
-impl PartialEncode for &Vec<u8> {
+impl<T: PartialEncode> PartialEncode for Vec<T> {
     fn partial_encode(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(self);
+        for t in self.iter() {
+            t.partial_encode(out);
+        }
     }
 }
 
@@ -153,7 +155,11 @@ packet_definition!(
     MonitorV0() => (),
     MonitorV1() => (),
     MonitorV2() => (response MonitorV2Response),
-    BeverageDispensingMode() => (),
+    BeverageDispensingMode(
+        recipe MachineEnum<EcamBeverageId>,
+        trigger MachineEnum<EcamOperationTrigger>,
+        ingredients Vec<RecipeInfo>,
+        mode MachineEnum<EcamBeverageTasteType>) => (),
     AppControl(request AppControl) => (),
     ParameterRead() => (),
     ParameterWrite() => (),
@@ -180,10 +186,19 @@ packet_definition!(
 
 impl Request {
     fn is_response_required(&self) -> bool {
-        !matches!(self, Request::AppControl(..)
-             | Request::MonitorV0()
-             | Request::MonitorV1()
-             | Request::MonitorV2())
+        !matches!(
+            self,
+            Request::AppControl(..)
+                | Request::MonitorV0()
+                | Request::MonitorV1()
+                | Request::MonitorV2()
+        )
+    }
+
+    fn encode(&self) -> Vec<u8> {
+        let mut v = vec![];
+        self.partial_encode(&mut v);
+        v
     }
 }
 
@@ -210,5 +225,25 @@ mod test {
                 load1: 0,
             })
         );
+    }
+
+    #[test]
+    fn test_brew_coffee() {
+        let mut recipe = vec![];
+        recipe.push(RecipeInfo::new(EcamIngredients::Coffee, 103));
+        recipe.push(RecipeInfo::new(EcamIngredients::Taste, 2));
+        recipe.push(RecipeInfo::new(EcamIngredients::Temp, 0));
+        assert_eq!(
+            Request::BeverageDispensingMode(
+                EcamBeverageId::RegularCoffee.into(),
+                EcamOperationTrigger::Start.into(),
+                recipe,
+                EcamBeverageTasteType::PrepareInversion.into()
+            )
+            .encode(),
+            vec![0x83, 0xf0, 0x02, 0x01, 0x01, 0x00, 0x67, 0x02, 0x02, 0x00, 0x00, 0x06]
+        );
+        // dispense request, 0xf0, beverage type, trigger, parameters*, taste type
+        // 0x83, 0xf0, 0x02, 0x01, 0x01, 0x00, 0x67, 0x02, 0x02, 0x00, 0x00, 0x06
     }
 }

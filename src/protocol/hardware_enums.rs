@@ -42,6 +42,25 @@ pub enum EcamIngredients {
     Accessorio = 28,           // ACCESSORIO
 }
 
+impl EcamIngredients {
+    /// Is this ingredient encoded as two bytes? Unknown encodings return None.
+    pub fn is_wide_encoding(&self) -> Option<bool> {
+        match self {
+            EcamIngredients::Temp
+            | EcamIngredients::Taste
+            | EcamIngredients::Inversion
+            | EcamIngredients::DueXPer
+            | EcamIngredients::IndexLength
+            | EcamIngredients::Visible
+            | EcamIngredients::Accessorio => Some(false),
+            EcamIngredients::Coffee | EcamIngredients::Milk | EcamIngredients::HotWater => {
+                Some(true)
+            }
+            _ => None,
+        }
+    }
+}
+
 /// Beverage preparation mode.
 #[repr(u8)]
 #[derive(
@@ -84,7 +103,7 @@ pub enum EcamRequestId {
     MonitorV0 = 96,
     MonitorV1 = 112,
     MonitorV2 = 117,
-    BeverageDispensingMode = 130,
+    BeverageDispensingMode = 131,
     /// (2, 1) for turn on, (3, 2) for refresh app ID.
     AppControl = 132,
     ParameterRead = 149,

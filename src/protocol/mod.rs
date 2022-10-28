@@ -1,4 +1,3 @@
-mod command;
 mod hardware_enums;
 mod machine_enum;
 mod packet;
