@@ -180,13 +180,10 @@ packet_definition!(
 
 impl Request {
     fn is_response_required(&self) -> bool {
-        match self {
-            Request::AppControl(..)
-            | Request::MonitorV0()
-            | Request::MonitorV1()
-            | Request::MonitorV2() => false,
-            _ => true,
-        }
+        !matches!(self, Request::AppControl(..)
+             | Request::MonitorV0()
+             | Request::MonitorV1()
+             | Request::MonitorV2())
     }
 }
 

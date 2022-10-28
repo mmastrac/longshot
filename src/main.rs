@@ -74,7 +74,7 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
     // )))
     // .await?;
     // tokio::time::sleep(Duration::from_millis(250)).await;
-    ecam.write(EcamPacket::from_undecodeable_bytes(&vec![176, 0xf0, 1]))
+    ecam.write(EcamPacket::from_undecodeable_bytes(&[176, 0xf0, 1]))
         .await?;
     tokio::time::sleep(Duration::from_millis(250)).await;
 
@@ -97,7 +97,7 @@ async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
     let mut m = HashMap::new();
     for beverage in enum_iterator::all() {
         ecam.write_request(Request::RecipeQuantityRead(
-            1 as u8,
+            1,
             MachineEnum::Value(beverage),
         ))
         .await?;

@@ -7,6 +7,7 @@ pub struct EcamDriverPacket {
 }
 
 impl EcamDriverPacket {
+    #[cfg(test)]
     pub fn from_slice(bytes: &[u8]) -> Self {
         EcamDriverPacket {
             bytes: bytes.into(),
