@@ -29,7 +29,7 @@ impl EcamBT {
     pub async fn send(&self, data: EcamDriverPacket) -> Result<(), EcamError> {
         let (peripheral, characteristic) = (self.peripheral.clone(), self.characteristic.clone());
         let data = data.packetize();
-        trace_packet!("SENDING {:?}", data);
+        trace_packet!("{{host->device}} {:?}", data);
         Result::Ok(
             peripheral
                 .write(
@@ -104,14 +104,14 @@ async fn get_notifications_from_peripheral(
             if packet_header == 0xd0 {
                 if (packet_size as usize) + 1 <= b.len() {
                     // Single packet
-                    trace_packet!("Packet: {:?}", b);
+                    trace_packet!("{{device->host}} Packet: {}", hexdump(&b));
                     yield b;
                 } else {
                     // Accumulate
-                    trace_packet!("size={} len={}", packet_size, b.len());
-                    trace_packet!("Packet: {:?}", b);
+                    trace_packet!("{{device->host}} size={} len={}", packet_size, b.len());
+                    trace_packet!("{{device->host}} Packet: {}", hexdump(&b));
                     while let Some(mut m) = n.next().await {
-                        trace_packet!("Cont'd: {:?}", m.value);
+                        trace_packet!("{{device->host}} Cont'd: {}", hexdump(&m.value));
                         b.append(&mut m.value);
                         if (packet_size as usize) + 1 <= b.len() {
                             yield b;
@@ -121,7 +121,7 @@ async fn get_notifications_from_peripheral(
                 }
             } else {
                 // Ignore malformed packet
-                trace_packet!("Ignoring spurious or malformed packet: {:?}", b);
+                trace_packet!("Warning: Ignoring spurious or malformed packet: {:?}", b);
             }
         }
     };

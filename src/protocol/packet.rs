@@ -1,9 +1,17 @@
+use std::fmt::Debug;
+
 use crate::protocol::request::{PartialDecode, PartialEncode};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 /// A simple byte-based driver packet, with header, length and checksum.
 pub struct EcamDriverPacket {
     pub(crate) bytes: Vec<u8>,
+}
+
+impl Debug for EcamDriverPacket {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&hexdump(&self.bytes))
+    }
 }
 
 impl EcamDriverPacket {
@@ -93,6 +101,27 @@ pub fn stringify(buffer: &[u8]) -> String {
         .iter()
         .map(|n| format!("{:02x}", n))
         .collect::<String>()
+}
+
+pub fn hexdump(buffer: &[u8]) -> String {
+    let maybe_space = |i| if i > 0 && i % 8 == 0 { " " } else { "" };
+    let s1: String = buffer
+        .iter()
+        .enumerate()
+        .map(|(i, b)| format!("{}{:02x}", maybe_space(i), b))
+        .collect::<String>();
+    let s2: String = buffer
+        .iter()
+        .enumerate()
+        .map(|(i, b)| {
+            if *b >= 20 && *b < 127 {
+                *b as char
+            } else {
+                '.'
+            }
+        })
+        .collect::<String>();
+    return format!("|{}| |{}|", s1, s2).to_owned();
 }
 
 #[cfg(test)]

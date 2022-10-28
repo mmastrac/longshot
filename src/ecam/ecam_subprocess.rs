@@ -70,13 +70,17 @@ pub async fn stream(
                     trace_packet!("Failed to decode '{}'", s);
                 }
             } else {
-                trace_packet!("{}", s);
+                trace_packet!("{{stdout}} {}", s);
             }
         }
     };
     let stderr = stream! {
         while let Some(Ok(s)) = stderr.next().await {
-            trace_packet!("{}", s);
+            if let Some(s) = s.strip_prefix("[TRACE] ") {
+                trace_packet!("{}", s);
+            } else {
+                trace_packet!("{{stderr}} {}", s);
+            }
         }
         // TODO: we might have to spawn this
         if false {
