@@ -1,12 +1,6 @@
 use crate::protocol::*;
 use std::{fmt::Debug, vec::Vec};
 
-/// Implements an encode/decode pair for a request or response.
-trait Codec {
-    fn encode(&self) -> Vec<u8>;
-    fn try_decode<'a> (bytes: &'a [u8]) -> Option<Self> where Self: Sized;
-}
-
 pub enum Request {
     Brew(BrewRequest),
     Monitor(MonitorRequestVersion),
@@ -40,6 +34,7 @@ pub enum ProfileRequest {
 
 pub enum StateRequest {
     TurnOn,
+    TurnOff,
 }
 
 pub enum BrewRequest {
@@ -150,7 +145,7 @@ impl ProfileRequest {
                 vec![EcamRequestId::RecipeNameRead.into(), 0xf0, *a, *b]
             }
             Self::GetRecipeQuantities(a, b) => {
-                vec![EcamRequestId::RecipeQtyRead.into(), 0xf0, *a, *b]
+                vec![EcamRequestId::RecipeQuantityRead.into(), 0xf0, *a, *b]
             }
             Self::GetRecipePriority(a) => {
                 vec![EcamRequestId::RecipePriorityRead.into(), 0xf0, *a]
@@ -164,6 +159,10 @@ impl StateRequest {
         match *self {
             StateRequest::TurnOn => {
                 vec![0x84, 0x0f, 0x02, 0x01]
+            }
+            StateRequest::TurnOff => {
+                // vec![0x84, 0x0f, 0x00, 0x00]
+                panic!()
             }
         }
     }
@@ -179,7 +178,7 @@ impl Response {
     pub fn decode(data: &[u8]) -> Self {
         if data[0] == 0x75 && data.len() > 10 {
             Response::State(MonitorState::decode(&data))
-        } else if data[0] == EcamRequestId::RecipeQtyRead as u8 {
+        } else if data[0] == EcamRequestId::RecipeQuantityRead as u8 {
             Response::Profile(ProfileResponse::decode(&data))
         } else {
             Response::Raw

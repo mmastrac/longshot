@@ -81,11 +81,12 @@ pub enum EcamOperationTrigger {
 )]
 pub enum EcamRequestId {
     SetBtMode = 17,
-    Data0 = 96,
-    Data1 = 112,
-    Data2 = 117,
+    MonitorV0 = 96,
+    MonitorV1 = 112,
+    MonitorV2 = 117,
     BeverageDispensingMode = 130,
-    RefreshAppId = 132,
+    /// (2, 1) for turn on, (3, 2) for refresh app ID.
+    AppControl = 132,
     ParameterRead = 149,
     ParameterWrite = 144,
     ParameterReadExt = 161,
@@ -93,13 +94,18 @@ pub enum EcamRequestId {
     Checksum = 163,
     ProfileNameRead = 164,
     ProfileNameWrite = 165,
-    RecipeQtyRead = 166,
+    RecipeQuantityRead = 166,
     RecipePriorityRead = 168,
     ProfileSelection = 169,
     RecipeNameRead = 170,
     RecipeNameWrite = 171,
-    PinActivation = 176,
+    SetFavoriteBeverages = 173,
+    RecipeMinMaxSync = 176,
     PinSet = 177,
+    BeanSystemSelect = 185,
+    BeanSystemRead = 186,
+    BeanSystemWrite = 187,
+    PinRead = 210,
     SetTime = 226,
 }
 

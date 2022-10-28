@@ -71,10 +71,13 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
 
     // ecam.write(Request::Profile(ProfileRequest::GetProfileNames(3, 6)))
     //     .await?;
-    ecam.write(EcamPacket::from_represenation(Request::Profile(
-        ProfileRequest::GetRecipeNames(1, 3),
-    )))
-    .await?;
+    // ecam.write(EcamPacket::from_represenation(Request::Profile(
+    //     ProfileRequest::GetRecipeNames(1, 3),
+    // )))
+    // .await?;
+    // tokio::time::sleep(Duration::from_millis(250)).await;
+    ecam.write(EcamPacket::from_represenation(Request::Raw(vec![176, 0xf0, 1])))
+        .await?;
     tokio::time::sleep(Duration::from_millis(250)).await;
 
     loop {
