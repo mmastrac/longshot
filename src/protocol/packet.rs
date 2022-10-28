@@ -2,6 +2,7 @@ use crate::protocol::FromRef;
 
 #[derive(Clone, Debug, PartialEq)]
 
+/// A simple byte-based driver packet, with header, length and checksum.
 pub struct EcamDriverPacket {
     pub(crate) bytes: Vec<u8>,
 }
