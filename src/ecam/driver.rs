@@ -2,7 +2,7 @@ use crate::{prelude::*, protocol::*};
 
 use uuid::Uuid;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum EcamDriverOutput {
     Ready,
     Packet(EcamDriverPacket),
@@ -13,10 +13,10 @@ pub enum EcamDriverOutput {
 /// for some tips on making async trait functions.
 pub trait EcamDriver: Send + Sync {
     /// Read one item from the ECAM.
-    fn read<'a>(&'a self) -> AsyncFuture<'a, Option<EcamDriverOutput>>;
+    fn read(&self) -> AsyncFuture<Option<EcamDriverOutput>>;
 
     /// Write one item to the ECAM.
-    fn write<'a>(&'a self, data: EcamDriverPacket) -> AsyncFuture<'a, ()>;
+    fn write(&self, data: EcamDriverPacket) -> AsyncFuture<()>;
 
     /// Scan for the first matching device.
     fn scan<'a>() -> AsyncFuture<'a, (String, Uuid)>

@@ -43,15 +43,15 @@ impl EcamBT {
 }
 
 impl EcamDriver for EcamBT {
-    fn read<'a>(&'a self) -> crate::prelude::AsyncFuture<'a, Option<EcamDriverOutput>> {
+    fn read<'a>(&self) -> AsyncFuture<Option<EcamDriverOutput>> {
         Box::pin(self.notifications.recv())
     }
 
-    fn write<'a>(&'a self, data: EcamDriverPacket) -> crate::prelude::AsyncFuture<'a, ()> {
+    fn write<'a>(&self, data: EcamDriverPacket) -> AsyncFuture<()> {
         Box::pin(self.send(data))
     }
 
-    fn scan<'a>() -> crate::prelude::AsyncFuture<'a, (String, Uuid)>
+    fn scan<'a>() -> AsyncFuture<'a, (String, Uuid)>
     where
         Self: Sized,
     {

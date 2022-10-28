@@ -6,15 +6,14 @@ use tokio_stream::wrappers::BroadcastStream;
 use crate::ecam::{EcamDriver, EcamDriverOutput, EcamError};
 use crate::protocol::*;
 
-#[derive(Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum EcamStatus {
-    Unknown,
     StandBy,
     Ready,
     Busy,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum EcamOutput {
     Ready,
     Packet(EcamPacket<Response>),

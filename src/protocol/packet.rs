@@ -1,6 +1,6 @@
 use crate::protocol::request::{PartialDecode, PartialEncode};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 /// A simple byte-based driver packet, with header, length and checksum.
 pub struct EcamDriverPacket {
     pub(crate) bytes: Vec<u8>,
@@ -27,7 +27,7 @@ impl EcamDriverPacket {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EcamPacket<T> {
     pub representation: Option<T>,
     pub bytes: Vec<u8>,

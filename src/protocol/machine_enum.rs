@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 /// Wraps a machine enumeration that may have unknown values.
-#[derive(Copy, Clone, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, Eq, PartialEq, PartialOrd)]
 pub enum MachineEnum<T>
 where
     T: TryFrom<u8> + Copy,

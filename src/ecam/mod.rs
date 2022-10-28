@@ -24,8 +24,6 @@ pub async fn ecam_scan() -> Result<(String, Uuid), EcamError> {
 pub enum EcamError {
     #[error("not found")]
     NotFound,
-    #[error("timed out")]
-    Timeout,
     #[error(transparent)]
     BTError(#[from] btleplug::Error),
     #[error(transparent)]

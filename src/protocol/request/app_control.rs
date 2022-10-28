@@ -2,7 +2,7 @@
 
 use super::PartialEncode;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AppControl {
     TurnOn,
     RefreshAppId,

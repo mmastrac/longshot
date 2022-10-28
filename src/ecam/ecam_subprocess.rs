@@ -35,11 +35,11 @@ impl EcamSubprocess {
 }
 
 impl EcamDriver for EcamSubprocess {
-    fn read<'a>(&'a self) -> AsyncFuture<'a, Option<EcamDriverOutput>> {
+    fn read<'a>(&self) -> AsyncFuture<Option<EcamDriverOutput>> {
         Box::pin(self.receiver.recv())
     }
 
-    fn write<'a>(&'a self, data: EcamDriverPacket) -> AsyncFuture<'a, ()> {
+    fn write<'a>(&self, data: EcamDriverPacket) -> AsyncFuture<()> {
         Box::pin(self.write_stdin(data))
     }
 
@@ -63,8 +63,8 @@ pub async fn stream(
         while let Some(Ok(s)) = stdout.next().await {
             if s == "R: READY" {
                 yield EcamDriverOutput::Ready;
-            } else if s.starts_with("R: ") {
-                if let Ok(bytes) = hex::decode(&s[3..]) {
+            } else if let Some(s) = s.strip_prefix("R: ") {
+                if let Ok(bytes) = hex::decode(&s) {
                     yield EcamDriverOutput::Packet(EcamDriverPacket::from_vec(bytes));
                 } else {
                     trace_packet!("Failed to decode '{}'", s);

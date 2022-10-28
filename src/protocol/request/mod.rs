@@ -74,13 +74,6 @@ impl PartialDecode<u8> for u8 {
     }
 }
 
-/// Implements an encode/decode pair for a request or response.
-trait Decode {
-    fn try_decode<'a>(bytes: &'a [u8]) -> Option<Self>
-    where
-        Self: Sized;
-}
-
 macro_rules! packet_definition {
     (
         $(
@@ -91,7 +84,7 @@ macro_rules! packet_definition {
         ),* $(,)? ) => {
 
         #[allow(dead_code)]
-        #[derive(Clone, Debug, PartialEq)]
+        #[derive(Clone, Debug, Eq, PartialEq)]
         pub enum Request {
             $(
                 $name( $($req_type),* ),
@@ -121,7 +114,7 @@ macro_rules! packet_definition {
         }
 
         #[allow(dead_code)]
-        #[derive(Clone, Debug, PartialEq)]
+        #[derive(Clone, Debug, Eq, PartialEq)]
         pub enum Response {
             $(
                 $name ( $($resp_type),* ),

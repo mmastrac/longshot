@@ -1,6 +1,6 @@
 use crate::protocol::*;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RecipeInfo {
     pub ingredient: MachineEnum<EcamIngredients>,
     pub value: u16,
