@@ -12,12 +12,9 @@ impl EcamDriverPacket {
             bytes: bytes.into(),
         }
     }
+
     pub fn from_vec(bytes: Vec<u8>) -> Self {
         EcamDriverPacket { bytes }
-    }
-
-    pub fn encode(&self) -> Vec<u8> {
-        self.bytes.clone()
     }
 
     pub fn stringify(&self) -> String {
@@ -33,20 +30,6 @@ impl EcamDriverPacket {
 pub struct EcamPacket<T> {
     pub representation: T,
     pub bytes: Vec<u8>,
-}
-
-impl<T> EcamPacket<T> {
-    pub fn encode(&self) -> Vec<u8> {
-        self.bytes.clone()
-    }
-
-    pub fn stringify(&self) -> String {
-        stringify(&self.bytes)
-    }
-
-    pub fn packetize(&self) -> Vec<u8> {
-        packetize(&self.bytes)
-    }
 }
 
 impl<'a, T: From<&'a [u8]>> EcamPacket<T> {

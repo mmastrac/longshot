@@ -1,6 +1,12 @@
 use crate::protocol::*;
 use std::{fmt::Debug, vec::Vec};
 
+/// Implements an encode/decode pair for a request or response.
+trait Codec {
+    fn encode(&self) -> Vec<u8>;
+    fn try_decode<'a> (bytes: &'a [u8]) -> Option<Self> where Self: Sized;
+}
+
 pub enum Request {
     Brew(BrewRequest),
     Monitor(MonitorRequestVersion),
