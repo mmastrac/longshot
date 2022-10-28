@@ -1,10 +1,12 @@
 mod app_control;
 mod monitor;
+mod profile;
 mod recipe;
 
 use super::{hardware_enums::*, MachineEnum};
 pub use app_control::*;
 pub use monitor::*;
+pub use profile::*;
 pub use recipe::*;
 
 /// Implements an encode/decode pair for a request or response.
@@ -46,10 +48,12 @@ pub trait PartialDecode<T> {
     fn partial_decode(input: &mut &[u8]) -> Option<T>;
 }
 
-impl PartialDecode<Vec<u8>> for Vec<u8> {
-    fn partial_decode(input: &mut &[u8]) -> Option<Vec<u8>> {
-        let v = input.to_vec();
-        *input = &[];
+impl<T: PartialDecode<T>> PartialDecode<Vec<T>> for Vec<T> {
+    fn partial_decode(input: &mut &[u8]) -> Option<Self> {
+        let mut v = vec![];
+        while !input.is_empty() {
+            v.push(<T>::partial_decode(input)?);
+        }
         Some(v)
     }
 }
@@ -165,13 +169,13 @@ packet_definition!(
     ParameterReadExt() => (),
     StatisticsRead() => (),
     Checksum() => (),
-    ProfileNameRead(start u8, end u8) => (),
+    ProfileNameRead(start u8, end u8) => (names Vec<WideStringWithIcon>),
     ProfileNameWrite() => (),
     RecipeQuantityRead(profile u8, recipe MachineEnum<EcamBeverageId>)
         => (profile u8, recipe MachineEnum<EcamBeverageId>, ingredients Vec<RecipeInfo>),
     RecipePriorityRead() => (priorities Vec<u8>),
     ProfileSelection() => (),
-    RecipeNameRead(start u8, end u8) => (),
+    RecipeNameRead(start u8, end u8) => (names Vec<WideStringWithIcon>),
     RecipeNameWrite() => (),
     SetFavoriteBeverages(profile u8, recipies Vec<u8>) => (),
     RecipeMinMaxSync(recipe u8) => (),
@@ -200,7 +204,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_monitor_packet() {
+    fn test_decode_monitor_packet() {
         let buf = [117_u8, 15, 1, 5, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0];
         let input = &mut buf.as_slice();
         assert_eq!(
@@ -218,6 +222,24 @@ mod test {
                 load1: 0,
             })
         );
+    }
+
+    #[test]
+    fn test_decode_profile_packet() {
+        let buf = [
+            164_u8, 240, 0, 77, 0, 97, 0, 116, 0, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0,
+            77, 0, 105, 0, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 80, 0, 82, 0, 79, 0,
+            70, 0, 73, 0, 76, 0, 69, 0, 32, 0, 51, 0, 0, 3,
+        ];
+        let input = &mut buf.as_slice();
+        assert_eq!(
+            <Response>::partial_decode(input).expect("Failed to decode"),
+            Response::ProfileNameRead(vec![
+                WideStringWithIcon::new("Matt", 3),
+                WideStringWithIcon::new("Mia", 8),
+                WideStringWithIcon::new("PROFILE 3", 3)
+            ])
+        )
     }
 
     #[test]

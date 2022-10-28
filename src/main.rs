@@ -31,8 +31,12 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
         ecam.write_request(Request::AppControl(AppControl::TurnOn))
             .await?;
     }
-
     ecam.write_request(Request::ProfileNameRead(1, 3)).await?;
+    tokio::time::sleep(Duration::from_millis(250)).await;
+    ecam.write_request(Request::RecipeNameRead(1, 3)).await?;
+    tokio::time::sleep(Duration::from_millis(250)).await;
+    ecam.write_request(Request::RecipeNameRead(4, 6)).await?;
+    tokio::time::sleep(Duration::from_millis(250)).await;
     // ecam.write(EcamPacket::from_represenation(Request::Profile(
     // ProfileRequest::GetRecipeNames(1, 3),
     // )))

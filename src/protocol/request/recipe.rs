@@ -50,13 +50,3 @@ impl PartialEncode for RecipeInfo {
         out.push(self.value as u8);
     }
 }
-
-impl PartialDecode<Vec<RecipeInfo>> for Vec<RecipeInfo> {
-    fn partial_decode(input: &mut &[u8]) -> Option<Self> {
-        let mut v = vec![];
-        while !input.is_empty() {
-            v.push(<RecipeInfo>::partial_decode(input)?);
-        }
-        Some(v)
-    }
-}
