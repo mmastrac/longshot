@@ -105,6 +105,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let device_name = arg!(--"device-name" <name>).help("Provides the name of the device");
     let turn_on = arg!(--"turn-on").help("Turn on the machine before running this operation");
     let matches = command!()
+        .arg(arg!(--"trace").help("Trace packets to/from device"))
         .subcommand(
             command!("brew")
                 .about("Brew a coffee")
@@ -131,8 +132,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .get_matches();
 
-    let subcommand = matches.subcommand();
+    if matches.get_flag("trace") {
+        crate::logging::TRACE_ENABLED.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
 
+    let subcommand = matches.subcommand();
     match subcommand {
         Some(("brew", cmd)) => {
             println!("{:?}", cmd);

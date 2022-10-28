@@ -94,6 +94,7 @@ pub async fn stream(
 
 pub async fn connect(device_name: &str) -> Result<EcamSubprocess, EcamError> {
     let mut cmd = tokio::process::Command::new(std::env::current_exe()?);
+    cmd.arg("--trace");
     cmd.arg("x-internal-pipe");
     cmd.arg("--device-name");
     cmd.arg(device_name);
