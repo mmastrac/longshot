@@ -39,12 +39,12 @@ impl EcamDriverPacket {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EcamPacket<T> {
     pub representation: Option<T>,
-    pub bytes: Vec<u8>,
+    pub bytes: EcamDriverPacket,
 }
 
 impl<T> EcamPacket<T> {
-    pub fn from_undecodeable_bytes(input: &[u8]) -> EcamPacket<T> {
-        let bytes = input.to_vec();
+    pub fn from_raw(input: &[u8]) -> EcamPacket<T> {
+        let bytes = EcamDriverPacket::from_vec(input.to_vec());
         EcamPacket {
             representation: None,
             bytes,
@@ -54,7 +54,7 @@ impl<T> EcamPacket<T> {
 
 impl<T: PartialDecode<T>> EcamPacket<T> {
     pub fn from_bytes(mut input: &[u8]) -> EcamPacket<T> {
-        let bytes = input.to_vec();
+        let bytes = EcamDriverPacket::from_vec(input.to_vec());
         let input = &mut input;
         let representation = <T>::partial_decode(input);
         EcamPacket {
@@ -66,7 +66,7 @@ impl<T: PartialDecode<T>> EcamPacket<T> {
 
 impl<T: PartialEncode> EcamPacket<T> {
     pub fn from_represenation(representation: T) -> EcamPacket<T> {
-        let bytes = representation.encode();
+        let bytes = EcamDriverPacket::from_vec(representation.encode());
         EcamPacket {
             representation: Some(representation),
             bytes,
@@ -82,7 +82,7 @@ impl<T: PartialDecode<T>> From<EcamDriverPacket> for EcamPacket<T> {
 
 impl<T> From<EcamPacket<T>> for EcamDriverPacket {
     fn from(packet: EcamPacket<T>) -> Self {
-        EcamDriverPacket::from_vec(packet.bytes)
+        packet.bytes
     }
 }
 
