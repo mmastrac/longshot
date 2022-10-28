@@ -99,13 +99,10 @@ macro_rules! packet_definition {
                             ),*
                         ) => {
                             out.push(EcamRequestId::$name as u8);
-                            if EcamRequestId::$name == EcamRequestId::AppControl ||
-                                EcamRequestId::$name == EcamRequestId::MonitorV0 ||
-                                EcamRequestId::$name == EcamRequestId::MonitorV1 ||
-                                EcamRequestId::$name == EcamRequestId::MonitorV2 {
-                                out.push(0x0f);
-                            } else {
+                            if self.is_response_required() {
                                 out.push(0xf0);
+                            } else {
+                                out.push(0x0f);
                             }
                             $($req_name .partial_encode(&mut out); )*
                         }
@@ -114,6 +111,7 @@ macro_rules! packet_definition {
             }
         }
 
+        #[allow(dead_code)]
         #[derive(Clone, Debug, PartialEq)]
         pub enum Response {
             $(
@@ -178,6 +176,18 @@ packet_definition!(
     PinRead() => (),
     SetTime() => (),
 );
+
+impl Request {
+    fn is_response_required(&self) -> bool {
+        match self {
+            Request::AppControl(..)
+            | Request::MonitorV0()
+            | Request::MonitorV1()
+            | Request::MonitorV2() => false,
+            _ => true,
+        }
+    }
+}
 
 #[cfg(test)]
 mod test {
