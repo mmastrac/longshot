@@ -3,52 +3,17 @@ use std::collections::HashMap;
 
 use clap::{arg, command};
 
-use tokio::select;
-use uuid::Uuid;
-
 mod ecam;
 mod logging;
-mod packet_stream;
 mod prelude;
 mod protocol;
 
 use ecam::{
-    ecam_scan, get_ecam_bt, get_ecam_subprocess, Ecam, EcamDriver, EcamDriverOutput, EcamError,
+    ecam_scan, get_ecam_bt, get_ecam_subprocess, pipe_stdin, Ecam, EcamDriver, EcamError,
     EcamOutput, EcamStatus,
 };
 use protocol::*;
-
-async fn pipe(device_name: String) -> Result<(), Box<dyn std::error::Error>> {
-    let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
-    let ecam = get_ecam_bt(uuid).await?;
-
-    let mut bt_out = Box::pin(packet_stream::packet_stdio_stream());
-
-    loop {
-        select! {
-            input = ecam.read() => {
-                if let Ok(Some(p)) = input {
-                    if let EcamDriverOutput::Packet(value) = p {
-                        println!("R: {}", value.stringify());
-                    }
-                } else {
-                    println!("Device closed");
-                    break;
-                }
-            },
-            out = bt_out.next() => {
-                if let Some(value) = out {
-                    ecam.send(EcamDriverPacket::from_vec(value)).await?;
-                } else {
-                    println!("Input closed");
-                    break;
-                }
-            }
-        }
-    }
-
-    Result::Ok(())
-}
+use uuid::Uuid;
 
 async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
     let mut tap = ecam.packet_tap().await?;
@@ -228,12 +193,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             list_recipes(ecam).await?;
         }
         Some(("x-internal-pipe", cmd)) => {
-            pipe(
-                cmd.get_one::<String>("device-name")
-                    .expect("Device name required")
-                    .clone(),
-            )
-            .await?;
+            let device_name = &cmd
+                .get_one::<String>("device-name")
+                .expect("Device name required")
+                .clone();
+            let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
+            let ecam = get_ecam_bt(uuid).await?;
+            pipe_stdin(ecam).await?;
         }
         _ => {}
     }

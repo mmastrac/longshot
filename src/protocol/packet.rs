@@ -27,6 +27,7 @@ impl EcamDriverPacket {
     }
 }
 
+/// A packet that may have a representation attached, allowing us to parse a packet once and only once.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EcamPacket<T> {
     pub representation: Option<T>,
