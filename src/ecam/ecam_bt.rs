@@ -29,7 +29,7 @@ impl EcamBT {
     pub async fn send(&self, data: EcamDriverPacket) -> Result<(), EcamError> {
         let (peripheral, characteristic) = (self.peripheral.clone(), self.characteristic.clone());
         let data = data.packetize();
-        trace_packet!("{{host->device}} {:?}", data);
+        trace_packet!("{{host->device}} {}", hexdump(&data));
         Result::Ok(
             peripheral
                 .write(
