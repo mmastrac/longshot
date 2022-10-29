@@ -13,6 +13,7 @@ use ecam::{
     ecam_scan, get_ecam_bt, get_ecam_subprocess, pipe_stdin, Ecam, EcamDriver, EcamError,
     EcamOutput, EcamStatus,
 };
+use enum_iterator::Sequence;
 use operations::RecipeAccumulator;
 use protocol::*;
 use uuid::Uuid;
@@ -33,12 +34,12 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
         ecam.write_request(Request::AppControl(AppControl::TurnOn))
             .await?;
     }
-    ecam.write_request(Request::ProfileNameRead(1, 3)).await?;
-    tokio::time::sleep(Duration::from_millis(250)).await;
-    ecam.write_request(Request::RecipeNameRead(1, 3)).await?;
-    tokio::time::sleep(Duration::from_millis(250)).await;
-    ecam.write_request(Request::RecipeNameRead(4, 6)).await?;
-    tokio::time::sleep(Duration::from_millis(250)).await;
+    // ecam.write_request(Request::ProfileNameRead(1, 3)).await?;
+    // tokio::time::sleep(Duration::from_millis(250)).await;
+    // ecam.write_request(Request::RecipeNameRead(1, 3)).await?;
+    // tokio::time::sleep(Duration::from_millis(250)).await;
+    // ecam.write_request(Request::RecipeNameRead(4, 6)).await?;
+    // tokio::time::sleep(Duration::from_millis(250)).await;
     // ecam.write(EcamPacket::from_represenation(Request::Profile(
     // ProfileRequest::GetRecipeNames(1, 3),
     // )))
@@ -141,6 +142,16 @@ async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
     Ok(())
 }
 
+fn enum_lookup<T: Sequence + std::fmt::Debug>(s: &str) -> Option<T> {
+    for e in enum_iterator::all() {
+        println!("{:?} {:?}", e, s);
+        if format!("{:?}", e).to_ascii_lowercase() == s.to_ascii_lowercase() {
+            return Some(e);
+        }
+    }
+    None
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     pretty_env_logger::init();
@@ -153,7 +164,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             command!("brew")
                 .about("Brew a coffee")
                 .arg(device_name.clone())
-                .arg(turn_on.clone()),
+                .arg(turn_on.clone())
+                .arg(
+                    arg!(--"beverage" <name>)
+                        .required(true)
+                        .help("The beverage to brew"),
+                )
+                .arg(arg!(--"coffee" <amount>).help("Amount of coffee to brew"))
+                .arg(arg!(--"milk" <amount>).help("Amount of milk to steam/pour"))
+                .arg(arg!(--"hotwater" <amount>).help("Amount of hot water to pour"))
+                .arg(arg!(--"taste" <taste>).help("The strength of the beverage"))
+                .arg(arg!(--"temperature" <temperature>).help("The temperature of the beverage")),
         )
         .subcommand(
             command!("monitor")
@@ -214,6 +235,44 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Waiting for ready...");
             ecam.wait_for_state(ecam::EcamStatus::Ready).await?;
             println!("Waiting for ready done...");
+
+            let beverage: EcamBeverageId =
+                enum_lookup(cmd.get_one::<String>("beverage").unwrap_or(&"".to_owned()))
+                    .expect("Beverage required");
+            let coffee = cmd
+                .get_one::<String>("coffee")
+                .map(|s| s.parse::<u16>().expect("Invalid number"));
+            let milk = cmd
+                .get_one::<String>("milk")
+                .map(|s| s.parse::<u16>().expect("Invalid number"));
+            let hotwater = cmd
+                .get_one::<String>("hotwater")
+                .map(|s| s.parse::<u16>().expect("Invalid number"));
+            let taste: Option<EcamBeverageTaste> =
+                enum_lookup(cmd.get_one::<String>("taste").unwrap_or(&"".to_owned()));
+            let temp: Option<EcamTemperature> = enum_lookup(
+                cmd.get_one::<String>("temperature")
+                    .unwrap_or(&"".to_owned()),
+            );
+
+            println!(
+                "{:?} {:?} {:?} {:?} {:?} {:?}",
+                beverage, coffee, milk, hotwater, taste, temp
+            );
+
+            let recipe = vec![
+                RecipeInfo::new(EcamIngredients::Coffee, 240),
+                RecipeInfo::new(EcamIngredients::Taste, <u8>::from(EcamBeverageTaste::ExtraStrong) as u16)
+            ];
+            let req = Request::BeverageDispensingMode(
+                MachineEnum::Value(beverage),
+                MachineEnum::Value(EcamOperationTrigger::Start),
+                recipe,
+                MachineEnum::Value(EcamBeverageTasteType::Prepare),
+            );
+
+            ecam.write_request(req).await?;
+            monitor(ecam, false).await?;
         }
         Some(("monitor", cmd)) => {
             let turn_on = cmd.get_flag("turn-on");

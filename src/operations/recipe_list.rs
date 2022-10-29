@@ -208,10 +208,10 @@ impl RecipeDetails {
                         v.push(IngredientInfo::Temperature(EcamTemperature::Low))
                     }
                     EcamIngredients::Inversion => {
-                        v.push(IngredientInfo::Inversion(r1.value == 1, r2.min != r2.max))
+                        v.push(IngredientInfo::Inversion(r2.value == 1, r2.min == r2.max))
                     }
                     EcamIngredients::DueXPer => {
-                        v.push(IngredientInfo::Brew2(r1.value == 1, r2.min != r2.max))
+                        v.push(IngredientInfo::Brew2(r2.value == 1, r2.min == r2.max))
                     }
                     _ => {
                         println!("Unknown ingredient {:?}", ingredient)
