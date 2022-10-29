@@ -20,11 +20,9 @@ impl PartialDecode<RecipeInfo> for RecipeInfo {
         let ingredient = <MachineEnum<EcamIngredients>>::partial_decode(input)?;
         if let MachineEnum::Value(known) = ingredient {
             if known.is_wide_encoding().expect("Unknown encoding") {
-                let a = <u8>::partial_decode(input)? as u16;
-                let b = <u8>::partial_decode(input)? as u16;
                 return Some(RecipeInfo {
                     ingredient,
-                    value: (a << 8) | b,
+                    value: <u16>::partial_decode(input)? as u16,
                 });
             } else {
                 return Some(RecipeInfo {
@@ -48,5 +46,40 @@ impl PartialEncode for RecipeInfo {
             out.push((self.value >> 8) as u8);
         }
         out.push(self.value as u8);
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RecipeMinMaxInfo {
+    pub ingredient: MachineEnum<EcamIngredients>,
+    pub min: u16,
+    pub value: u16,
+    pub max: u16,
+}
+
+impl PartialDecode<RecipeMinMaxInfo> for RecipeMinMaxInfo {
+    fn partial_decode(input: &mut &[u8]) -> Option<Self> {
+        let ingredient = <MachineEnum<EcamIngredients>>::partial_decode(input)?;
+        if let MachineEnum::Value(known) = ingredient {
+            if known
+                .is_wide_encoding()
+                .expect(format!("Unknown encoding for {:?}", known).as_str())
+            {
+                return Some(RecipeMinMaxInfo {
+                    ingredient,
+                    min: <u16>::partial_decode(input)?,
+                    value: <u16>::partial_decode(input)?,
+                    max: <u16>::partial_decode(input)?,
+                });
+            } else {
+                return Some(RecipeMinMaxInfo {
+                    ingredient,
+                    min: <u8>::partial_decode(input)? as u16,
+                    value: <u8>::partial_decode(input)? as u16,
+                    max: <u8>::partial_decode(input)? as u16,
+                });
+            }
+        }
+        panic!("Unhandled ingredient {:?}", ingredient);
     }
 }

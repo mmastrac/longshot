@@ -32,6 +32,18 @@ impl EcamOutput {
             None
         }
     }
+
+    /// Takes the underlying packet, if it exists.
+    pub fn take_packet(self) -> Option<Response> {
+        if let Self::Packet(EcamPacket {
+            representation: r, ..
+        }) = self
+        {
+            r
+        } else {
+            None
+        }
+    }
 }
 
 impl From<EcamDriverOutput> for EcamOutput {

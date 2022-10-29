@@ -52,6 +52,7 @@ impl EcamIngredients {
             | EcamIngredients::DueXPer
             | EcamIngredients::IndexLength
             | EcamIngredients::Visible
+            | EcamIngredients::Programmable
             | EcamIngredients::Accessorio => Some(false),
             EcamIngredients::Coffee | EcamIngredients::Milk | EcamIngredients::HotWater => {
                 Some(true)
@@ -138,6 +139,19 @@ pub enum EcamTemperature {
     Mid = 1,
     High = 2,
     VeryHigh = 3,
+}
+
+#[repr(u8)]
+#[derive(
+    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+)]
+pub enum EcamBeverageTaste {
+    Preground = 0,
+    ExtraMild = 1,
+    Mild = 2,
+    Normal = 3,
+    Strong = 4,
+    ExtraStrong = 5,
 }
 
 #[repr(u8)]

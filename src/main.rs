@@ -5,6 +5,7 @@ use clap::{arg, command};
 
 mod ecam;
 mod logging;
+mod operations;
 mod prelude;
 mod protocol;
 
@@ -12,6 +13,7 @@ use ecam::{
     ecam_scan, get_ecam_bt, get_ecam_subprocess, pipe_stdin, Ecam, EcamDriver, EcamError,
     EcamOutput, EcamStatus,
 };
+use operations::RecipeAccumulator;
 use protocol::*;
 use uuid::Uuid;
 
@@ -62,41 +64,79 @@ async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
 
     // Get the tap we'll use for reading responses
     let mut tap = ecam.packet_tap().await?;
-    let mut m = HashMap::new();
-    for beverage in enum_iterator::all() {
-        ecam.write_request(Request::RecipeQuantityRead(1, MachineEnum::Value(beverage)))
-            .await?;
-
-        let now = std::time::Instant::now();
-        'outer: while now.elapsed() < Duration::from_millis(500) {
-            match tokio::time::timeout(Duration::from_millis(50), tap.next()).await {
-                Err(_) => {}
-                Ok(None) => {}
-                Ok(Some(x)) => {
-                    println!("{:?}", x);
-                    if let Some(Response::RecipeQuantityRead(_, recipe, x)) = x.get_packet() {
-                        if *recipe == MachineEnum::Value(beverage) {
-                            m.insert(beverage, x.clone());
-                            break 'outer;
+    let mut recipes = RecipeAccumulator::new();
+    for i in 0..3 {
+        if i == 0 {
+            println!("Fetching recipes...");
+        } else {
+            if recipes.get_remaining_beverages().len() > 0 {
+                println!(
+                    "Fetching potentially missing recipes... {:?}",
+                    recipes.get_remaining_beverages()
+                );
+            }
+        }
+        'outer: for beverage in recipes.get_remaining_beverages() {
+            'inner: for packet in vec![
+                Request::RecipeMinMaxSync(MachineEnum::Value(beverage)),
+                Request::RecipeQuantityRead(1, MachineEnum::Value(beverage)),
+            ] {
+                let request_id = packet.ecam_request_id();
+                ecam.write_request(packet).await?;
+                let now = std::time::Instant::now();
+                while now.elapsed() < Duration::from_millis(500) {
+                    match tokio::time::timeout(Duration::from_millis(50), tap.next()).await {
+                        Err(_) => {}
+                        Ok(None) => {}
+                        Ok(Some(x)) => {
+                            if let Some(packet) = x.take_packet() {
+                                let response_id = packet.ecam_request_id();
+                                recipes.accumulate_packet(beverage, packet);
+                                // If this recipe is totally complete, move to the next one
+                                if recipes.is_complete(beverage) {
+                                    continue 'outer;
+                                }
+                                // If we got a response for the given request, move to the next packet/beverage
+                                if response_id == request_id {
+                                    continue 'inner;
+                                }
+                            }
                         }
-                    }
-                    if x.get_packet().is_some() {
-                        println!("Spurious packet? {:?} {:?}", x, beverage)
                     }
                 }
             }
         }
     }
 
-    for beverage in enum_iterator::all() {
-        let response = m.get(&beverage);
-        if let Some(response) = response {
-            println!("{:?}", beverage);
-            for r in response.iter() {
-                println!("  {:?}: {}", r.ingredient, r.value);
-            }
-        }
+    let list = recipes.take();
+    for recipe in list.recipes {
+        println!("{:?} {:?}", recipe.beverage, recipe.fetch_ingredients());
     }
+    // 'outer: for beverage in enum_iterator::all() {
+    //     let response1 = m.get(&beverage);
+    //     println!("{:?}", response1);
+    //     let response = m2.get(&beverage);
+    //     let mut s = format!("brew {:?}", beverage).to_owned();
+    //     if let Some(response) = response {
+    //         if response.is_empty() {
+    //             continue;
+    //         }
+    //         for r in response.iter() {
+    //             if r.ingredient == MachineEnum::Value(EcamIngredients::Visible) && r.value == 0 {
+    //                 continue 'outer;
+    //             }
+    //             if matches!(r.ingredient.into(), Some(EcamIngredients::Visible | EcamIngredients::Programmable | EcamIngredients::IndexLength | EcamIngredients::Accessorio)) {
+    //                 continue;
+    //             }
+    //             if r.min == 0 && r.max == 1 {
+    //                 s += &format!(" --{} (true|false)", format!("{:?}", r.ingredient).to_ascii_lowercase());
+    //             } else {
+    //                 s += &format!(" --{} ({}<={}<={})", format!("{:?}", r.ingredient).to_ascii_lowercase(), r.min, r.value, r.max);
+    //             }
+    //         }
+    //         println!("{}", s);
+    //     }
+    // }
 
     Ok(())
 }

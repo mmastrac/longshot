@@ -26,6 +26,13 @@ impl PartialEncode for u8 {
     }
 }
 
+impl PartialEncode for u16 {
+    fn partial_encode(&self, out: &mut Vec<u8>) {
+        out.push((*self >> 8) as u8);
+        out.push(*self as u8);
+    }
+}
+
 impl<T: PartialEncode> PartialEncode for Vec<T> {
     fn partial_encode(&self, out: &mut Vec<u8>) {
         for t in self.iter() {
@@ -78,6 +85,14 @@ impl PartialDecode<u8> for u8 {
     }
 }
 
+impl PartialDecode<u16> for u16 {
+    fn partial_decode(input: &mut &[u8]) -> Option<u16> {
+        let a = <u8>::partial_decode(input)? as u16;
+        let b = <u8>::partial_decode(input)? as u16;
+        Some((a << 8) | b)
+    }
+}
+
 macro_rules! packet_definition {
     (
         $(
@@ -117,12 +132,28 @@ macro_rules! packet_definition {
             }
         }
 
+        impl Request {
+            pub fn ecam_request_id(&self) -> EcamRequestId {
+                match self {
+                    $( Self::$name(..) => { EcamRequestId::$name } )*
+                }
+            }
+        }
+
         #[allow(dead_code)]
         #[derive(Clone, Debug, Eq, PartialEq)]
         pub enum Response {
             $(
                 $name ( $($resp_type),* ),
             )*
+        }
+
+        impl Response {
+            pub fn ecam_request_id(&self) -> EcamRequestId {
+                match self {
+                    $( Self::$name(..) => { EcamRequestId::$name } )*
+                }
+            }
         }
 
         impl PartialDecode<Response> for Response {
@@ -178,7 +209,7 @@ packet_definition!(
     RecipeNameRead(start u8, end u8) => (names Vec<WideStringWithIcon>),
     RecipeNameWrite() => (),
     SetFavoriteBeverages(profile u8, recipies Vec<u8>) => (),
-    RecipeMinMaxSync(recipe u8) => (),
+    RecipeMinMaxSync(recipe MachineEnum<EcamBeverageId>) => (recipe MachineEnum<EcamBeverageId>, bounds Vec<RecipeMinMaxInfo>),
     PinSet() => (),
     BeanSystemSelect() => (),
     BeanSystemRead() => (),
