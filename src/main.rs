@@ -10,8 +10,8 @@ mod prelude;
 mod protocol;
 
 use ecam::{
-    ecam_scan, get_ecam_bt, get_ecam_subprocess, pipe_stdin, Ecam, EcamDriver, EcamError,
-    EcamOutput, EcamStatus,
+    ecam_scan, get_ecam_bt, get_ecam_simulator, get_ecam_subprocess, pipe_stdin, Ecam, EcamDriver,
+    EcamError, EcamOutput, EcamStatus,
 };
 use enum_iterator::Sequence;
 use operations::RecipeAccumulator;
@@ -262,7 +262,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let recipe = vec![
                 RecipeInfo::new(EcamIngredients::Coffee, 240),
-                RecipeInfo::new(EcamIngredients::Taste, <u8>::from(EcamBeverageTaste::ExtraStrong) as u16)
+                RecipeInfo::new(
+                    EcamIngredients::Taste,
+                    <u8>::from(EcamBeverageTaste::ExtraStrong) as u16,
+                ),
             ];
             let req = Request::BeverageDispensingMode(
                 MachineEnum::Value(beverage),
@@ -303,9 +306,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .get_one::<String>("device-name")
                 .expect("Device name required")
                 .clone();
-            let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
-            let ecam = get_ecam_bt(uuid).await?;
-            pipe_stdin(ecam).await?;
+            if device_name == "simulate" {
+                let ecam = get_ecam_simulator().await?;
+                pipe_stdin(ecam).await?;
+            } else {
+                let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
+                let ecam = get_ecam_bt(uuid).await?;
+                pipe_stdin(ecam).await?;
+            }
         }
         _ => {}
     }

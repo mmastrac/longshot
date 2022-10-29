@@ -31,3 +31,18 @@ impl PartialDecode<MonitorV2Response> for MonitorV2Response {
         })
     }
 }
+
+impl PartialEncode for MonitorV2Response {
+    fn partial_encode(&self, out: &mut Vec<u8>) {
+        out.push(self.accessory.into());
+        out.push(self.akey0);
+        out.push(self.akey1);
+        out.push(self.akey2);
+        out.push(self.akey3);
+        out.push(self.state.into());
+        out.push(self.progress.into());
+        out.push(self.percentage.into());
+        out.push(self.load0);
+        out.push(self.load1);
+    }
+}
