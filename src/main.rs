@@ -17,7 +17,7 @@ use ecam::{
     EcamError, EcamOutput, EcamStatus,
 };
 use enum_iterator::Sequence;
-use operations::RecipeAccumulator;
+use operations::{RecipeAccumulator, RecipeList};
 use protocol::*;
 use uuid::Uuid;
 
@@ -33,7 +33,7 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
         }
     });
 
-    let mut display = ColouredStatusDisplay::new(80);
+    let mut display: Box<dyn StatusDisplay> = Box::new(ColouredStatusDisplay::new(80));
     let mut state = ecam.current_state().await?;
     display.display(state);
     if turn_on && state == EcamStatus::StandBy {
@@ -58,13 +58,17 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
     Ok(())
 }
 
-async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
+async fn list_recipies_for(ecam: Ecam, recipes: Option<Vec<EcamBeverageId>>) -> Result<RecipeList, EcamError> {
     // Wait for device to settle
     ecam.wait_for_connection().await?;
 
     // Get the tap we'll use for reading responses
     let mut tap = ecam.packet_tap().await?;
-    let mut recipes = RecipeAccumulator::new();
+    let mut recipes = if let Some(recipes) = recipes { 
+        RecipeAccumulator::limited_to(recipes)
+    } else {
+        RecipeAccumulator::new()
+    };
     for i in 0..3 {
         if i == 0 {
             println!("Fetching recipes...");
@@ -107,8 +111,12 @@ async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
             }
         }
     }
+    Ok(recipes.take())
+}
 
-    let list = recipes.take();
+async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
+    let list = list_recipies_for(ecam, None).await?;
+
     for recipe in list.recipes {
         println!("{:?} {:?}", recipe.beverage, recipe.fetch_ingredients());
     }
@@ -148,7 +156,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .arg(arg!(--"milk" <amount>).help("Amount of milk to steam/pour"))
                 .arg(arg!(--"hotwater" <amount>).help("Amount of hot water to pour"))
                 .arg(arg!(--"taste" <taste>).help("The strength of the beverage"))
-                .arg(arg!(--"temperature" <temperature>).help("The temperature of the beverage")),
+                .arg(arg!(--"temperature" <temperature>).help("The temperature of the beverage"))
+                .arg(arg!(--"allow-off").hide(true).help("Allow brewing while machine is off"))
+                .arg(arg!(--"skip-brew").hide(true).help("Does everything except actually brew the beverage")),
         )
         .subcommand(
             command!("monitor")
@@ -179,6 +189,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(("brew", cmd)) => {
             println!("{:?}", cmd);
             let turn_on = cmd.get_flag("turn-on");
+            let skip_brew = cmd.get_flag("skip-brew");
+            let allow_off = cmd.get_flag("allow-off");
             let device_name = &cmd
                 .get_one::<String>("device-name")
                 .expect("Device name required")
@@ -188,27 +200,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             match ecam.current_state().await? {
                 EcamStatus::Ready => {}
                 EcamStatus::StandBy => {
-                    if !turn_on {
+                    if allow_off {
+                        println!("Machine is off, but --allow-off will allow us to proceed")
+                    } else {
+                        if !turn_on {
+                            println!(
+                                "Machine is not on, pass --turn-on to turn it on before operation"
+                            );
+                            return Ok(());
+                        }
+                        println!("Waiting for the machine to turn on...");
+                        ecam.write_request(Request::AppControl(AppControl::TurnOn))
+                            .await?;
+                        ecam.wait_for_state(ecam::EcamStatus::Ready).await?;
+                    }
+                }
+                s => {
+                    {
                         println!(
-                            "Machine is not on, pass --turn-on to turn it on before operation"
+                            "Machine is in state {:?}, so we will cowardly refuse to brew coffee",
+                            s
                         );
                         return Ok(());
                     }
-                    ecam.write_request(Request::AppControl(AppControl::TurnOn))
-                        .await?;
-                    ecam.wait_for_state(ecam::EcamStatus::Ready).await?;
-                }
-                s => {
-                    println!(
-                        "Machine is in state {:?}, so we will cowardly refuse to brew coffee",
-                        s
-                    );
-                    return Ok(());
                 }
             }
-            println!("Waiting for ready...");
-            ecam.wait_for_state(ecam::EcamStatus::Ready).await?;
-            println!("Waiting for ready done...");
 
             let beverage: EcamBeverageId =
                 enum_lookup(cmd.get_one::<String>("beverage").unwrap_or(&"".to_owned()))
@@ -234,6 +250,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 beverage, coffee, milk, hotwater, taste, temp
             );
 
+            println!("Fetching recipe for {:?}...", beverage);
+            let recipe_list = list_recipies_for(ecam.clone(), Some(vec![beverage])).await?;
+            println!("{:?}", recipe_list);
             let recipe = vec![
                 RecipeInfo::new(EcamIngredients::Coffee, 240),
                 RecipeInfo::new(
@@ -248,7 +267,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 MachineEnum::Value(EcamBeverageTasteType::Prepare),
             );
 
-            ecam.write_request(req).await?;
+            if skip_brew {
+                println!("--skip-brew was passed, so we aren't going to brew anything")
+            } else {
+                ecam.write_request(req).await?;
+            }
             monitor(ecam, false).await?;
         }
         Some(("monitor", cmd)) => {

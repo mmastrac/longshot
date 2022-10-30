@@ -23,6 +23,14 @@ impl RecipeAccumulator {
         }
     }
 
+    pub fn limited_to(recipes: Vec<EcamBeverageId>) -> Self{
+        RecipeAccumulator {
+            list: recipes,
+            recipe: HashMap::new(),
+            recipe_min_max: HashMap::new(),
+        }
+    }
+
     pub fn get_remaining_beverages(&self) -> Vec<EcamBeverageId> {
         let mut remaining = vec![];
         for beverage in self.list.iter() {
