@@ -58,13 +58,13 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
     Ok(())
 }
 
-async fn list_recipies_for(ecam: Ecam, recipes: Option<Vec<EcamBeverageId>>) -> Result<RecipeList, EcamError> {
-    // Wait for device to settle
-    ecam.wait_for_connection().await?;
-
+async fn list_recipies_for(
+    ecam: Ecam,
+    recipes: Option<Vec<EcamBeverageId>>,
+) -> Result<RecipeList, EcamError> {
     // Get the tap we'll use for reading responses
     let mut tap = ecam.packet_tap().await?;
-    let mut recipes = if let Some(recipes) = recipes { 
+    let mut recipes = if let Some(recipes) = recipes {
         RecipeAccumulator::limited_to(recipes)
     } else {
         RecipeAccumulator::new()
@@ -115,6 +115,8 @@ async fn list_recipies_for(ecam: Ecam, recipes: Option<Vec<EcamBeverageId>>) -> 
 }
 
 async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
+    // Wait for device to settle
+    ecam.wait_for_connection().await?;
     let list = list_recipies_for(ecam, None).await?;
 
     for recipe in list.recipes {
@@ -157,8 +159,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .arg(arg!(--"hotwater" <amount>).help("Amount of hot water to pour"))
                 .arg(arg!(--"taste" <taste>).help("The strength of the beverage"))
                 .arg(arg!(--"temperature" <temperature>).help("The temperature of the beverage"))
-                .arg(arg!(--"allow-off").hide(true).help("Allow brewing while machine is off"))
-                .arg(arg!(--"skip-brew").hide(true).help("Does everything except actually brew the beverage")),
+                .arg(
+                    arg!(--"allow-off")
+                        .hide(true)
+                        .help("Allow brewing while machine is off"),
+                )
+                .arg(
+                    arg!(--"skip-brew")
+                        .hide(true)
+                        .help("Does everything except actually brew the beverage"),
+                ),
         )
         .subcommand(
             command!("monitor")
@@ -195,6 +205,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .get_one::<String>("device-name")
                 .expect("Device name required")
                 .clone();
+
+            let beverage: EcamBeverageId =
+                enum_lookup(cmd.get_one::<String>("beverage").unwrap_or(&"".to_owned()))
+                    .expect("Beverage required");
+            let coffee = cmd
+                .get_one::<String>("coffee")
+                .map(|s| s.parse::<u16>().expect("Invalid number"));
+            let milk = cmd
+                .get_one::<String>("milk")
+                .map(|s| s.parse::<u16>().expect("Invalid number"));
+            let hotwater = cmd
+                .get_one::<String>("hotwater")
+                .map(|s| s.parse::<u16>().expect("Invalid number"));
+            let taste: Option<EcamBeverageTaste> =
+                enum_lookup(cmd.get_one::<String>("taste").unwrap_or(&"".to_owned()));
+            let temp: Option<EcamTemperature> = enum_lookup(
+                cmd.get_one::<String>("temperature")
+                    .unwrap_or(&"".to_owned()),
+            );
+
             let ecam: Box<dyn EcamDriver> = Box::new(get_ecam_subprocess(device_name).await?);
             let ecam = Ecam::new(ecam).await;
             match ecam.current_state().await? {
@@ -216,34 +246,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
                 s => {
-                    {
-                        println!(
-                            "Machine is in state {:?}, so we will cowardly refuse to brew coffee",
-                            s
-                        );
-                        return Ok(());
-                    }
+                    println!(
+                        "Machine is in state {:?}, so we will cowardly refuse to brew coffee",
+                        s
+                    );
+                    return Ok(());
                 }
             }
-
-            let beverage: EcamBeverageId =
-                enum_lookup(cmd.get_one::<String>("beverage").unwrap_or(&"".to_owned()))
-                    .expect("Beverage required");
-            let coffee = cmd
-                .get_one::<String>("coffee")
-                .map(|s| s.parse::<u16>().expect("Invalid number"));
-            let milk = cmd
-                .get_one::<String>("milk")
-                .map(|s| s.parse::<u16>().expect("Invalid number"));
-            let hotwater = cmd
-                .get_one::<String>("hotwater")
-                .map(|s| s.parse::<u16>().expect("Invalid number"));
-            let taste: Option<EcamBeverageTaste> =
-                enum_lookup(cmd.get_one::<String>("taste").unwrap_or(&"".to_owned()));
-            let temp: Option<EcamTemperature> = enum_lookup(
-                cmd.get_one::<String>("temperature")
-                    .unwrap_or(&"".to_owned()),
-            );
 
             println!(
                 "{:?} {:?} {:?} {:?} {:?} {:?}",
@@ -252,27 +261,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             println!("Fetching recipe for {:?}...", beverage);
             let recipe_list = list_recipies_for(ecam.clone(), Some(vec![beverage])).await?;
-            println!("{:?}", recipe_list);
-            let recipe = vec![
-                RecipeInfo::new(EcamIngredients::Coffee, 240),
-                RecipeInfo::new(
-                    EcamIngredients::Taste,
-                    <u8>::from(EcamBeverageTaste::ExtraStrong) as u16,
-                ),
-            ];
-            let req = Request::BeverageDispensingMode(
-                MachineEnum::Value(beverage),
-                MachineEnum::Value(EcamOperationTrigger::Start),
-                recipe,
-                MachineEnum::Value(EcamBeverageTasteType::Prepare),
-            );
+            let recipe = recipe_list.find(beverage);
+            if let Some(recipe) = recipe {
+                println!("{:?}", recipe.fetch_ingredients());
+                let recipe = vec![
+                    RecipeInfo::new(EcamIngredients::Coffee, 240),
+                    RecipeInfo::new(
+                        EcamIngredients::Taste,
+                        <u8>::from(EcamBeverageTaste::ExtraStrong) as u16,
+                    ),
+                ];
+                let req = Request::BeverageDispensingMode(
+                    MachineEnum::Value(beverage),
+                    MachineEnum::Value(EcamOperationTrigger::Start),
+                    recipe,
+                    MachineEnum::Value(EcamBeverageTasteType::Prepare),
+                );
 
-            if skip_brew {
-                println!("--skip-brew was passed, so we aren't going to brew anything")
+                if skip_brew {
+                    println!("--skip-brew was passed, so we aren't going to brew anything")
+                } else {
+                    ecam.write_request(req).await?;
+                }
+                monitor(ecam, false).await?;
             } else {
-                ecam.write_request(req).await?;
+                println!("I wasn't able to fetch the recipe for {:?}. Perhaps this machine can't make it?", beverage);
             }
-            monitor(ecam, false).await?;
         }
         Some(("monitor", cmd)) => {
             let turn_on = cmd.get_flag("turn-on");

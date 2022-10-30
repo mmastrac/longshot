@@ -23,7 +23,7 @@ impl RecipeAccumulator {
         }
     }
 
-    pub fn limited_to(recipes: Vec<EcamBeverageId>) -> Self{
+    pub fn limited_to(recipes: Vec<EcamBeverageId>) -> Self {
         RecipeAccumulator {
             list: recipes,
             recipe: HashMap::new(),
@@ -130,6 +130,17 @@ impl RecipeAccumulator {
 #[derive(Clone, Debug)]
 pub struct RecipeList {
     pub recipes: Vec<RecipeDetails>,
+}
+
+impl RecipeList {
+    pub fn find(&self, beverage: EcamBeverageId) -> Option<&RecipeDetails> {
+        for r in self.recipes.iter() {
+            if r.beverage == beverage {
+                return Some(r);
+            }
+        }
+        None
+    }
 }
 
 #[derive(Clone, Debug)]
