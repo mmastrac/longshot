@@ -34,6 +34,7 @@ impl BasicDisplay {
             EcamStatus::Ready => ("Ready", None),
             EcamStatus::StandBy => ("Standby", None),
             EcamStatus::TurningOn(percent) => ("Turning on...", Some(percent)),
+            EcamStatus::ShuttingDown(percent) => ("Shutting down...", Some(percent)),
             EcamStatus::Busy(percent) => ("Dispensing...", Some(percent)),
         };
 

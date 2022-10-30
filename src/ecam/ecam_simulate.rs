@@ -53,7 +53,7 @@ fn make_simulated_response(state: EcamMachineState, progress: u8, percentage: u8
 }
 
 async fn send(tx: &tokio::sync::mpsc::Sender<Vec<u8>>, v: Vec<u8>) -> Result<(), EcamError> {
-    Ok(tx.send(v).await.map_err(|x| EcamError::Unknown)?)
+    Ok(tx.send(v).await.map_err(|_| EcamError::Unknown)?)
 }
 
 pub async fn get_ecam_simulator() -> Result<impl EcamDriver, EcamError> {
@@ -61,7 +61,7 @@ pub async fn get_ecam_simulator() -> Result<impl EcamDriver, EcamError> {
     const DELAY: Duration = Duration::from_millis(250);
     tokio::spawn(async move {
         // Start in standby
-        for i in 0..5 {
+        for _ in 0..5 {
             send(
                 &tx,
                 make_simulated_response(EcamMachineState::StandBy, 0, 0),
@@ -81,7 +81,7 @@ pub async fn get_ecam_simulator() -> Result<impl EcamDriver, EcamError> {
         }
 
         // Ready
-        for i in 0..3 {
+        for _ in 0..3 {
             send(
                 &tx,
                 make_simulated_response(EcamMachineState::ReadyOrDispensing, 0, 0),
@@ -101,7 +101,7 @@ pub async fn get_ecam_simulator() -> Result<impl EcamDriver, EcamError> {
         }
 
         // Ready forever
-        for i in 0..100 {
+        for _ in 0..100 {
             send(
                 &tx,
                 make_simulated_response(EcamMachineState::ReadyOrDispensing, 0, 0),

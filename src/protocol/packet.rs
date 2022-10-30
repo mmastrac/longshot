@@ -43,6 +43,7 @@ pub struct EcamPacket<T> {
 }
 
 impl<T> EcamPacket<T> {
+    #[cfg(test)]
     pub fn from_raw(input: &[u8]) -> EcamPacket<T> {
         let bytes = EcamDriverPacket::from_vec(input.to_vec());
         EcamPacket {

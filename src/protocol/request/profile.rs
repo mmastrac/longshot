@@ -7,6 +7,7 @@ pub struct WideStringWithIcon {
 }
 
 impl WideStringWithIcon {
+    #[cfg(test)]
     pub fn new(name: &str, icon: u8) -> Self {
         WideStringWithIcon {
             name: name.to_owned(),

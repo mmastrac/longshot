@@ -10,6 +10,7 @@ use crate::protocol::*;
 pub enum EcamStatus {
     StandBy,
     TurningOn(usize),
+    ShuttingDown(usize),
     Ready,
     Busy(usize),
 }
@@ -74,6 +75,9 @@ impl EcamStatus {
         }
         if state.state == EcamMachineState::TurningOn {
             return EcamStatus::TurningOn(state.percentage as usize);
+        }
+        if state.state == EcamMachineState::ShuttingDown {
+            return EcamStatus::ShuttingDown(state.percentage as usize);
         }
         if state.state == EcamMachineState::ReadyOrDispensing && state.progress == 0 {
             return EcamStatus::Ready;
