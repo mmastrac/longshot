@@ -90,11 +90,11 @@ pub async fn get_ecam_simulator() -> Result<impl EcamDriver, EcamError> {
             tokio::time::sleep(DELAY).await;
         }
 
-        // Turning on
-        for i in 0..10 {
+        // Dispensing
+        for i in 0..25 {
             send(
                 &tx,
-                make_simulated_response(EcamMachineState::ReadyOrDispensing, i, i * 10),
+                make_simulated_response(EcamMachineState::ReadyOrDispensing, i, i * 4),
             )
             .await?;
             tokio::time::sleep(DELAY).await;

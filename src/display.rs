@@ -1,7 +1,84 @@
 use crate::ecam::EcamStatus;
+use colored::*;
 use std::io::Write;
 
-pub struct BasicDisplay {
+pub trait StatusDisplay {
+    fn display(&mut self, state: EcamStatus);
+}
+
+pub struct ColouredStatusDisplay {
+    activity: usize,
+    width: usize,
+}
+
+impl ColouredStatusDisplay {
+    pub fn new(width: usize) -> Self {
+        Self { activity: 0, width }
+    }
+}
+
+impl StatusDisplay for ColouredStatusDisplay {
+    fn display(&mut self, state: EcamStatus) {
+        const BUBBLE_CHARS: [char; 5] = ['⋅', '∘', '°', 'º', '⚬'];
+
+        self.activity += 1;
+
+        let (percent, status_text) = match state {
+            EcamStatus::Ready => (0, format!("✅ Ready")),
+            EcamStatus::StandBy => (0, format!("💤 Standby")),
+            EcamStatus::Busy(percent) => (percent, format!("☕ Dispensing... ({}%)", percent)),
+            EcamStatus::TurningOn(percent) => (percent, format!("💡 Turning on... ({}%)", percent)),
+            EcamStatus::ShuttingDown(percent) => {
+                (percent, format!("🛏 Shutting down... ({}%)", percent))
+            }
+        };
+
+        let mut status = " ".to_owned() + &status_text;
+        let pad = " ".repeat(self.width - status.len());
+        status = status + &pad;
+
+        if percent == 0 {
+            print!(
+                "\r{}",
+                status.truecolor(153, 141, 109).on_truecolor(92, 69, 6)
+            );
+        } else {
+            let status = status.chars().collect::<Vec<char>>();
+
+            let (left, right) = status.split_at((percent * status.len()) / 100);
+            let (mid, right) = right.split_at(2);
+            let mut left = left.to_owned();
+            for i in 0..2 {
+                let random = |n| (self.activity * 321 + 677 * i) % n;
+                // Pick a spot at random
+                let pos = random(left.len());
+                if pos < status_text.len() + 3 {
+                    continue;
+                }
+                let (a, b) = left.split_at(pos);
+                if b[0] == ' ' {
+                    let mut temp = a.to_owned();
+                    temp.push(BUBBLE_CHARS[random(BUBBLE_CHARS.len())]);
+                    temp.extend_from_slice(&b[1..]);
+                    left = temp;
+                }
+            }
+
+            print!(
+                "\r{}{}{}",
+                left.iter()
+                    .collect::<String>()
+                    .truecolor(183, 161, 129)
+                    .on_truecolor(92, 69, 6),
+                mid.iter().collect::<String>().black().on_white(),
+                right.iter().collect::<String>().white().on_black()
+            );
+        }
+        std::io::stdout().flush().unwrap();
+    }
+}
+
+pub struct BasicStatusDisplay {
     activity: u8,
     width: usize,
 }
@@ -24,12 +101,14 @@ fn make_bar(s: &str, width: usize, percent: Option<usize>) -> String {
     }
 }
 
-impl BasicDisplay {
+impl BasicStatusDisplay {
     pub fn new(width: usize) -> Self {
-        BasicDisplay { activity: 0, width }
+        Self { activity: 0, width }
     }
+}
 
-    pub fn display(&mut self, state: EcamStatus) {
+impl StatusDisplay for BasicStatusDisplay {
+    fn display(&mut self, state: EcamStatus) {
         let (bar, percent) = match state {
             EcamStatus::Ready => ("Ready", None),
             EcamStatus::StandBy => ("Standby", None),

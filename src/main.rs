@@ -11,7 +11,7 @@ mod operations;
 mod prelude;
 mod protocol;
 
-use display::BasicDisplay;
+use display::{BasicStatusDisplay, ColouredStatusDisplay, StatusDisplay};
 use ecam::{
     ecam_scan, get_ecam_bt, get_ecam_simulator, get_ecam_subprocess, pipe_stdin, Ecam, EcamDriver,
     EcamError, EcamOutput, EcamStatus,
@@ -33,7 +33,7 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
         }
     });
 
-    let mut display = BasicDisplay::new(60);
+    let mut display = ColouredStatusDisplay::new(80);
     let mut state = ecam.current_state().await?;
     display.display(state);
     if turn_on && state == EcamStatus::StandBy {
