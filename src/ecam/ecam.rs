@@ -9,8 +9,9 @@ use crate::protocol::*;
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum EcamStatus {
     StandBy,
+    TurningOn(usize),
     Ready,
-    Busy,
+    Busy(usize),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -71,10 +72,13 @@ impl EcamStatus {
         if state.state == EcamMachineState::StandBy {
             return EcamStatus::StandBy;
         }
+        if state.state == EcamMachineState::TurningOn {
+            return EcamStatus::TurningOn(state.percentage as usize);
+        }
         if state.state == EcamMachineState::ReadyOrDispensing && state.progress == 0 {
             return EcamStatus::Ready;
         }
-        EcamStatus::Busy
+        EcamStatus::Busy(state.percentage as usize)
     }
 
     fn matches(&self, state: &MonitorV2Response) -> bool {
