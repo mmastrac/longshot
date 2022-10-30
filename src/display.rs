@@ -36,17 +36,22 @@ impl StatusDisplay for ColouredStatusDisplay {
         let mut status = " ".to_owned() + &status_text;
         let pad = " ".repeat(self.width - status.len());
         status = status + &pad;
-
+        let temp_vec = vec![];
         if percent == 0 {
             print!(
-                "\r{}",
+                "\r▐{}▌ ",
                 status.truecolor(153, 141, 109).on_truecolor(92, 69, 6)
             );
         } else {
             let status = status.chars().collect::<Vec<char>>();
 
+            // This isn't super pretty but it's visually what we need and Good Enough™️
             let (left, right) = status.split_at((percent * status.len()) / 100);
-            let (mid, right) = right.split_at(2);
+            let (mid, right) = if right.len() <= 2 {
+                (right, temp_vec.as_slice())
+            } else {
+                right.split_at(2)
+            };
             let mut left = left.to_owned();
             for i in 0..2 {
                 let random = |n| (self.activity * 321 + 677 * i) % n;
@@ -65,7 +70,7 @@ impl StatusDisplay for ColouredStatusDisplay {
             }
 
             print!(
-                "\r{}{}{}",
+                "\r▐{}{}{}▌ ",
                 left.iter()
                     .collect::<String>()
                     .truecolor(183, 161, 129)
