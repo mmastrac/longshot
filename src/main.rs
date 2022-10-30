@@ -34,20 +34,6 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
         ecam.write_request(Request::AppControl(AppControl::TurnOn))
             .await?;
     }
-    // ecam.write_request(Request::ProfileNameRead(1, 3)).await?;
-    // tokio::time::sleep(Duration::from_millis(250)).await;
-    // ecam.write_request(Request::RecipeNameRead(1, 3)).await?;
-    // tokio::time::sleep(Duration::from_millis(250)).await;
-    // ecam.write_request(Request::RecipeNameRead(4, 6)).await?;
-    // tokio::time::sleep(Duration::from_millis(250)).await;
-    // ecam.write(EcamPacket::from_represenation(Request::Profile(
-    // ProfileRequest::GetRecipeNames(1, 3),
-    // )))
-    // .await?;
-    // tokio::time::sleep(Duration::from_millis(250)).await;
-    // ecam.write(EcamPacket::from_undecodeable_bytes(&[176, 0xf0, 1]))
-    //     .await?;
-    // tokio::time::sleep(Duration::from_millis(250)).await;
 
     loop {
         // Poll for current state
@@ -113,31 +99,6 @@ async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
     for recipe in list.recipes {
         println!("{:?} {:?}", recipe.beverage, recipe.fetch_ingredients());
     }
-    // 'outer: for beverage in enum_iterator::all() {
-    //     let response1 = m.get(&beverage);
-    //     println!("{:?}", response1);
-    //     let response = m2.get(&beverage);
-    //     let mut s = format!("brew {:?}", beverage).to_owned();
-    //     if let Some(response) = response {
-    //         if response.is_empty() {
-    //             continue;
-    //         }
-    //         for r in response.iter() {
-    //             if r.ingredient == MachineEnum::Value(EcamIngredients::Visible) && r.value == 0 {
-    //                 continue 'outer;
-    //             }
-    //             if matches!(r.ingredient.into(), Some(EcamIngredients::Visible | EcamIngredients::Programmable | EcamIngredients::IndexLength | EcamIngredients::Accessorio)) {
-    //                 continue;
-    //             }
-    //             if r.min == 0 && r.max == 1 {
-    //                 s += &format!(" --{} (true|false)", format!("{:?}", r.ingredient).to_ascii_lowercase());
-    //             } else {
-    //                 s += &format!(" --{} ({}<={}<={})", format!("{:?}", r.ingredient).to_ascii_lowercase(), r.min, r.value, r.max);
-    //             }
-    //         }
-    //         println!("{}", s);
-    //     }
-    // }
 
     Ok(())
 }
