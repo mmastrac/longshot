@@ -17,7 +17,7 @@ use ecam::{
     EcamError, EcamOutput, EcamStatus,
 };
 use enum_iterator::Sequence;
-use operations::{RecipeAccumulator, RecipeList};
+use operations::{check_ingredients, list_recipies_for, BrewIngredients};
 use protocol::*;
 use uuid::Uuid;
 
@@ -58,62 +58,6 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
     Ok(())
 }
 
-async fn list_recipies_for(
-    ecam: Ecam,
-    recipes: Option<Vec<EcamBeverageId>>,
-) -> Result<RecipeList, EcamError> {
-    // Get the tap we'll use for reading responses
-    let mut tap = ecam.packet_tap().await?;
-    let mut recipes = if let Some(recipes) = recipes {
-        RecipeAccumulator::limited_to(recipes)
-    } else {
-        RecipeAccumulator::new()
-    };
-    for i in 0..3 {
-        if i == 0 {
-            println!("Fetching recipes...");
-        } else {
-            if recipes.get_remaining_beverages().len() > 0 {
-                println!(
-                    "Fetching potentially missing recipes... {:?}",
-                    recipes.get_remaining_beverages()
-                );
-            }
-        }
-        'outer: for beverage in recipes.get_remaining_beverages() {
-            'inner: for packet in vec![
-                Request::RecipeMinMaxSync(MachineEnum::Value(beverage)),
-                Request::RecipeQuantityRead(1, MachineEnum::Value(beverage)),
-            ] {
-                let request_id = packet.ecam_request_id();
-                ecam.write_request(packet).await?;
-                let now = std::time::Instant::now();
-                while now.elapsed() < Duration::from_millis(500) {
-                    match tokio::time::timeout(Duration::from_millis(50), tap.next()).await {
-                        Err(_) => {}
-                        Ok(None) => {}
-                        Ok(Some(x)) => {
-                            if let Some(packet) = x.take_packet() {
-                                let response_id = packet.ecam_request_id();
-                                recipes.accumulate_packet(beverage, packet);
-                                // If this recipe is totally complete, move to the next one
-                                if recipes.is_complete(beverage) {
-                                    continue 'outer;
-                                }
-                                // If we got a response for the given request, move to the next packet/beverage
-                                if response_id == request_id {
-                                    continue 'inner;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    Ok(recipes.take())
-}
-
 async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
     // Wait for device to settle
     ecam.wait_for_connection().await?;
@@ -126,9 +70,84 @@ async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
     Ok(())
 }
 
+async fn brew(
+    ecam: Ecam,
+    turn_on: bool,
+    allow_off: bool,
+    skip_brew: bool,
+    ingredients: BrewIngredients,
+) -> Result<(), EcamError> {
+    match ecam.current_state().await? {
+        EcamStatus::Ready => {}
+        EcamStatus::StandBy => {
+            if allow_off {
+                println!("Machine is off, but --allow-off will allow us to proceed")
+            } else {
+                if !turn_on {
+                    println!("Machine is not on, pass --turn-on to turn it on before operation");
+                    return Ok(());
+                }
+                println!("Waiting for the machine to turn on...");
+                ecam.write_request(Request::AppControl(AppControl::TurnOn))
+                    .await?;
+                ecam.wait_for_state(ecam::EcamStatus::Ready).await?;
+            }
+        }
+        s => {
+            println!(
+                "Machine is in state {:?}, so we will cowardly refuse to brew coffee",
+                s
+            );
+            return Ok(());
+        }
+    }
+
+    println!("Fetching recipe for {:?}...", ingredients.beverage);
+    let recipe_list = list_recipies_for(ecam.clone(), Some(vec![ingredients.beverage])).await?;
+    let recipe = recipe_list.find(ingredients.beverage);
+    if let Some(details) = recipe {
+        match check_ingredients(&ingredients, details) {
+            Err(s) => {
+                println!("{}", s)
+            }
+            Ok(recipe) => {
+                println!(
+                    "Brewing {:?} with {}",
+                    ingredients.beverage,
+                    recipe
+                        .iter()
+                        .map(|x| format!("--{:?}={}", x.ingredient, x.value))
+                        .collect::<Vec<String>>()
+                        .join(" ")
+                );
+
+                let req = Request::BeverageDispensingMode(
+                    MachineEnum::Value(ingredients.beverage),
+                    MachineEnum::Value(EcamOperationTrigger::Start),
+                    recipe,
+                    MachineEnum::Value(EcamBeverageTasteType::Prepare),
+                );
+
+                if skip_brew {
+                    println!("--skip-brew was passed, so we aren't going to brew anything")
+                } else {
+                    ecam.write_request(req).await?;
+                }
+                monitor(ecam, false).await?;
+            }
+        }
+    } else {
+        println!(
+            "I wasn't able to fetch the recipe for {:?}. Perhaps this machine can't make it?",
+            ingredients.beverage
+        );
+    }
+
+    Ok(())
+}
+
 fn enum_lookup<T: Sequence + std::fmt::Debug>(s: &str) -> Option<T> {
     for e in enum_iterator::all() {
-        println!("{:?} {:?}", e, s);
         if format!("{:?}", e).to_ascii_lowercase() == s.to_ascii_lowercase() {
             return Some(e);
         }
@@ -159,6 +178,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .arg(arg!(--"hotwater" <amount>).help("Amount of hot water to pour"))
                 .arg(arg!(--"taste" <taste>).help("The strength of the beverage"))
                 .arg(arg!(--"temperature" <temperature>).help("The temperature of the beverage"))
+                .arg(
+                    arg!(--"allow-defaults")
+                        .help("Allow brewing if some parameters are not specified"),
+                )
                 .arg(
                     arg!(--"allow-off")
                         .hide(true)
@@ -197,10 +220,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let subcommand = matches.subcommand();
     match subcommand {
         Some(("brew", cmd)) => {
-            println!("{:?}", cmd);
             let turn_on = cmd.get_flag("turn-on");
             let skip_brew = cmd.get_flag("skip-brew");
             let allow_off = cmd.get_flag("allow-off");
+            let allow_defaults = cmd.get_flag("allow-defaults");
             let device_name = &cmd
                 .get_one::<String>("device-name")
                 .expect("Device name required")
@@ -227,66 +250,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let ecam: Box<dyn EcamDriver> = Box::new(get_ecam_subprocess(device_name).await?);
             let ecam = Ecam::new(ecam).await;
-            match ecam.current_state().await? {
-                EcamStatus::Ready => {}
-                EcamStatus::StandBy => {
-                    if allow_off {
-                        println!("Machine is off, but --allow-off will allow us to proceed")
-                    } else {
-                        if !turn_on {
-                            println!(
-                                "Machine is not on, pass --turn-on to turn it on before operation"
-                            );
-                            return Ok(());
-                        }
-                        println!("Waiting for the machine to turn on...");
-                        ecam.write_request(Request::AppControl(AppControl::TurnOn))
-                            .await?;
-                        ecam.wait_for_state(ecam::EcamStatus::Ready).await?;
-                    }
-                }
-                s => {
-                    println!(
-                        "Machine is in state {:?}, so we will cowardly refuse to brew coffee",
-                        s
-                    );
-                    return Ok(());
-                }
-            }
-
-            println!(
-                "{:?} {:?} {:?} {:?} {:?} {:?}",
-                beverage, coffee, milk, hotwater, taste, temp
-            );
-
-            println!("Fetching recipe for {:?}...", beverage);
-            let recipe_list = list_recipies_for(ecam.clone(), Some(vec![beverage])).await?;
-            let recipe = recipe_list.find(beverage);
-            if let Some(recipe) = recipe {
-                println!("{:?}", recipe.fetch_ingredients());
-                let recipe = vec![
-                    RecipeInfo::new(EcamIngredients::Coffee, 240),
-                    RecipeInfo::new(
-                        EcamIngredients::Taste,
-                        <u8>::from(EcamBeverageTaste::ExtraStrong) as u16,
-                    ),
-                ];
-                let req = Request::BeverageDispensingMode(
-                    MachineEnum::Value(beverage),
-                    MachineEnum::Value(EcamOperationTrigger::Start),
-                    recipe,
-                    MachineEnum::Value(EcamBeverageTasteType::Prepare),
-                );
-
-                if skip_brew {
-                    println!("--skip-brew was passed, so we aren't going to brew anything")
-                } else {
-                    ecam.write_request(req).await?;
-                }
-                monitor(ecam, false).await?;
-            } else {
-                println!("I wasn't able to fetch the recipe for {:?}. Perhaps this machine can't make it?", beverage);
-            }
+            let ingredients = BrewIngredients {
+                beverage,
+                coffee,
+                milk,
+                hotwater,
+                taste,
+                temp,
+                allow_defaults,
+            };
+            brew(ecam, turn_on, allow_off, skip_brew, ingredients).await?;
         }
         Some(("monitor", cmd)) => {
             let turn_on = cmd.get_flag("turn-on");

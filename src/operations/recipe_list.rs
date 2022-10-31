@@ -1,11 +1,9 @@
+use crate::prelude::*;
 use std::collections::HashMap;
 
 use crate::{
-    protocol::{
-        EcamAccessory, EcamBeverageId, EcamBeverageTaste, EcamIngredients, EcamTemperature,
-        MachineEnum, RecipeInfo, RecipeMinMaxInfo, Response,
-    },
-    warning,
+    ecam::{Ecam, EcamError},
+    protocol::*,
 };
 
 pub struct RecipeAccumulator {
@@ -247,4 +245,61 @@ impl RecipeDetails {
         }
         v
     }
+}
+
+/// Lists recipes for either all recipes, or just the given ones.
+pub async fn list_recipies_for(
+    ecam: Ecam,
+    recipes: Option<Vec<EcamBeverageId>>,
+) -> Result<RecipeList, EcamError> {
+    // Get the tap we'll use for reading responses
+    let mut tap = ecam.packet_tap().await?;
+    let mut recipes = if let Some(recipes) = recipes {
+        RecipeAccumulator::limited_to(recipes)
+    } else {
+        RecipeAccumulator::new()
+    };
+    for i in 0..3 {
+        if i == 0 {
+            println!("Fetching recipes...");
+        } else {
+            if recipes.get_remaining_beverages().len() > 0 {
+                println!(
+                    "Fetching potentially missing recipes... {:?}",
+                    recipes.get_remaining_beverages()
+                );
+            }
+        }
+        'outer: for beverage in recipes.get_remaining_beverages() {
+            'inner: for packet in vec![
+                Request::RecipeMinMaxSync(MachineEnum::Value(beverage)),
+                Request::RecipeQuantityRead(1, MachineEnum::Value(beverage)),
+            ] {
+                let request_id = packet.ecam_request_id();
+                ecam.write_request(packet).await?;
+                let now = std::time::Instant::now();
+                while now.elapsed() < Duration::from_millis(500) {
+                    match tokio::time::timeout(Duration::from_millis(50), tap.next()).await {
+                        Err(_) => {}
+                        Ok(None) => {}
+                        Ok(Some(x)) => {
+                            if let Some(packet) = x.take_packet() {
+                                let response_id = packet.ecam_request_id();
+                                recipes.accumulate_packet(beverage, packet);
+                                // If this recipe is totally complete, move to the next one
+                                if recipes.is_complete(beverage) {
+                                    continue 'outer;
+                                }
+                                // If we got a response for the given request, move to the next packet/beverage
+                                if response_id == request_id {
+                                    continue 'inner;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Ok(recipes.take())
 }

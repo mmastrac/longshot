@@ -191,6 +191,7 @@ impl Ecam {
                         }
                     }
                     EcamOutput::Done => {
+                        trace_packet!("Underlying driver is done");
                         break;
                     }
                     EcamOutput::Packet(EcamPacket {
@@ -198,6 +199,7 @@ impl Ecam {
                         ..
                     }) => {
                         if tx.send(Some(x)).is_err() {
+                            warning!("Failed to send a monitor response");
                             break;
                         }
                         ready_lock_semaphore.take();
@@ -328,6 +330,7 @@ impl Ecam {
 
 impl Drop for Ecam {
     fn drop(&mut self) {
+        trace_packet!("Ecam was dropped");
         self.deaden()
     }
 }
