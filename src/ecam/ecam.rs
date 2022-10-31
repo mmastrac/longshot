@@ -1,7 +1,8 @@
 use crate::prelude::*;
 
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, OwnedSemaphorePermit};
 use tokio_stream::wrappers::BroadcastStream;
+use tuples::TupleCloned;
 
 use crate::ecam::{EcamDriver, EcamDriverOutput, EcamError};
 use crate::protocol::*;
@@ -98,6 +99,7 @@ struct StatusInterestHandle {
     count: Arc<std::sync::Mutex<usize>>,
 }
 
+/// Internal flag indicating there is interest in the status of the machine.
 impl StatusInterest {
     fn new() -> Self {
         StatusInterest {
@@ -123,11 +125,49 @@ impl Drop for StatusInterestHandle {
     }
 }
 
+/// Internal struct determining if the interface is still alive.
+#[derive(Clone)]
+struct Alive(Arc<std::sync::Mutex<bool>>);
+
+impl Alive {
+    fn new() -> Self {
+        Self(Arc::new(std::sync::Mutex::new(true)))
+    }
+
+    fn is_alive(&self) -> bool {
+        if let Ok(alive) = self.0.lock() {
+            *alive
+        } else {
+            false
+        }
+    }
+
+    fn deaden(&self) {
+        if let Ok(mut alive) = self.0.lock() {
+            *alive = false;
+        }
+    }
+}
+
+struct EcamDropHandle {
+    alive: Alive,
+}
+
+impl Drop for EcamDropHandle {
+    fn drop(&mut self) {
+        trace_packet!("Ecam was dropped");
+        self.alive.deaden()
+    }
+}
+
+/// Handle that gives a user access to a machine. When all clones are dropped, the connection is closed.
 #[derive(Clone)]
 pub struct Ecam {
     driver: Arc<Box<dyn EcamDriver>>,
     internals: Arc<Mutex<EcamInternals>>,
-    alive: Arc<std::sync::Mutex<bool>>,
+    alive: Alive,
+    #[allow(unused)]
+    drop_handle: Arc<EcamDropHandle>,
 }
 
 struct EcamInternals {
@@ -146,7 +186,7 @@ impl Ecam {
 
         // We want to lock the status until we've received at least one packet
         let ready_lock = Arc::new(tokio::sync::Semaphore::new(1));
-        let mut ready_lock_semaphore = Some(
+        let ready_lock_semaphore = Some(
             ready_lock
                 .clone()
                 .acquire_owned()
@@ -161,58 +201,79 @@ impl Ecam {
             status_interest: StatusInterest::new(),
             started: false,
         }));
+        let alive = Alive::new();
         let ecam_result = Ecam {
             driver,
             internals,
-            alive: Arc::new(true.into()),
+            drop_handle: Arc::new(EcamDropHandle {
+                alive: alive.clone(),
+            }),
+            alive,
         };
 
-        let ecam = ecam_result.clone();
+        let (driver, internals, alive) = (
+            ecam_result.driver.clone(),
+            ecam_result.internals.clone(),
+            ecam_result.alive.clone(),
+        );
         tokio::spawn(async move {
-            let packet_tap_sender = ecam.internals.lock().await.packet_tap.clone();
-            let mut started = false;
-            while ecam.is_alive() {
-                // Treat end-of-stream as EcamOutput::Done, but we might want to reconsider this in the future
-                let packet: EcamOutput = ecam
-                    .driver
-                    .read()
-                    .await?
-                    .unwrap_or(EcamDriverOutput::Done)
-                    .into();
-                let _ = packet_tap_sender.send(packet.clone());
-                match packet {
-                    EcamOutput::Ready => {
-                        if started {
-                            warning!("Got multiple start requests");
-                        } else {
-                            tokio::spawn(ecam.clone().write_monitor_loop());
-                            started = true;
-                            ecam.internals.lock().await.started = true;
-                        }
-                    }
-                    EcamOutput::Done => {
-                        trace_packet!("Underlying driver is done");
-                        break;
-                    }
-                    EcamOutput::Packet(EcamPacket {
-                        representation: Some(Response::MonitorV2(x)),
-                        ..
-                    }) => {
-                        if tx.send(Some(x)).is_err() {
-                            warning!("Failed to send a monitor response");
-                            break;
-                        }
-                        ready_lock_semaphore.take();
-                    }
-                    _ => {}
-                }
-            }
-            println!("Closed");
-            ecam.deaden();
-            Result::<(), EcamError>::Ok(())
+            Self::operation_loop(ready_lock_semaphore, tx, driver, internals, alive).await
         });
 
         ecam_result
+    }
+
+    async fn operation_loop(
+        mut ready_lock_semaphore: Option<OwnedSemaphorePermit>,
+        tx: tokio::sync::watch::Sender<Option<MonitorV2Response>>,
+        driver: Arc<Box<dyn EcamDriver>>,
+        internals: Arc<Mutex<EcamInternals>>,
+        alive: Alive,
+    ) -> Result<(), EcamError> {
+        let packet_tap_sender = internals.lock().await.packet_tap.clone();
+        let mut started = false;
+        while alive.is_alive() {
+            // Treat end-of-stream as EcamOutput::Done, but we might want to reconsider this in the future
+            let packet: EcamOutput = driver
+                .read()
+                .await?
+                .unwrap_or(EcamDriverOutput::Done)
+                .into();
+            let _ = packet_tap_sender.send(packet.clone());
+            match packet {
+                EcamOutput::Ready => {
+                    if started {
+                        warning!("Got multiple start requests");
+                    } else {
+                        tokio::spawn(Self::write_monitor_loop(
+                            driver.clone(),
+                            internals.clone(),
+                            alive.clone(),
+                        ));
+                        started = true;
+                        internals.lock().await.started = true;
+                    }
+                }
+                EcamOutput::Done => {
+                    trace_packet!("Underlying driver is done");
+                    break;
+                }
+                EcamOutput::Packet(EcamPacket {
+                    representation: Some(Response::MonitorV2(x)),
+                    ..
+                }) => {
+                    if tx.send(Some(x)).is_err() {
+                        warning!("Failed to send a monitor response");
+                        break;
+                    }
+                    ready_lock_semaphore.take();
+                }
+                _ => {}
+            }
+        }
+        println!("Closed");
+        alive.deaden();
+        Ok(())
     }
 
     /// Blocks until the device state reaches our desired state.
@@ -281,27 +342,23 @@ impl Ecam {
             .map(|x| x.expect("Unexpected receive error")))
     }
 
-    pub fn is_alive(&self) -> bool {
-        if let Ok(alive) = self.alive.lock() {
-            *alive
-        } else {
-            false
-        }
-    }
-
     /// The monitor loop is booted when the underlying driver reports that it is ready.
-    async fn write_monitor_loop(self) -> Result<(), EcamError> {
+    async fn write_monitor_loop(
+        driver: Arc<Box<dyn EcamDriver>>,
+        internals: Arc<Mutex<EcamInternals>>,
+        alive: Alive,
+    ) -> Result<(), EcamError> {
         let status_request = EcamDriverPacket::from_vec(Request::MonitorV2().encode());
-        while self.is_alive() {
+        while alive.is_alive() {
             // Only send status update packets while there is status interest
-            if self.internals.lock().await.status_interest.count() == 0 {
+            if internals.lock().await.status_interest.count() == 0 {
                 tokio::time::sleep(Duration::from_millis(100)).await;
                 continue;
             }
 
             match tokio::time::timeout(
                 Duration::from_millis(250),
-                self.driver.write(status_request.clone()),
+                driver.write(status_request.clone()),
             )
             .await
             {
@@ -317,20 +374,7 @@ impl Ecam {
             }
         }
         warning!("Sending loop died.");
-        self.deaden();
+        alive.deaden();
         Ok(())
-    }
-
-    fn deaden(&self) {
-        if let Ok(mut alive) = self.alive.lock() {
-            *alive = false;
-        }
-    }
-}
-
-impl Drop for Ecam {
-    fn drop(&mut self) {
-        trace_packet!("Ecam was dropped");
-        self.deaden()
     }
 }
