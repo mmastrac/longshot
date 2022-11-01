@@ -1,3 +1,6 @@
+[![docs.rs](https://docs.rs/ctor/badge.svg)](https://docs.rs/longshot)
+[![crates.io](https://img.shields.io/crates/v/ctor.svg)](https://crates.io/crates/longshot)
+
 # longshot
 
 Brew coffee from the command-line!
