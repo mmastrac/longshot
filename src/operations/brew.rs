@@ -5,6 +5,7 @@ use crate::{
     protocol::*,
 };
 
+/// The complete set of brewing ingredients that can be specified to dispense a beverage.
 pub struct BrewIngredients {
     pub beverage: EcamBeverageId,
     pub coffee: Option<u16>,

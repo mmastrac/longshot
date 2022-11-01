@@ -6,6 +6,7 @@ use crate::{
     protocol::*,
 };
 
+/// Accumulates recipe responses, allowing us to fetch them one-at-a-time and account for which ones went missing in transit.
 pub struct RecipeAccumulator {
     recipe: HashMap<EcamBeverageId, Vec<RecipeInfo>>,
     recipe_min_max: HashMap<EcamBeverageId, Vec<RecipeMinMaxInfo>>,
@@ -19,14 +20,12 @@ impl Default for RecipeAccumulator {
 }
 
 impl RecipeAccumulator {
+    /// Creates a new accumulator for all recipes.
     pub fn new() -> Self {
-        RecipeAccumulator {
-            list: EcamBeverageId::all().collect(),
-            recipe: HashMap::new(),
-            recipe_min_max: HashMap::new(),
-        }
+        Self::limited_to(EcamBeverageId::all().collect())
     }
 
+    /// Creates a new accumulator limited to a smaller subset of [`EcamBeverageId`]s (potentially just one).
     pub fn limited_to(recipes: Vec<EcamBeverageId>) -> Self {
         RecipeAccumulator {
             list: recipes,
@@ -35,6 +34,7 @@ impl RecipeAccumulator {
         }
     }
 
+    /// Lists the [`EcamBeverageId`]s which we still need to fetch information for.
     pub fn get_remaining_beverages(&self) -> Vec<EcamBeverageId> {
         let mut remaining = vec![];
         for beverage in self.list.iter() {
@@ -49,6 +49,7 @@ impl RecipeAccumulator {
         remaining
     }
 
+    /// Is our fetch complete for this [`EcamBeverageId`].
     pub fn is_complete(&self, beverage: EcamBeverageId) -> bool {
         let recipe = self.recipe.get(&beverage);
         let recipe_min_max = self.recipe_min_max.get(&beverage);
@@ -69,6 +70,7 @@ impl RecipeAccumulator {
         recipe.is_some() && recipe_min_max.is_some()
     }
 
+    /// Is this [`EcamBeverageId`] empty, ie: is it unavailable for dispensing?
     pub fn is_empty(&self, beverage: EcamBeverageId) -> bool {
         let recipe = self.recipe.get(&beverage);
         let recipe_min_max = self.recipe_min_max.get(&beverage);
@@ -88,6 +90,7 @@ impl RecipeAccumulator {
         false
     }
 
+    /// Accumulate a [`Response`] for the given [`EcamBeverageId`].
     pub fn accumulate_packet(&mut self, expected_beverage: EcamBeverageId, packet: Response) {
         match packet {
             Response::RecipeQuantityRead(_, beverage, ingredients) => {
@@ -106,6 +109,7 @@ impl RecipeAccumulator {
         }
     }
 
+    /// Take the contents of this instance as a [`RecipeList`].
     pub fn take(mut self) -> RecipeList {
         let mut list = RecipeList { recipes: vec![] };
         for beverage in self.list.iter() {
@@ -131,17 +135,20 @@ impl RecipeAccumulator {
     }
 }
 
+/// A completed list of [`RecipeDetails`].
 #[derive(Clone, Debug)]
 pub struct RecipeList {
     pub recipes: Vec<RecipeDetails>,
 }
 
 impl RecipeList {
+    /// Find the recipe for the given [`EcamBeverageId`], returning it as a [`RecipeDetails`].
     pub fn find(&self, beverage: EcamBeverageId) -> Option<&RecipeDetails> {
         self.recipes.iter().find(|&r| r.beverage == beverage)
     }
 }
 
+/// The processed ingredients from the raw ECAM responses. Some ingredients are omitted as they are not useful for brewing.
 #[derive(Clone, Debug)]
 pub enum IngredientInfo {
     Coffee(u16, u16, u16),
@@ -154,6 +161,7 @@ pub enum IngredientInfo {
     Brew2(bool, bool),
 }
 
+/// The details for a given [`EcamBeverageId`]'s recipe.
 #[derive(Clone, Debug)]
 pub struct RecipeDetails {
     pub beverage: EcamBeverageId,
@@ -162,6 +170,7 @@ pub struct RecipeDetails {
 }
 
 impl RecipeDetails {
+    /// Processes this [`RecipeDetails`] into a [`Vec<IngredientInfo>`], suitable for dispensing.
     pub fn fetch_ingredients(&self) -> Vec<IngredientInfo> {
         let mut v = vec![];
         let mut m1 = HashMap::new();

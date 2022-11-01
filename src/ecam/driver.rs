@@ -9,7 +9,7 @@ pub enum EcamDriverOutput {
     Done,
 }
 
-/// Async-ish traits for read/write. See https://smallcultfollowing.com/babysteps/blog/2019/10/26/async-fn-in-traits-are-hard/
+/// Async-ish traits for read/write. See <https://smallcultfollowing.com/babysteps/blog/2019/10/26/async-fn-in-traits-are-hard/>
 /// for some tips on making async trait functions.
 pub trait EcamDriver: Send + Sync {
     /// Read one item from the ECAM.
