@@ -245,9 +245,35 @@ mod test {
                 accessory: EcamAccessory::Water.into(),
                 progress: 0,
                 percentage: 0,
-                akey0: 5,
-                akey1: 0,
+                switches: SwitchSet::of(&[
+                    EcamMachineSwitch::WaterSpout,
+                    EcamMachineSwitch::MotorDown
+                ]),
                 akey2: 0,
+                akey3: 0,
+                load0: 0,
+                load1: 0,
+            })
+        );
+    }
+
+    #[test]
+    fn test_decode_monitor_packet_alarm() {
+        let buf = [117_u8, 15, 1, 69, 0, 1, 0, 7, 0, 0, 0, 0, 0, 0, 0];
+        let input = &mut buf.as_slice();
+        assert_eq!(
+            <Response>::partial_decode(input).expect("Failed to decode"),
+            Response::MonitorV2(MonitorV2Response {
+                state: EcamMachineState::ReadyOrDispensing.into(),
+                accessory: EcamAccessory::Water.into(),
+                progress: 0,
+                percentage: 0,
+                switches: SwitchSet::of(&[
+                    EcamMachineSwitch::WaterSpout,
+                    EcamMachineSwitch::MotorDown,
+                    EcamMachineSwitch::WaterLevelLow,
+                ]),
+                akey2: 1,
                 akey3: 0,
                 load0: 0,
                 load1: 0,

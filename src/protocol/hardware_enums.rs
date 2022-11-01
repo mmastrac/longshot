@@ -228,3 +228,60 @@ pub enum EcamBeverageId {
     Custom09 = 238,
     Custom10 = 239,
 }
+
+/// Represents bits set in the alarm fields.
+#[repr(u8)]
+#[derive(
+    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+)]
+pub enum EcamAlarm {
+    EmptyWaterTank = 0,
+    CoffeeWasteContainerFull = 1,
+    DescaleAlarm = 2,
+    ReplaceWaterFilter = 3,
+    CoffeGroundTooFine = 4,
+    CoffeeBeansEmpty = 5,
+    MachineToService = 6,
+    CoffeeHeaterProbeFailure = 7,
+    TooMuchCoffee = 8,
+    CoffeeInfuserMotorNotWorking = 9,
+    EmptyDripTray = 11,
+    SteamerProbeFailure = 10,
+    TankIsInPosition = 13,
+    HydraulicCircuitProblem = 12,
+    CoffeeBeansEmptyTwo = 15,
+    CleanKnob = 14,
+    BeanHopperAbsent = 17,
+    TankTooFull = 16,
+    InfuserSense = 19,
+    GridPresence = 18,
+    ExpansionCommProb = 21,
+    NotEnoughCoffee = 20,
+    GrindingUnit1Problem = 23,
+    ExpansionSubmodulesProb = 22,
+    CondenseFanProblem = 25,
+    GrindingUnit2Problem = 24,
+    SpiCommProblem = 27,
+    ClockBtCommProblem = 26,
+}
+
+/// Represents bits set in the machine switch fields.
+#[repr(u8)]
+#[derive(
+    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+)]
+pub enum EcamMachineSwitch {
+    WaterSpout = 0,
+    MotorUp = 1,
+    MotorDown = 2,
+    CoffeeWasteContainer = 3,
+    WaterTankAbsent = 4,
+    Knob = 5,
+    WaterLevelLow = 6,
+    CoffeeJug = 7,
+    IfdCaraffe = 8,
+    CioccoTank = 9,
+    CleanKnob = 10,
+    DoorOpened = 13,
+    PregroundDoorOpened = 14,
+}

@@ -53,19 +53,21 @@ impl StatusDisplay for ColouredStatusDisplay {
                 right.split_at(2)
             };
             let mut left = left.to_owned();
-            for i in 0..2 {
-                let random = |n| (self.activity * 321 + 677 * i) % n;
-                // Pick a spot at random
-                let pos = random(left.len());
-                if pos < status_text.len() + 3 {
-                    continue;
-                }
-                let (a, b) = left.split_at(pos);
-                if b[0] == ' ' {
-                    let mut temp = a.to_owned();
-                    temp.push(BUBBLE_CHARS[random(BUBBLE_CHARS.len())]);
-                    temp.extend_from_slice(&b[1..]);
-                    left = temp;
+            if left.len() > 10 {
+                for i in 0..2 {
+                    let random = |n| (self.activity * 321 + 677 * i) % n;
+                    // Pick a spot at random
+                    let pos = random(left.len());
+                    if pos < status_text.len() + 3 {
+                        continue;
+                    }
+                    let (a, b) = left.split_at(pos);
+                    if b[0] == ' ' {
+                        let mut temp = a.to_owned();
+                        temp.push(BUBBLE_CHARS[random(BUBBLE_CHARS.len())]);
+                        temp.extend_from_slice(&b[1..]);
+                        left = temp;
+                    }
                 }
             }
 
@@ -135,7 +137,7 @@ impl StatusDisplay for BasicStatusDisplay {
 
 #[cfg(test)]
 mod test {
-    use super::make_bar;
+    use super::{make_bar, ColouredStatusDisplay, StatusDisplay};
 
     #[test]
     fn format_no_progress() {
@@ -166,6 +168,14 @@ mod test {
 
         for (expected, (description, progress)) in test_cases.into_iter() {
             assert_eq!(expected, make_bar(description, 40, progress));
+        }
+    }
+
+    #[test]
+    fn format_rich() {
+        let mut display = ColouredStatusDisplay::new(60);
+        for i in 0..=100 {
+            display.display(crate::ecam::EcamStatus::Busy(i));
         }
     }
 }

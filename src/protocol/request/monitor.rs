@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use super::PartialDecode;
 use crate::protocol::*;
 
@@ -5,8 +7,7 @@ use crate::protocol::*;
 pub struct MonitorV2Response {
     pub state: MachineEnum<EcamMachineState>,
     pub accessory: MachineEnum<EcamAccessory>,
-    pub akey0: u8,
-    pub akey1: u8,
+    pub switches: SwitchSet<EcamMachineSwitch>,
     pub akey2: u8,
     pub akey3: u8,
     pub progress: u8,
@@ -15,12 +16,75 @@ pub struct MonitorV2Response {
     pub load1: u8,
 }
 
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct SwitchSet<T> {
+    pub value: u16,
+    phantom: PhantomData<T>,
+}
+
+impl<T> SwitchSet<T>
+where
+    T: TryFrom<u8> + Copy + std::fmt::Debug,
+    u8: From<T>,
+{
+    pub fn of(input: &[T]) -> Self {
+        let mut v = 0u16;
+        for t in input {
+            v |= 1 << u8::from(*t);
+        }
+        SwitchSet {
+            value: v,
+            phantom: PhantomData::default(),
+        }
+    }
+}
+
+impl<T> std::fmt::Debug for SwitchSet<T>
+where
+    T: TryFrom<u8> + Copy + std::fmt::Debug,
+    u8: From<T>,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.value == 0 {
+            f.write_str("(empty)")
+        } else {
+            let mut sep = "";
+            for i in 0..core::mem::size_of::<u16>() * 8 - 1 {
+                if self.value & (1 << i) != 0 {
+                    let i = <u8>::try_from(i).expect("This should have fit in a u8");
+                    f.write_fmt(format_args!("{}{:?}", sep, MachineEnum::<T>::decode(i)))?;
+                    sep = " | ";
+                }
+            }
+            Ok(())
+        }
+    }
+}
+
+impl<T> PartialDecode<SwitchSet<T>> for SwitchSet<T> {
+    fn partial_decode(input: &mut &[u8]) -> Option<SwitchSet<T>> {
+        let a = <u8>::partial_decode(input)? as u16;
+        let b = <u8>::partial_decode(input)? as u16;
+        // Note that this is inverted from <u16>::partial_decode
+        let value = (b << 8) | a;
+        Some(SwitchSet {
+            value,
+            phantom: PhantomData::default(),
+        })
+    }
+}
+
+impl<T> PartialEncode for SwitchSet<T> {
+    fn partial_encode(&self, out: &mut Vec<u8>) {
+        self.value.partial_encode(out)
+    }
+}
+
 impl PartialDecode<MonitorV2Response> for MonitorV2Response {
     fn partial_decode(input: &mut &[u8]) -> Option<MonitorV2Response> {
         Some(MonitorV2Response {
             accessory: <MachineEnum<EcamAccessory>>::partial_decode(input)?,
-            akey0: <u8>::partial_decode(input)?,
-            akey1: <u8>::partial_decode(input)?,
+            switches: <SwitchSet<EcamMachineSwitch>>::partial_decode(input)?,
             akey2: <u8>::partial_decode(input)?,
             akey3: <u8>::partial_decode(input)?,
             state: <MachineEnum<EcamMachineState>>::partial_decode(input)?,
@@ -35,8 +99,7 @@ impl PartialDecode<MonitorV2Response> for MonitorV2Response {
 impl PartialEncode for MonitorV2Response {
     fn partial_encode(&self, out: &mut Vec<u8>) {
         out.push(self.accessory.into());
-        out.push(self.akey0);
-        out.push(self.akey1);
+        self.switches.partial_encode(out);
         out.push(self.akey2);
         out.push(self.akey3);
         out.push(self.state.into());
@@ -44,5 +107,20 @@ impl PartialEncode for MonitorV2Response {
         out.push(self.percentage.into());
         out.push(self.load0);
         out.push(self.load1);
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::protocol::EcamMachineSwitch;
+
+    use super::SwitchSet;
+
+    #[test]
+    fn switch_set_test() {
+        let switches = SwitchSet::<EcamMachineSwitch>::of(&[]);
+        assert_eq!("(empty)", format!("{:?}", switches));
+        let switches = SwitchSet::of(&[EcamMachineSwitch::MotorDown, EcamMachineSwitch::WaterSpout]);
+        assert_eq!("WaterSpout | MotorDown", format!("{:?}", switches));
     }
 }

@@ -4,7 +4,7 @@ use crate::ecam::{EcamDriver, EcamDriverOutput, EcamError};
 use crate::prelude::*;
 use crate::protocol::{
     EcamAccessory, EcamDriverPacket, EcamMachineState, EcamRequestId, MachineEnum,
-    MonitorV2Response, PartialEncode,
+    MonitorV2Response, PartialDecode, PartialEncode, Request, Response, SwitchSet, EcamMachineSwitch,
 };
 
 struct EcamSimulate {
@@ -20,7 +20,15 @@ impl EcamDriver for EcamSimulate {
     }
 
     fn write(&self, data: crate::protocol::EcamDriverPacket) -> AsyncFuture<()> {
-        Box::pin(async { Ok(()) })
+        Box::pin(async move {
+            if data.bytes[0] == EcamRequestId::RecipeQuantityRead as u8 {
+                println!("{:?}", data.bytes);
+            }
+            if data.bytes[0] == EcamRequestId::RecipeMinMaxSync as u8 {
+                println!("{:?}", data.bytes);
+            }
+            Ok(())
+        })
     }
 
     fn scan<'a>() -> AsyncFuture<'a, (String, uuid::Uuid)>
@@ -38,8 +46,7 @@ fn make_simulated_response(state: EcamMachineState, progress: u8, percentage: u8
         &MonitorV2Response {
             state: MachineEnum::Value(state),
             accessory: MachineEnum::Value(EcamAccessory::None),
-            akey0: 0,
-            akey1: 0,
+            switches: SwitchSet::of(&[EcamMachineSwitch::WaterSpout]),
             akey2: 0,
             akey3: 0,
             progress: progress,
