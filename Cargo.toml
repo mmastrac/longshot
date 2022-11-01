@@ -1,6 +1,6 @@
 [package]
 name = "longshot"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Matt Mastracci <matthew@mastracci.com>"]
 edition = "2021"
 description = "API and CLI for ECAM-based Delonghi machines"
@@ -24,3 +24,10 @@ futures = "0.3.25"
 num_enum = "0.5.7"
 enum-iterator = "1.2.0"
 colored = "2"
+
+[lib]
+name = "longshot"
+
+[[bin]]
+name = "longshot"
+path = "src/main.rs"
