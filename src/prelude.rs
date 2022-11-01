@@ -1,3 +1,5 @@
+//! Universal imports for this crate.
+
 use crate::ecam::EcamError;
 
 pub use std::future::Future;

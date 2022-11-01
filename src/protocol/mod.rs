@@ -1,3 +1,5 @@
+//! Protocols for communication with ECAM-based devices.
+
 mod hardware_enums;
 mod machine_enum;
 mod packet;

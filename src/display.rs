@@ -1,3 +1,5 @@
+//! Status display utilities.
+
 use crate::ecam::EcamStatus;
 use colored::*;
 use std::io::Write;

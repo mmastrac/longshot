@@ -1,3 +1,5 @@
+//! Low-level communication with ECAM-based devices.
+
 use crate::prelude::*;
 
 use thiserror::Error;
