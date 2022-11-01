@@ -3,7 +3,7 @@ mod monitor;
 mod profile;
 mod recipe;
 
-use super::{hardware_enums::*, MachineEnum};
+use super::{hardware_enums::*, machine_enum::*};
 pub use app_control::*;
 pub use monitor::*;
 pub use profile::*;
@@ -41,11 +41,7 @@ impl<T: PartialEncode> PartialEncode for Vec<T> {
     }
 }
 
-impl<T> PartialEncode for &MachineEnum<T>
-where
-    T: TryFrom<u8> + Copy,
-    u8: From<T>,
-{
+impl<T: MachineEnumerable> PartialEncode for &MachineEnum<T> {
     fn partial_encode(&self, out: &mut Vec<u8>) {
         out.push((**self).into())
     }
@@ -65,11 +61,7 @@ impl<T: PartialDecode<T>> PartialDecode<Vec<T>> for Vec<T> {
     }
 }
 
-impl<T> PartialDecode<MachineEnum<T>> for MachineEnum<T>
-where
-    T: TryFrom<u8> + Copy,
-    u8: From<T>,
-{
+impl<T: MachineEnumerable> PartialDecode<MachineEnum<T>> for MachineEnum<T> {
     fn partial_decode(input: &mut &[u8]) -> Option<Self> {
         let (head, tail) = input.split_first()?;
         *input = tail;

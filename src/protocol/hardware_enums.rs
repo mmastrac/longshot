@@ -3,6 +3,8 @@
 use enum_iterator::Sequence;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
+use super::MachineEnumerable;
+
 ///! This file contains validated hardware enumerations and associated values.
 
 /// Ingredients used for brew operations.
@@ -285,3 +287,12 @@ pub enum EcamMachineSwitch {
     DoorOpened = 13,
     PregroundDoorOpened = 14,
 }
+
+impl MachineEnumerable for EcamAlarm {}
+impl MachineEnumerable for EcamIngredients {}
+impl MachineEnumerable for EcamMachineState {}
+impl MachineEnumerable for EcamMachineSwitch {}
+impl MachineEnumerable for EcamAccessory {}
+impl MachineEnumerable for EcamBeverageId {}
+impl MachineEnumerable for EcamBeverageTasteType {}
+impl MachineEnumerable for EcamOperationTrigger {}

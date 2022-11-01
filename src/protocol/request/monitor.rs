@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use super::PartialDecode;
 use crate::protocol::*;
 
@@ -15,84 +13,16 @@ pub struct MonitorV2Response {
     pub load1: u8,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct SwitchSet<T> {
-    pub value: u16,
-    phantom: PhantomData<T>,
-}
-
-impl<T> SwitchSet<T>
-where
-    T: TryFrom<u8> + Copy + std::fmt::Debug,
-    u8: From<T>,
-{
-    pub fn of(input: &[T]) -> Self {
-        let mut v = 0u16;
-        for t in input {
-            v |= 1 << u8::from(*t);
-        }
-        SwitchSet {
-            value: v,
-            phantom: PhantomData::default(),
-        }
-    }
-
-    pub fn empty() -> Self {
-        SwitchSet {
-            value: 0,
-            phantom: PhantomData::default(),
-        }
-    }
-
-    pub fn set(&self) -> Vec<MachineEnum<T>> {
-        // TODO: This should be an iterator
-        let mut v = vec![];
-        for i in 0..core::mem::size_of::<u16>() * 8 - 1 {
-            if self.value & (1 << i) != 0 {
-                let i = <u8>::try_from(i).expect("This should have fit in a u8");
-                v.push(MachineEnum::<T>::decode(i));
-            }
-        }
-        v
-    }
-}
-
-impl<T> std::fmt::Debug for SwitchSet<T>
-where
-    T: TryFrom<u8> + Copy + std::fmt::Debug,
-    u8: From<T>,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.value == 0 {
-            f.write_str("(empty)")
-        } else {
-            let mut sep = "";
-            for i in 0..core::mem::size_of::<u16>() * 8 - 1 {
-                if self.value & (1 << i) != 0 {
-                    let i = <u8>::try_from(i).expect("This should have fit in a u8");
-                    f.write_fmt(format_args!("{}{:?}", sep, MachineEnum::<T>::decode(i)))?;
-                    sep = " | ";
-                }
-            }
-            Ok(())
-        }
-    }
-}
-
-impl<T> PartialDecode<SwitchSet<T>> for SwitchSet<T> {
+impl<T: MachineEnumerable> PartialDecode<SwitchSet<T>> for SwitchSet<T> {
     fn partial_decode(input: &mut &[u8]) -> Option<SwitchSet<T>> {
         let a = <u8>::partial_decode(input)? as u16;
         let b = <u8>::partial_decode(input)? as u16;
         // Note that this is inverted from <u16>::partial_decode
-        let value = (b << 8) | a;
-        Some(SwitchSet {
-            value,
-            phantom: PhantomData::default(),
-        })
+        Some(SwitchSet::from_u16((b << 8) | a))
     }
 }
 
-impl<T> PartialEncode for SwitchSet<T> {
+impl<T: MachineEnumerable> PartialEncode for SwitchSet<T> {
     fn partial_encode(&self, out: &mut Vec<u8>) {
         self.value.partial_encode(out)
     }

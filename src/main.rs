@@ -11,7 +11,7 @@ mod operations;
 mod prelude;
 mod protocol;
 
-use display::{BasicStatusDisplay, ColouredStatusDisplay, StatusDisplay};
+use display::{ColouredStatusDisplay, StatusDisplay};
 use ecam::{
     ecam_scan, get_ecam_bt, get_ecam_simulator, get_ecam_subprocess, pipe_stdin, Ecam, EcamDriver,
     EcamError, EcamOutput, EcamStatus,
@@ -24,7 +24,7 @@ use uuid::Uuid;
 async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
     let mut tap = ecam.packet_tap().await?;
     let ecam = ecam.clone();
-    let handle = tokio::spawn(async move {
+    let _handle = tokio::spawn(async move {
         while let Some(packet) = tap.next().await {
             // println!("{:?}", packet);
             if packet == EcamOutput::Done {
