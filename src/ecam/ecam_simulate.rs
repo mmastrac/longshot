@@ -3,8 +3,8 @@ use tokio::sync::Mutex;
 use crate::ecam::{EcamDriver, EcamDriverOutput, EcamError};
 use crate::prelude::*;
 use crate::protocol::{
-    EcamAccessory, EcamDriverPacket, EcamMachineState, EcamRequestId, MachineEnum,
-    MonitorV2Response, PartialDecode, PartialEncode, Request, Response, SwitchSet, EcamMachineSwitch,
+    EcamAccessory, EcamDriverPacket, EcamMachineState, EcamMachineSwitch, EcamRequestId,
+    MachineEnum, MonitorV2Response, PartialDecode, PartialEncode, Request, Response, SwitchSet,
 };
 
 struct EcamSimulate {
@@ -47,8 +47,7 @@ fn make_simulated_response(state: EcamMachineState, progress: u8, percentage: u8
             state: MachineEnum::Value(state),
             accessory: MachineEnum::Value(EcamAccessory::None),
             switches: SwitchSet::of(&[EcamMachineSwitch::WaterSpout]),
-            akey2: 0,
-            akey3: 0,
+            alarms: SwitchSet::empty(),
             progress: progress,
             percentage: percentage,
             load0: 0,

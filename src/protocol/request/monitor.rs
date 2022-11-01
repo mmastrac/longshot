@@ -8,8 +8,7 @@ pub struct MonitorV2Response {
     pub state: MachineEnum<EcamMachineState>,
     pub accessory: MachineEnum<EcamAccessory>,
     pub switches: SwitchSet<EcamMachineSwitch>,
-    pub akey2: u8,
-    pub akey3: u8,
+    pub alarms: SwitchSet<EcamAlarm>,
     pub progress: u8,
     pub percentage: u8,
     pub load0: u8,
@@ -34,6 +33,13 @@ where
         }
         SwitchSet {
             value: v,
+            phantom: PhantomData::default(),
+        }
+    }
+
+    pub fn empty() -> Self {
+        SwitchSet {
+            value: 0,
             phantom: PhantomData::default(),
         }
     }
@@ -85,8 +91,7 @@ impl PartialDecode<MonitorV2Response> for MonitorV2Response {
         Some(MonitorV2Response {
             accessory: <MachineEnum<EcamAccessory>>::partial_decode(input)?,
             switches: <SwitchSet<EcamMachineSwitch>>::partial_decode(input)?,
-            akey2: <u8>::partial_decode(input)?,
-            akey3: <u8>::partial_decode(input)?,
+            alarms: <SwitchSet<EcamAlarm>>::partial_decode(input)?,
             state: <MachineEnum<EcamMachineState>>::partial_decode(input)?,
             progress: <u8>::partial_decode(input)?,
             percentage: <u8>::partial_decode(input)?,
@@ -100,8 +105,7 @@ impl PartialEncode for MonitorV2Response {
     fn partial_encode(&self, out: &mut Vec<u8>) {
         out.push(self.accessory.into());
         self.switches.partial_encode(out);
-        out.push(self.akey2);
-        out.push(self.akey3);
+        self.alarms.partial_encode(out);
         out.push(self.state.into());
         out.push(self.progress.into());
         out.push(self.percentage.into());
@@ -120,7 +124,8 @@ mod test {
     fn switch_set_test() {
         let switches = SwitchSet::<EcamMachineSwitch>::of(&[]);
         assert_eq!("(empty)", format!("{:?}", switches));
-        let switches = SwitchSet::of(&[EcamMachineSwitch::MotorDown, EcamMachineSwitch::WaterSpout]);
+        let switches =
+            SwitchSet::of(&[EcamMachineSwitch::MotorDown, EcamMachineSwitch::WaterSpout]);
         assert_eq!("WaterSpout | MotorDown", format!("{:?}", switches));
     }
 }

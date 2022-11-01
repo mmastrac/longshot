@@ -249,8 +249,7 @@ mod test {
                     EcamMachineSwitch::WaterSpout,
                     EcamMachineSwitch::MotorDown
                 ]),
-                akey2: 0,
-                akey3: 0,
+                alarms: SwitchSet::empty(),
                 load0: 0,
                 load1: 0,
             })
@@ -273,8 +272,7 @@ mod test {
                     EcamMachineSwitch::MotorDown,
                     EcamMachineSwitch::WaterLevelLow,
                 ]),
-                akey2: 1,
-                akey3: 0,
+                alarms: SwitchSet::of(&[EcamAlarm::EmptyWaterTank]),
                 load0: 0,
                 load1: 0,
             })
