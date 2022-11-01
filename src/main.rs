@@ -53,8 +53,6 @@ async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
         }
     }
 
-    let _ = handle.await;
-
     Ok(())
 }
 

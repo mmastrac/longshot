@@ -50,7 +50,7 @@ mod test {
     }
 
     impl EcamDriver for EcamTest {
-        fn read<'a>(&'a self) -> crate::prelude::AsyncFuture<'a, Option<EcamDriverOutput>> {
+        fn read(&self) -> crate::prelude::AsyncFuture<Option<EcamDriverOutput>> {
             Box::pin(async {
                 if self.read_items.lock().unwrap().is_empty() {
                     Ok(None)
@@ -60,7 +60,7 @@ mod test {
             })
         }
 
-        fn write<'a>(&'a self, data: EcamDriverPacket) -> crate::prelude::AsyncFuture<'a, ()> {
+        fn write(&self, data: EcamDriverPacket) -> crate::prelude::AsyncFuture<()> {
             self.write_items.lock().unwrap().push(data);
             Box::pin(async { Ok(()) })
         }
