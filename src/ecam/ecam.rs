@@ -47,9 +47,9 @@ impl From<EcamDriverOutput> for EcamOutput {
     }
 }
 
-impl Into<EcamDriverOutput> for EcamOutput {
-    fn into(self) -> EcamDriverOutput {
-        match self {
+impl From<EcamOutput> for EcamDriverOutput {
+    fn from(other: EcamOutput) -> EcamDriverOutput {
+        match other {
             EcamOutput::Done => EcamDriverOutput::Done,
             EcamOutput::Ready => EcamDriverOutput::Ready,
             EcamOutput::Packet(p) => EcamDriverOutput::Packet(p.into()),
@@ -59,6 +59,7 @@ impl Into<EcamDriverOutput> for EcamOutput {
 
 impl EcamStatus {
     fn extract(state: &MonitorV2Response) -> EcamStatus {
+        #[allow(clippy::never_loop)]
         for alarm in state.alarms.set() {
             return EcamStatus::Alarm(alarm);
         }
