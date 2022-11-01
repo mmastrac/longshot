@@ -299,10 +299,11 @@ mod test {
 
     #[test]
     fn test_brew_coffee() {
-        let mut recipe = vec![];
-        recipe.push(RecipeInfo::new(EcamIngredients::Coffee, 103));
-        recipe.push(RecipeInfo::new(EcamIngredients::Taste, 2));
-        recipe.push(RecipeInfo::new(EcamIngredients::Temp, 0));
+        let mut recipe = vec![
+            RecipeInfo::new(EcamIngredients::Coffee, 103),
+            RecipeInfo::new(EcamIngredients::Taste, 2),
+            RecipeInfo::new(EcamIngredients::Temp, 0),
+        ];
         assert_eq!(
             Request::BeverageDispensingMode(
                 EcamBeverageId::RegularCoffee.into(),

@@ -147,12 +147,7 @@ async fn brew(
 }
 
 fn enum_lookup<T: Sequence + std::fmt::Debug>(s: &str) -> Option<T> {
-    for e in enum_iterator::all() {
-        if format!("{:?}", e).to_ascii_lowercase() == s.to_ascii_lowercase() {
-            return Some(e);
-        }
-    }
-    None
+    enum_iterator::all().find(|e| format!("{:?}", e).to_ascii_lowercase() == s.to_ascii_lowercase())
 }
 
 #[tokio::main]
@@ -294,7 +289,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let ecam = get_ecam_simulator().await?;
                 pipe_stdin(ecam).await?;
             } else {
-                let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
+                let uuid = Uuid::parse_str(device_name).expect("Failed to parse UUID");
                 let ecam = get_ecam_bt(uuid).await?;
                 pipe_stdin(ecam).await?;
             }

@@ -24,18 +24,6 @@ pub enum EcamOutput {
 }
 
 impl EcamOutput {
-    /// Gets the underlying packet, if it exists.
-    pub fn get_packet(&self) -> Option<&Response> {
-        if let Self::Packet(EcamPacket {
-            representation: r, ..
-        }) = self
-        {
-            r.as_ref()
-        } else {
-            None
-        }
-    }
-
     /// Takes the underlying packet, if it exists.
     pub fn take_packet(self) -> Option<Response> {
         if let Self::Packet(EcamPacket {
