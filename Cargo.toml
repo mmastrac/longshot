@@ -1,10 +1,12 @@
 [package]
 name = "longshot"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Matt Mastracci <matthew@mastracci.com>"]
 edition = "2021"
 description = "API and CLI for ECAM-based Delonghi machines"
 license = "Apache-2.0 OR MIT"
+repository = "https://github.com/mmastrac/longshot"
+readme = "README.md"
 
 [dependencies]
 btleplug = "0.10.1"
