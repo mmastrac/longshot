@@ -1,5 +1,9 @@
 use super::{IngredientInfo, RecipeDetails};
-use crate::protocol::*;
+use crate::{
+    ecam::{Ecam, EcamError, EcamStatus},
+    operations::{list_recipies_for, monitor},
+    protocol::*,
+};
 
 pub struct BrewIngredients {
     pub beverage: EcamBeverageId,
@@ -46,7 +50,7 @@ fn get_enum_arg<T>(
     }
 }
 
-pub fn check_ingredients(
+fn check_ingredients(
     ingredients: &BrewIngredients,
     details: &RecipeDetails,
 ) -> Result<Vec<RecipeInfo>, String> {
@@ -88,4 +92,80 @@ pub fn check_ingredients(
         }
     }
     Ok(v)
+}
+
+pub async fn brew(
+    ecam: Ecam,
+    turn_on: bool,
+    allow_off: bool,
+    skip_brew: bool,
+    ingredients: BrewIngredients,
+) -> Result<(), EcamError> {
+    match ecam.current_state().await? {
+        EcamStatus::Ready => {}
+        EcamStatus::StandBy => {
+            if allow_off {
+                println!("Machine is off, but --allow-off will allow us to proceed")
+            } else {
+                if !turn_on {
+                    println!("Machine is not on, pass --turn-on to turn it on before operation");
+                    return Ok(());
+                }
+                println!("Waiting for the machine to turn on...");
+                ecam.write_request(Request::AppControl(AppControl::TurnOn))
+                    .await?;
+                ecam.wait_for_state(EcamStatus::Ready).await?;
+            }
+        }
+        s => {
+            println!(
+                "Machine is in state {:?}, so we will cowardly refuse to brew coffee",
+                s
+            );
+            return Ok(());
+        }
+    }
+
+    println!("Fetching recipe for {:?}...", ingredients.beverage);
+    let recipe_list = list_recipies_for(ecam.clone(), Some(vec![ingredients.beverage])).await?;
+    let recipe = recipe_list.find(ingredients.beverage);
+    if let Some(details) = recipe {
+        match check_ingredients(&ingredients, details) {
+            Err(s) => {
+                println!("{}", s)
+            }
+            Ok(recipe) => {
+                println!(
+                    "Brewing {:?} with {}",
+                    ingredients.beverage,
+                    recipe
+                        .iter()
+                        .map(|x| format!("--{:?}={}", x.ingredient, x.value))
+                        .collect::<Vec<String>>()
+                        .join(" ")
+                );
+
+                let req = Request::BeverageDispensingMode(
+                    MachineEnum::Value(ingredients.beverage),
+                    MachineEnum::Value(EcamOperationTrigger::Start),
+                    recipe,
+                    MachineEnum::Value(EcamBeverageTasteType::Prepare),
+                );
+
+                if skip_brew {
+                    println!("--skip-brew was passed, so we aren't going to brew anything")
+                } else {
+                    ecam.write_request(req).await?;
+                }
+                monitor(ecam, false).await?;
+            }
+        }
+    } else {
+        println!(
+            "I wasn't able to fetch the recipe for {:?}. Perhaps this machine can't make it?",
+            ingredients.beverage
+        );
+    }
+
+    Ok(())
 }

@@ -1,7 +1,3 @@
-use std::time::Instant;
-
-use crate::prelude::*;
-
 use clap::{arg, command};
 
 mod display;
@@ -11,137 +7,12 @@ mod operations;
 mod prelude;
 mod protocol;
 
-use display::{ColouredStatusDisplay, StatusDisplay};
 use ecam::{
     ecam_scan, get_ecam_bt, get_ecam_simulator, get_ecam_subprocess, pipe_stdin, Ecam, EcamDriver,
-    EcamError, EcamOutput, EcamStatus,
 };
-use operations::{check_ingredients, list_recipies_for, BrewIngredients};
+use operations::*;
 use protocol::*;
 use uuid::Uuid;
-
-async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
-    let mut tap = ecam.packet_tap().await?;
-    let ecam = ecam.clone();
-    let _handle = tokio::spawn(async move {
-        while let Some(packet) = tap.next().await {
-            // println!("{:?}", packet);
-            if packet == EcamOutput::Done {
-                break;
-            }
-        }
-    });
-
-    let mut display: Box<dyn StatusDisplay> = Box::new(ColouredStatusDisplay::new(80));
-    let mut state = ecam.current_state().await?;
-    display.display(state);
-    if turn_on && state == EcamStatus::StandBy {
-        ecam.write_request(Request::AppControl(AppControl::TurnOn))
-            .await?;
-    }
-
-    let mut debounce = Instant::now();
-    loop {
-        // Poll for current state
-        let next_state = ecam.current_state().await?;
-        if next_state != state || debounce.elapsed() > Duration::from_millis(250) {
-            // println!("{:?}", next_state);
-            display.display(next_state);
-            state = next_state;
-            debounce = Instant::now();
-        }
-    }
-
-    Ok(())
-}
-
-async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
-    // Wait for device to settle
-    ecam.wait_for_connection().await?;
-    let list = list_recipies_for(ecam, None).await?;
-
-    for recipe in list.recipes {
-        println!("{:?} {:?}", recipe.beverage, recipe.fetch_ingredients());
-    }
-
-    Ok(())
-}
-
-async fn brew(
-    ecam: Ecam,
-    turn_on: bool,
-    allow_off: bool,
-    skip_brew: bool,
-    ingredients: BrewIngredients,
-) -> Result<(), EcamError> {
-    match ecam.current_state().await? {
-        EcamStatus::Ready => {}
-        EcamStatus::StandBy => {
-            if allow_off {
-                println!("Machine is off, but --allow-off will allow us to proceed")
-            } else {
-                if !turn_on {
-                    println!("Machine is not on, pass --turn-on to turn it on before operation");
-                    return Ok(());
-                }
-                println!("Waiting for the machine to turn on...");
-                ecam.write_request(Request::AppControl(AppControl::TurnOn))
-                    .await?;
-                ecam.wait_for_state(ecam::EcamStatus::Ready).await?;
-            }
-        }
-        s => {
-            println!(
-                "Machine is in state {:?}, so we will cowardly refuse to brew coffee",
-                s
-            );
-            return Ok(());
-        }
-    }
-
-    println!("Fetching recipe for {:?}...", ingredients.beverage);
-    let recipe_list = list_recipies_for(ecam.clone(), Some(vec![ingredients.beverage])).await?;
-    let recipe = recipe_list.find(ingredients.beverage);
-    if let Some(details) = recipe {
-        match check_ingredients(&ingredients, details) {
-            Err(s) => {
-                println!("{}", s)
-            }
-            Ok(recipe) => {
-                println!(
-                    "Brewing {:?} with {}",
-                    ingredients.beverage,
-                    recipe
-                        .iter()
-                        .map(|x| format!("--{:?}={}", x.ingredient, x.value))
-                        .collect::<Vec<String>>()
-                        .join(" ")
-                );
-
-                let req = Request::BeverageDispensingMode(
-                    MachineEnum::Value(ingredients.beverage),
-                    MachineEnum::Value(EcamOperationTrigger::Start),
-                    recipe,
-                    MachineEnum::Value(EcamBeverageTasteType::Prepare),
-                );
-
-                if skip_brew {
-                    println!("--skip-brew was passed, so we aren't going to brew anything")
-                } else {
-                    ecam.write_request(req).await?;
-                }
-                monitor(ecam, false).await?;
-            }
-        }
-    } else {
-        println!(
-            "I wasn't able to fetch the recipe for {:?}. Perhaps this machine can't make it?",
-            ingredients.beverage
-        );
-    }
-
-    Ok(())
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

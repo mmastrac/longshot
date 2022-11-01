@@ -300,3 +300,15 @@ pub async fn list_recipies_for(
     }
     Ok(recipes.take())
 }
+
+pub async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
+    // Wait for device to settle
+    ecam.wait_for_connection().await?;
+    let list = list_recipies_for(ecam, None).await?;
+
+    for recipe in list.recipes {
+        println!("{:?} {:?}", recipe.beverage, recipe.fetch_ingredients());
+    }
+
+    Ok(())
+}
