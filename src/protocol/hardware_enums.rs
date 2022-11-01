@@ -24,6 +24,21 @@ macro_rules! hardware_enum {
         )]
         pub enum $name $($x)*
 
+        impl $name {
+            pub fn all() -> impl Iterator<Item=$name> {
+                enum_iterator::all()
+            }
+
+            pub fn lookup_by_name_case_insensitive(s: &str) -> Option<$name> {
+                // TODO: Can use one of the static ToString crates to improve this
+                enum_iterator::all().find(|e| format!("{:?}", e).to_ascii_lowercase() == s.to_ascii_lowercase())
+            }
+
+            pub fn lookup_by_name(s: &str) -> Option<$name> {
+                // TODO: Can use one of the static ToString crates to improve this
+                enum_iterator::all().find(|e| format!("{:?}", e) == s)
+            }
+        }
         impl MachineEnumerable for $name {}
     };
 }

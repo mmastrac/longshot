@@ -16,7 +16,6 @@ use ecam::{
     ecam_scan, get_ecam_bt, get_ecam_simulator, get_ecam_subprocess, pipe_stdin, Ecam, EcamDriver,
     EcamError, EcamOutput, EcamStatus,
 };
-use enum_iterator::Sequence;
 use operations::{check_ingredients, list_recipies_for, BrewIngredients};
 use protocol::*;
 use uuid::Uuid;
@@ -144,10 +143,6 @@ async fn brew(
     Ok(())
 }
 
-fn enum_lookup<T: Sequence + std::fmt::Debug>(s: &str) -> Option<T> {
-    enum_iterator::all().find(|e| format!("{:?}", e).to_ascii_lowercase() == s.to_ascii_lowercase())
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     pretty_env_logger::init();
@@ -222,9 +217,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .expect("Device name required")
                 .clone();
 
-            let beverage: EcamBeverageId =
-                enum_lookup(cmd.get_one::<String>("beverage").unwrap_or(&"".to_owned()))
-                    .expect("Beverage required");
+            let beverage: EcamBeverageId = EcamBeverageId::lookup_by_name_case_insensitive(
+                cmd.get_one::<String>("beverage").unwrap_or(&"".to_owned()),
+            )
+            .expect("Beverage required");
             let coffee = cmd
                 .get_one::<String>("coffee")
                 .map(|s| s.parse::<u16>().expect("Invalid number"));
@@ -235,8 +231,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .get_one::<String>("hotwater")
                 .map(|s| s.parse::<u16>().expect("Invalid number"));
             let taste: Option<EcamBeverageTaste> =
-                enum_lookup(cmd.get_one::<String>("taste").unwrap_or(&"".to_owned()));
-            let temp: Option<EcamTemperature> = enum_lookup(
+                EcamBeverageTaste::lookup_by_name_case_insensitive(
+                    cmd.get_one::<String>("taste").unwrap_or(&"".to_owned()),
+                );
+            let temp: Option<EcamTemperature> = EcamTemperature::lookup_by_name_case_insensitive(
                 cmd.get_one::<String>("temperature")
                     .unwrap_or(&"".to_owned()),
             );

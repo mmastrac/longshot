@@ -12,10 +12,16 @@ pub struct RecipeAccumulator {
     list: Vec<EcamBeverageId>,
 }
 
+impl Default for RecipeAccumulator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RecipeAccumulator {
     pub fn new() -> Self {
         RecipeAccumulator {
-            list: enum_iterator::all().collect(),
+            list: EcamBeverageId::all().collect(),
             recipe: HashMap::new(),
             recipe_min_max: HashMap::new(),
         }
