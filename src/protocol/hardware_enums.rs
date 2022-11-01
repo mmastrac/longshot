@@ -10,7 +10,17 @@ use super::MachineEnumerable;
 /// Ingredients used for brew operations.
 #[repr(u8)]
 #[derive(
-    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    IntoPrimitive,
+    TryFromPrimitive,
+    Eq,
+    Hash,
+    Sequence,
 )]
 pub enum EcamIngredients {
     Temp = 0,                  // TEMP
@@ -67,7 +77,17 @@ impl EcamIngredients {
 /// Beverage preparation mode.
 #[repr(u8)]
 #[derive(
-    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    IntoPrimitive,
+    TryFromPrimitive,
+    Eq,
+    Hash,
+    Sequence,
 )]
 pub enum EcamBeverageTasteType {
     Delete = 0,
@@ -82,7 +102,17 @@ pub enum EcamBeverageTasteType {
 /// Operation mode.
 #[repr(u8)]
 #[derive(
-    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    IntoPrimitive,
+    TryFromPrimitive,
+    Eq,
+    Hash,
+    Sequence,
 )]
 pub enum EcamOperationTrigger {
     DontCare = 0,
@@ -99,7 +129,17 @@ pub enum EcamOperationTrigger {
 /// Answer and request IDs for packets send to/from the machine.
 #[repr(u8)]
 #[derive(
-    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    IntoPrimitive,
+    TryFromPrimitive,
+    Eq,
+    Hash,
+    Sequence,
 )]
 pub enum EcamRequestId {
     SetBtMode = 17,
@@ -134,7 +174,17 @@ pub enum EcamRequestId {
 
 #[repr(u8)]
 #[derive(
-    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    IntoPrimitive,
+    TryFromPrimitive,
+    Eq,
+    Hash,
+    Sequence,
 )]
 pub enum EcamTemperature {
     Low = 0,
@@ -145,7 +195,17 @@ pub enum EcamTemperature {
 
 #[repr(u8)]
 #[derive(
-    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    IntoPrimitive,
+    TryFromPrimitive,
+    Eq,
+    Hash,
+    Sequence,
 )]
 pub enum EcamBeverageTaste {
     Preground = 0,
@@ -158,7 +218,17 @@ pub enum EcamBeverageTaste {
 
 #[repr(u8)]
 #[derive(
-    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    IntoPrimitive,
+    TryFromPrimitive,
+    Eq,
+    Hash,
+    Sequence,
 )]
 pub enum EcamMachineState {
     StandBy = 0,
@@ -177,7 +247,17 @@ pub enum EcamMachineState {
 
 #[repr(u8)]
 #[derive(
-    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    IntoPrimitive,
+    TryFromPrimitive,
+    Eq,
+    Hash,
+    Sequence,
 )]
 pub enum EcamAccessory {
     None = 0,
@@ -189,7 +269,17 @@ pub enum EcamAccessory {
 
 #[repr(u8)]
 #[derive(
-    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    IntoPrimitive,
+    TryFromPrimitive,
+    Eq,
+    Hash,
+    Sequence,
 )]
 pub enum EcamBeverageId {
     EspressoCoffee = 1,
@@ -234,7 +324,17 @@ pub enum EcamBeverageId {
 /// Represents bits set in the alarm fields.
 #[repr(u8)]
 #[derive(
-    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    IntoPrimitive,
+    TryFromPrimitive,
+    Eq,
+    Hash,
+    Sequence,
 )]
 pub enum EcamAlarm {
     EmptyWaterTank = 0,
@@ -270,7 +370,17 @@ pub enum EcamAlarm {
 /// Represents bits set in the machine switch fields.
 #[repr(u8)]
 #[derive(
-    Copy, Clone, Debug, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, Eq, Hash, Sequence,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    IntoPrimitive,
+    TryFromPrimitive,
+    Eq,
+    Hash,
+    Sequence,
 )]
 pub enum EcamMachineSwitch {
     WaterSpout = 0,

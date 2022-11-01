@@ -1,7 +1,10 @@
-use std::{fmt::Debug, marker::PhantomData};
+use std::{fmt::Debug, hash::Hash, marker::PhantomData};
 
 /// Helper trait that collects the requirements for a MachineEnum.
-pub trait MachineEnumerable: TryFrom<u8> + Into<u8> + Copy + Debug {}
+pub trait MachineEnumerable:
+    TryFrom<u8> + Into<u8> + Copy + Debug + Eq + PartialEq + Ord + PartialOrd + Hash
+{
+}
 
 /// Wraps a machine enumeration that may have unknown values.
 #[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Hash)]
@@ -32,34 +35,25 @@ where
     }
 }
 
-impl<T> Into<u8> for MachineEnum<T>
-where
-    T: MachineEnumerable,
-{
-    fn into(self) -> u8 {
-        match self {
+impl<T: MachineEnumerable> From<MachineEnum<T>> for u8 {
+    fn from(v: MachineEnum<T>) -> Self {
+        match v {
             MachineEnum::Value(v) => v.into(),
             MachineEnum::Unknown(v) => v,
         }
     }
 }
 
-impl<T> Into<Option<T>> for MachineEnum<T>
-where
-    T: MachineEnumerable,
-{
-    fn into(self) -> Option<T> {
-        match self {
+impl<T: MachineEnumerable> From<MachineEnum<T>> for Option<T> {
+    fn from(v: MachineEnum<T>) -> Self {
+        match v {
             MachineEnum::Value(v) => Some(v),
             _ => None,
         }
     }
 }
 
-impl<T: Debug> Debug for MachineEnum<T>
-where
-    T: MachineEnumerable,
-{
+impl<T: MachineEnumerable> Debug for MachineEnum<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Value(t) => t.fmt(f),
@@ -68,10 +62,7 @@ where
     }
 }
 
-impl<T: PartialEq> PartialEq<T> for MachineEnum<T>
-where
-    T: MachineEnumerable,
-{
+impl<T: MachineEnumerable> PartialEq<T> for MachineEnum<T> {
     fn eq(&self, other: &T) -> bool {
         match self {
             Self::Value(t) => t.eq(other),
@@ -80,6 +71,7 @@ where
     }
 }
 
+/// Represents a set of enum values, some potentially unknown.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct SwitchSet<T: MachineEnumerable> {
     pub value: u16,
