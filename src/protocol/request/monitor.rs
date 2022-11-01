@@ -43,6 +43,18 @@ where
             phantom: PhantomData::default(),
         }
     }
+
+    pub fn set(&self) -> Vec<MachineEnum<T>> {
+        // TODO: This should be an iterator
+        let mut v = vec![];
+        for i in 0..core::mem::size_of::<u16>() * 8 - 1 {
+            if self.value & (1 << i) != 0 {
+                let i = <u8>::try_from(i).expect("This should have fit in a u8");
+                v.push(MachineEnum::<T>::decode(i));
+            }
+        }
+        v
+    }
 }
 
 impl<T> std::fmt::Debug for SwitchSet<T>

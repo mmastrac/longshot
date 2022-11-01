@@ -2,7 +2,6 @@ use crate::prelude::*;
 
 use tokio::sync::{Mutex, OwnedSemaphorePermit};
 use tokio_stream::wrappers::BroadcastStream;
-use tuples::TupleCloned;
 
 use crate::ecam::{EcamDriver, EcamDriverOutput, EcamError};
 use crate::protocol::*;
@@ -14,6 +13,7 @@ pub enum EcamStatus {
     ShuttingDown(usize),
     Ready,
     Busy(usize),
+    Alarm(MachineEnum<EcamAlarm>),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -71,6 +71,9 @@ impl Into<EcamDriverOutput> for EcamOutput {
 
 impl EcamStatus {
     fn extract(state: &MonitorV2Response) -> EcamStatus {
+        for alarm in state.alarms.set() {
+            return EcamStatus::Alarm(alarm);
+        }
         if state.state == EcamMachineState::StandBy {
             return EcamStatus::StandBy;
         }

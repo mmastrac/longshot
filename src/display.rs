@@ -31,6 +31,7 @@ impl StatusDisplay for ColouredStatusDisplay {
             EcamStatus::ShuttingDown(percent) => {
                 (percent, format!("🛏 Shutting down... ({}%)", percent))
             }
+            EcamStatus::Alarm(alarm) => (0, format!("🔔 Alarm ({:?})", alarm)),
         };
 
         let mut status = " ".to_owned() + &status_text;
@@ -117,17 +118,18 @@ impl BasicStatusDisplay {
 impl StatusDisplay for BasicStatusDisplay {
     fn display(&mut self, state: EcamStatus) {
         let (bar, percent) = match state {
-            EcamStatus::Ready => ("Ready", None),
-            EcamStatus::StandBy => ("Standby", None),
-            EcamStatus::TurningOn(percent) => ("Turning on...", Some(percent)),
-            EcamStatus::ShuttingDown(percent) => ("Shutting down...", Some(percent)),
-            EcamStatus::Busy(percent) => ("Dispensing...", Some(percent)),
+            EcamStatus::Ready => ("Ready".to_owned(), None),
+            EcamStatus::StandBy => ("Standby".to_owned(), None),
+            EcamStatus::TurningOn(percent) => ("Turning on...".to_owned(), Some(percent)),
+            EcamStatus::ShuttingDown(percent) => ("Shutting down...".to_owned(), Some(percent)),
+            EcamStatus::Busy(percent) => ("Dispensing...".to_owned(), Some(percent)),
+            EcamStatus::Alarm(alarm) => (format!("Alarm: {:?}", alarm), None),
         };
 
         self.activity = (self.activity + 1) % 8;
         print!(
             "\r{} {}",
-            make_bar(bar, self.width - 2, percent),
+            make_bar(&bar, self.width - 2, percent),
             "/-\\|/-\\|"[self.activity as usize..self.activity as usize + 1].to_owned()
         );
 
