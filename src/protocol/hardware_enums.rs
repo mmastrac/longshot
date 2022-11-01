@@ -1,28 +1,34 @@
 #![allow(dead_code)]
-
+use super::MachineEnumerable;
 use enum_iterator::Sequence;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
-use super::MachineEnumerable;
-
 ///! This file contains validated hardware enumerations and associated values.
 
-/// Ingredients used for brew operations.
-#[repr(u8)]
-#[derive(
-    Copy,
-    Clone,
-    Debug,
-    PartialEq,
-    PartialOrd,
-    Ord,
-    IntoPrimitive,
-    TryFromPrimitive,
-    Eq,
-    Hash,
-    Sequence,
-)]
-pub enum EcamIngredients {
+macro_rules! hardware_enum {
+    ($comment:literal, $name:ident $($x:tt)*) => {
+        #[doc=$comment]
+        #[repr(u8)]
+        #[derive(
+            Copy,
+            Clone,
+            Debug,
+            PartialEq,
+            PartialOrd,
+            Ord,
+            IntoPrimitive,
+            TryFromPrimitive,
+            Eq,
+            Hash,
+            Sequence,
+        )]
+        pub enum $name $($x)*
+
+        impl MachineEnumerable for $name {}
+    };
+}
+
+hardware_enum! {"Ingredients used for brew operations.", EcamIngredients {
     Temp = 0,                  // TEMP
     Coffee = 1,                // COFFEE
     Taste = 2,                 // TASTE
@@ -52,7 +58,7 @@ pub enum EcamIngredients {
     VisibleInProgramming = 26, // VISIBLEINPROGRAMMING
     IndexLength = 27,          // INDEXLENGTH
     Accessorio = 28,           // ACCESSORIO
-}
+}}
 
 impl EcamIngredients {
     /// Is this ingredient encoded as two bytes? Unknown encodings return None.
@@ -74,22 +80,7 @@ impl EcamIngredients {
     }
 }
 
-/// Beverage preparation mode.
-#[repr(u8)]
-#[derive(
-    Copy,
-    Clone,
-    Debug,
-    PartialEq,
-    PartialOrd,
-    Ord,
-    IntoPrimitive,
-    TryFromPrimitive,
-    Eq,
-    Hash,
-    Sequence,
-)]
-pub enum EcamBeverageTasteType {
+hardware_enum! {"Beverage preparation mode.", EcamBeverageTasteType {
     Delete = 0,
     Save = 1,
     Prepare = 2,
@@ -97,24 +88,9 @@ pub enum EcamBeverageTasteType {
     SaveInversion = 5,
     PrepareInversion = 6,
     PrepareAndSaveInversion = 7,
-}
+}}
 
-/// Operation mode.
-#[repr(u8)]
-#[derive(
-    Copy,
-    Clone,
-    Debug,
-    PartialEq,
-    PartialOrd,
-    Ord,
-    IntoPrimitive,
-    TryFromPrimitive,
-    Eq,
-    Hash,
-    Sequence,
-)]
-pub enum EcamOperationTrigger {
+hardware_enum! {"Operation mode/trigger.", EcamOperationTrigger {
     DontCare = 0,
     Start = 1,
     /// This is STARTPROGRAM and STOPV2, but only STOPV2 appears to be used.
@@ -124,24 +100,9 @@ pub enum EcamOperationTrigger {
     StopProgram = 5,
     ExitProgramOk = 6,
     AdvancedMode = 7,
-}
+}}
 
-/// Answer and request IDs for packets send to/from the machine.
-#[repr(u8)]
-#[derive(
-    Copy,
-    Clone,
-    Debug,
-    PartialEq,
-    PartialOrd,
-    Ord,
-    IntoPrimitive,
-    TryFromPrimitive,
-    Eq,
-    Hash,
-    Sequence,
-)]
-pub enum EcamRequestId {
+hardware_enum! {"Identifier determining the type of request and response (also referred to as the 'answer ID').", EcamRequestId {
     SetBtMode = 17,
     MonitorV0 = 96,
     MonitorV1 = 112,
@@ -170,67 +131,25 @@ pub enum EcamRequestId {
     BeanSystemWrite = 187,
     PinRead = 210,
     SetTime = 226,
-}
+}}
 
-#[repr(u8)]
-#[derive(
-    Copy,
-    Clone,
-    Debug,
-    PartialEq,
-    PartialOrd,
-    Ord,
-    IntoPrimitive,
-    TryFromPrimitive,
-    Eq,
-    Hash,
-    Sequence,
-)]
-pub enum EcamTemperature {
+hardware_enum! {"The temperature of the dispensed beverage.", EcamTemperature {
     Low = 0,
     Mid = 1,
     High = 2,
     VeryHigh = 3,
-}
+}}
 
-#[repr(u8)]
-#[derive(
-    Copy,
-    Clone,
-    Debug,
-    PartialEq,
-    PartialOrd,
-    Ord,
-    IntoPrimitive,
-    TryFromPrimitive,
-    Eq,
-    Hash,
-    Sequence,
-)]
-pub enum EcamBeverageTaste {
+hardware_enum! {"The strength of the dispensed beverage.", EcamBeverageTaste {
     Preground = 0,
     ExtraMild = 1,
     Mild = 2,
     Normal = 3,
     Strong = 4,
     ExtraStrong = 5,
-}
+}}
 
-#[repr(u8)]
-#[derive(
-    Copy,
-    Clone,
-    Debug,
-    PartialEq,
-    PartialOrd,
-    Ord,
-    IntoPrimitive,
-    TryFromPrimitive,
-    Eq,
-    Hash,
-    Sequence,
-)]
-pub enum EcamMachineState {
+hardware_enum! {"The current state of the machine.", EcamMachineState {
     StandBy = 0,
     TurningOn = 1,
     ShuttingDown = 2,
@@ -243,45 +162,17 @@ pub enum EcamMachineState {
     HotWaterDelivery = 11,
     MilkCleaning = 12,
     ChocolatePreparation = 16,
-}
+}}
 
-#[repr(u8)]
-#[derive(
-    Copy,
-    Clone,
-    Debug,
-    PartialEq,
-    PartialOrd,
-    Ord,
-    IntoPrimitive,
-    TryFromPrimitive,
-    Eq,
-    Hash,
-    Sequence,
-)]
-pub enum EcamAccessory {
+hardware_enum! {"The accessory that is connected to the accessory port.", EcamAccessory {
     None = 0,
     Water = 1,
     Milk = 2,
     Chocolate = 3,
     MilkClean = 4,
-}
+}}
 
-#[repr(u8)]
-#[derive(
-    Copy,
-    Clone,
-    Debug,
-    PartialEq,
-    PartialOrd,
-    Ord,
-    IntoPrimitive,
-    TryFromPrimitive,
-    Eq,
-    Hash,
-    Sequence,
-)]
-pub enum EcamBeverageId {
+hardware_enum! {"The type of beverage to prepare.", EcamBeverageId {
     EspressoCoffee = 1,
     RegularCoffee = 2,
     LongCoffee = 3,
@@ -319,24 +210,9 @@ pub enum EcamBeverageId {
     Custom08 = 237,
     Custom09 = 238,
     Custom10 = 239,
-}
+}}
 
-/// Represents bits set in the alarm fields.
-#[repr(u8)]
-#[derive(
-    Copy,
-    Clone,
-    Debug,
-    PartialEq,
-    PartialOrd,
-    Ord,
-    IntoPrimitive,
-    TryFromPrimitive,
-    Eq,
-    Hash,
-    Sequence,
-)]
-pub enum EcamAlarm {
+hardware_enum! {"The set of alarms the machine can produce.", EcamAlarm {
     EmptyWaterTank = 0,
     CoffeeWasteContainerFull = 1,
     DescaleAlarm = 2,
@@ -365,24 +241,9 @@ pub enum EcamAlarm {
     GrindingUnit2Problem = 24,
     SpiCommProblem = 27,
     ClockBtCommProblem = 26,
-}
+}}
 
-/// Represents bits set in the machine switch fields.
-#[repr(u8)]
-#[derive(
-    Copy,
-    Clone,
-    Debug,
-    PartialEq,
-    PartialOrd,
-    Ord,
-    IntoPrimitive,
-    TryFromPrimitive,
-    Eq,
-    Hash,
-    Sequence,
-)]
-pub enum EcamMachineSwitch {
+hardware_enum! {"The various switches that the machine reads.", EcamMachineSwitch {
     WaterSpout = 0,
     MotorUp = 1,
     MotorDown = 2,
@@ -396,13 +257,4 @@ pub enum EcamMachineSwitch {
     CleanKnob = 10,
     DoorOpened = 13,
     PregroundDoorOpened = 14,
-}
-
-impl MachineEnumerable for EcamAlarm {}
-impl MachineEnumerable for EcamIngredients {}
-impl MachineEnumerable for EcamMachineState {}
-impl MachineEnumerable for EcamMachineSwitch {}
-impl MachineEnumerable for EcamAccessory {}
-impl MachineEnumerable for EcamBeverageId {}
-impl MachineEnumerable for EcamBeverageTasteType {}
-impl MachineEnumerable for EcamOperationTrigger {}
+}}
