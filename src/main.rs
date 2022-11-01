@@ -1,17 +1,8 @@
 use clap::{arg, command};
 
-mod display;
-mod ecam;
-mod logging;
-mod operations;
-mod prelude;
-mod protocol;
-
-use ecam::{
-    ecam_scan, get_ecam_bt, get_ecam_simulator, get_ecam_subprocess, pipe_stdin, Ecam, EcamDriver,
-};
-use operations::*;
-use protocol::*;
+use longshot::ecam::{ecam_lookup, ecam_scan, get_ecam_bt, get_ecam_simulator, pipe_stdin};
+use longshot::operations::*;
+use longshot::protocol::*;
 use uuid::Uuid;
 
 #[tokio::main]
@@ -73,7 +64,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .get_matches();
 
     if matches.get_flag("trace") {
-        crate::logging::TRACE_ENABLED.store(true, std::sync::atomic::Ordering::Relaxed);
+        longshot::logging::enable_tracing();
     }
 
     let subcommand = matches.subcommand();
@@ -110,8 +101,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .unwrap_or(&"".to_owned()),
             );
 
-            let ecam: Box<dyn EcamDriver> = Box::new(get_ecam_subprocess(device_name).await?);
-            let ecam = Ecam::new(ecam).await;
+            let ecam = ecam_lookup(device_name).await?;
             let ingredients = BrewIngredients {
                 beverage,
                 coffee,
@@ -129,9 +119,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .get_one::<String>("device-name")
                 .expect("Device name required")
                 .clone();
-            let ecam: Box<dyn EcamDriver> = Box::new(get_ecam_subprocess(device_name).await?);
-            let ecam = Ecam::new(ecam).await;
-
+            let ecam = ecam_lookup(device_name).await?;
             monitor(ecam, turn_on).await?;
         }
         Some(("list", _cmd)) => {
@@ -143,8 +131,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .get_one::<String>("device-name")
                 .expect("Device name required")
                 .clone();
-            let ecam: Box<dyn EcamDriver> = Box::new(get_ecam_subprocess(device_name).await?);
-            let ecam = Ecam::new(ecam).await;
+            let ecam = ecam_lookup(device_name).await?;
             list_recipes(ecam).await?;
         }
         Some(("x-internal-pipe", cmd)) => {

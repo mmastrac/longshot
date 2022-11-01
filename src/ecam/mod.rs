@@ -24,6 +24,16 @@ pub async fn ecam_scan() -> Result<(String, Uuid), EcamError> {
     EcamBT::scan().await
 }
 
+pub async fn ecam_lookup(device_name: &str) -> Result<Ecam, EcamError> {
+    let driver = Box::new(get_ecam_subprocess(device_name).await?);
+    Ok(Ecam::new(driver).await)
+}
+
+pub async fn ecam_lookup_direct(device_name: &str) -> Result<Ecam, EcamError> {
+    let driver = Box::new(get_ecam_subprocess(device_name).await?);
+    Ok(Ecam::new(driver).await)
+}
+
 #[derive(Error, Debug)]
 pub enum EcamError {
     #[error("not found")]

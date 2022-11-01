@@ -1,6 +1,10 @@
 use std::sync::atomic::AtomicBool;
 pub(crate) static TRACE_ENABLED: AtomicBool = AtomicBool::new(false);
 
+pub fn enable_tracing() {
+    TRACE_ENABLED.store(true, std::sync::atomic::Ordering::Relaxed);
+}
+
 #[macro_export]
 macro_rules! trace_packet {
     ($($arg:tt)*) => {{
