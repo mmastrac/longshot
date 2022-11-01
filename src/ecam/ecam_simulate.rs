@@ -48,8 +48,8 @@ fn make_simulated_response(state: EcamMachineState, progress: u8, percentage: u8
             accessory: MachineEnum::Value(EcamAccessory::None),
             switches: SwitchSet::of(&[EcamMachineSwitch::WaterSpout]),
             alarms: SwitchSet::empty(),
-            progress: progress,
-            percentage: percentage,
+            progress,
+            percentage,
             load0: 0,
             load1: 0,
         }

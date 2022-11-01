@@ -262,13 +262,11 @@ pub async fn list_recipies_for(
     for i in 0..3 {
         if i == 0 {
             println!("Fetching recipes...");
-        } else {
-            if recipes.get_remaining_beverages().len() > 0 {
-                println!(
-                    "Fetching potentially missing recipes... {:?}",
-                    recipes.get_remaining_beverages()
-                );
-            }
+        } else if recipes.get_remaining_beverages().len() > 0 {
+            println!(
+                "Fetching potentially missing recipes... {:?}",
+                recipes.get_remaining_beverages()
+            );
         }
         'outer: for beverage in recipes.get_remaining_beverages() {
             'inner: for packet in vec![
