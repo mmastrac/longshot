@@ -24,8 +24,8 @@ impl StatusDisplay for ColouredStatusDisplay {
         self.activity += 1;
 
         let (percent, status_text) = match state {
-            EcamStatus::Ready => (0, format!("✅ Ready")),
-            EcamStatus::StandBy => (0, format!("💤 Standby")),
+            EcamStatus::Ready => (0, "✅ Ready".to_string()),
+            EcamStatus::StandBy => (0, "💤 Standby".to_string()),
             EcamStatus::Busy(percent) => (percent, format!("☕ Dispensing... ({}%)", percent)),
             EcamStatus::TurningOn(percent) => (percent, format!("💡 Turning on... ({}%)", percent)),
             EcamStatus::ShuttingDown(percent) => {

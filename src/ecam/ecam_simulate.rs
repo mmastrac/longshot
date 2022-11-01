@@ -4,7 +4,7 @@ use crate::ecam::{EcamDriver, EcamDriverOutput, EcamError};
 use crate::prelude::*;
 use crate::protocol::{
     EcamAccessory, EcamDriverPacket, EcamMachineState, EcamMachineSwitch, EcamRequestId,
-    MachineEnum, MonitorV2Response, PartialDecode, PartialEncode, Request, Response, SwitchSet,
+    MachineEnum, MonitorV2Response, PartialEncode, SwitchSet,
 };
 
 struct EcamSimulate {
@@ -59,7 +59,7 @@ fn make_simulated_response(state: EcamMachineState, progress: u8, percentage: u8
 }
 
 async fn send(tx: &tokio::sync::mpsc::Sender<Vec<u8>>, v: Vec<u8>) -> Result<(), EcamError> {
-    Ok(tx.send(v).await.map_err(|_| EcamError::Unknown)?)
+    tx.send(v).await.map_err(|_| EcamError::Unknown)
 }
 
 pub async fn get_ecam_simulator() -> Result<impl EcamDriver, EcamError> {

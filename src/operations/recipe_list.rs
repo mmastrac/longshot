@@ -49,12 +49,12 @@ impl RecipeAccumulator {
 
         // If the recipe has empty ingredients, we're going to ignore it and say it's complete
         if let Some(recipe) = recipe {
-            if recipe.len() == 0 {
+            if recipe.is_empty() {
                 return true;
             }
         }
         if let Some(recipe_min_max) = recipe_min_max {
-            if recipe_min_max.len() == 0 {
+            if recipe_min_max.is_empty() {
                 return true;
             }
         }
@@ -132,12 +132,7 @@ pub struct RecipeList {
 
 impl RecipeList {
     pub fn find(&self, beverage: EcamBeverageId) -> Option<&RecipeDetails> {
-        for r in self.recipes.iter() {
-            if r.beverage == beverage {
-                return Some(r);
-            }
-        }
-        None
+        self.recipes.iter().find(|&r| r.beverage == beverage)
     }
 }
 
@@ -234,13 +229,11 @@ impl RecipeDetails {
                         println!("Unknown ingredient {:?}", ingredient)
                     }
                 }
-            } else {
-                if m1.contains_key(key) ^ m2.contains_key(key) {
-                    println!(
-                        "Mismatch for ingredient {:?} (recipe={:?} min_max={:?})",
-                        ingredient, r1, r2
-                    );
-                }
+            } else if m1.contains_key(key) ^ m2.contains_key(key) {
+                println!(
+                    "Mismatch for ingredient {:?} (recipe={:?} min_max={:?})",
+                    ingredient, r1, r2
+                );
             }
         }
         v
@@ -262,7 +255,7 @@ pub async fn list_recipies_for(
     for i in 0..3 {
         if i == 0 {
             println!("Fetching recipes...");
-        } else if recipes.get_remaining_beverages().len() > 0 {
+        } else if !recipes.get_remaining_beverages().is_empty() {
             println!(
                 "Fetching potentially missing recipes... {:?}",
                 recipes.get_remaining_beverages()

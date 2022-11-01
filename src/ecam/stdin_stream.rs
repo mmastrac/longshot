@@ -30,7 +30,7 @@ fn to_line(output: EcamDriverOutput) -> String {
     match output {
         EcamDriverOutput::Ready => "R: READY".to_owned(),
         EcamDriverOutput::Done => "Q:".to_owned(),
-        EcamDriverOutput::Packet(p) => format!("R: {}", p.stringify()).to_owned(),
+        EcamDriverOutput::Packet(p) => format!("R: {}", p.stringify()),
     }
 }
 

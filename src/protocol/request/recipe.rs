@@ -63,7 +63,7 @@ impl PartialDecode<RecipeMinMaxInfo> for RecipeMinMaxInfo {
         if let MachineEnum::Value(known) = ingredient {
             if known
                 .is_wide_encoding()
-                .expect(format!("Unknown encoding for {:?}", known).as_str())
+                .unwrap_or_else(|| panic!("Unknown encoding for {:?}", known))
             {
                 return Some(RecipeMinMaxInfo {
                     ingredient,

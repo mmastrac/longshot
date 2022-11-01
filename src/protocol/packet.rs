@@ -126,7 +126,7 @@ pub fn hexdump(buffer: &[u8]) -> String {
     let s2: String = buffer
         .iter()
         .enumerate()
-        .map(|(i, b)| {
+        .map(|(_i, b)| {
             if *b >= 20 && *b < 127 {
                 *b as char
             } else {
@@ -134,7 +134,7 @@ pub fn hexdump(buffer: &[u8]) -> String {
             }
         })
         .collect::<String>();
-    return format!("|{}| |{}|", s1, s2).to_owned();
+    format!("|{}| |{}|", s1, s2)
 }
 
 #[cfg(test)]

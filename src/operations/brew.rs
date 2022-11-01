@@ -24,12 +24,10 @@ fn get_u16_arg(
             return Err(format!("{} out of valid range", ingredient));
         }
         Ok(arg)
+    } else if allow_defaults {
+        Ok(value)
     } else {
-        if allow_defaults {
-            Ok(value)
-        } else {
-            Err(format!("{} required for this beverage", ingredient))
-        }
+        Err(format!("{} required for this beverage", ingredient))
     }
 }
 
@@ -41,12 +39,10 @@ fn get_enum_arg<T>(
 ) -> Result<T, String> {
     if let Some(arg) = arg {
         Ok(arg)
+    } else if allow_defaults {
+        Ok(default)
     } else {
-        if allow_defaults {
-            Ok(default)
-        } else {
-            Err(format!("{} required for this beverage", ingredient))
-        }
+        Err(format!("{} required for this beverage", ingredient))
     }
 }
 

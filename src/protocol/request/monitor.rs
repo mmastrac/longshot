@@ -119,8 +119,8 @@ impl PartialEncode for MonitorV2Response {
         self.switches.partial_encode(out);
         self.alarms.partial_encode(out);
         out.push(self.state.into());
-        out.push(self.progress.into());
-        out.push(self.percentage.into());
+        out.push(self.progress);
+        out.push(self.percentage);
         out.push(self.load0);
         out.push(self.load1);
     }
