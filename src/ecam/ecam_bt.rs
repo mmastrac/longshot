@@ -201,10 +201,7 @@ async fn get_ecam_from_adapter(
     let filter = ScanFilter {
         services: vec![SERVICE_UUID],
     };
-    adapter
-        .start_scan(filter)
-        .await
-        .expect("Can't scan BLE adapter for connected devices...");
+    adapter.start_scan(filter).await?;
 
     for _ in 0..10 {
         time::sleep(Duration::from_secs(1)).await;

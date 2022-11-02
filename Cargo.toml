@@ -25,6 +25,9 @@ num_enum = "0.5.7"
 enum-iterator = "1.2.0"
 colored = "2"
 
+[dev_dependencies]
+rstest = "0.15.0"
+
 [lib]
 name = "longshot"
 

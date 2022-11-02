@@ -87,6 +87,9 @@ pub async fn pipe_stdin<T: EcamDriver>(ecam: T) -> Result<(), Box<dyn std::error
                     break;
                 }
             }
+            _ = tokio::time::sleep(Duration::from_millis(1000)) => {
+                println!("Sleep");
+            }
         }
     }
     println!("Pipe shutting down");

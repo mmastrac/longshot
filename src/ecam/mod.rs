@@ -11,6 +11,7 @@ mod ecam_simulate;
 mod ecam_subprocess;
 mod ecam_wrapper;
 mod packet_receiver;
+mod packet_stream;
 mod stdin_stream;
 
 use self::ecam_bt::EcamBT;
