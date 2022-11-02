@@ -14,9 +14,8 @@ mod packet_receiver;
 mod packet_stream;
 mod stdin_stream;
 
-use self::ecam_bt::EcamBT;
+pub use self::ecam_bt::EcamBT;
 pub use driver::{EcamDriver, EcamDriverOutput};
-pub use ecam_bt::get_ecam as get_ecam_bt;
 pub use ecam_simulate::get_ecam_simulator;
 pub use ecam_subprocess::connect as get_ecam_subprocess;
 pub use ecam_wrapper::{Ecam, EcamOutput, EcamStatus};

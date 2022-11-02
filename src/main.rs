@@ -1,6 +1,6 @@
 use clap::{arg, command};
 
-use longshot::ecam::{ecam_lookup, ecam_scan, get_ecam_bt, get_ecam_simulator, pipe_stdin};
+use longshot::ecam::{ecam_lookup, ecam_scan, get_ecam_simulator, pipe_stdin, EcamBT};
 use longshot::operations::*;
 use longshot::protocol::*;
 use uuid::Uuid;
@@ -144,7 +144,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 pipe_stdin(ecam).await?;
             } else {
                 let uuid = Uuid::parse_str(device_name).expect("Failed to parse UUID");
-                let ecam = get_ecam_bt(uuid).await?;
+                let ecam = EcamBT::get(uuid).await?;
                 pipe_stdin(ecam).await?;
             }
         }
