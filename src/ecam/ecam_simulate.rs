@@ -120,7 +120,7 @@ pub async fn get_ecam_simulator() -> Result<impl EcamDriver, EcamError> {
             tokio::time::sleep(DELAY).await;
         }
 
-        trace_packet!("Done");
+        trace_shutdown!("EcamSimulate");
         Result::<(), EcamError>::Ok(())
     });
     Ok(EcamSimulate { rx: Mutex::new(rx) })

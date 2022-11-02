@@ -97,7 +97,7 @@ where
                 yield v;
             }
         }
-        trace_packet!("Main receive loop shutting down");
+        trace_shutdown!("packet_stream()");
     }
 }
 

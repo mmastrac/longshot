@@ -147,7 +147,7 @@ struct EcamDropHandle {
 
 impl Drop for EcamDropHandle {
     fn drop(&mut self) {
-        trace_packet!("Ecam was dropped");
+        trace_shutdown!("Ecam (dropped)");
         self.alive.deaden()
     }
 }
@@ -221,7 +221,7 @@ impl Ecam {
                 break;
             }
         }
-        trace_packet!("Alive watch is closing!");
+        trace_shutdown!("Ecam::alive_watch()");
         alive.deaden();
         Ok(())
     }
@@ -258,7 +258,7 @@ impl Ecam {
                     }
                 }
                 EcamOutput::Done => {
-                    trace_packet!("Underlying driver is done");
+                    trace_shutdown!("Ecam::operation_loop (Done)");
                     break;
                 }
                 EcamOutput::Packet(EcamPacket {
@@ -274,7 +274,7 @@ impl Ecam {
                 _ => {}
             }
         }
-        trace_packet!("Ecam is closing");
+        trace_shutdown!("Ecam::operation_loop");
         alive.deaden();
         Ok(())
     }

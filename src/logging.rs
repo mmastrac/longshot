@@ -18,6 +18,16 @@ macro_rules! trace_packet {
     }};
 }
 
+/// Writes a trace of the given shutdown event if [`enable_tracing`] has been called.
+#[macro_export]
+macro_rules! trace_shutdown {
+    ($arg:literal) => {{
+        if $crate::logging::TRACE_ENABLED.load(std::sync::atomic::Ordering::Relaxed) {
+            eprintln!("[TRACE] [SHUTDOWN] {}", $arg);
+        }
+    }};
+}
+
 /// Writes a warning of the given event if [`enable_tracing`] has been called.
 #[macro_export]
 macro_rules! warning {

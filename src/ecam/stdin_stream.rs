@@ -1,10 +1,11 @@
+use crate::prelude::*;
 use std::time::Duration;
 
 use async_stream::stream;
 use tokio::select;
 use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
 
-use crate::{protocol::EcamDriverPacket, trace_packet};
+use crate::protocol::EcamDriverPacket;
 
 use super::{EcamDriver, EcamDriverOutput};
 
@@ -61,7 +62,7 @@ fn packet_stdio_stream() -> impl Stream<Item = EcamDriverPacket> {
                 }
             }
         }
-        trace_packet!("Exiting stdin loop.");
+        trace_shutdown!("packet_stdio_stream()");
     }
 }
 
@@ -84,7 +85,7 @@ pub async fn pipe_stdin<T: EcamDriver>(ecam: T) -> Result<(), Box<dyn std::error
                 Ok(true) => {}
             }
         }
-        trace_packet!("Watchdog thread shutting down.");
+        trace_shutdown!("pipe_stdin() (watchdog)");
     });
 
     let keepalive = || drop(tx.send(true));
@@ -103,7 +104,7 @@ pub async fn pipe_stdin<T: EcamDriver>(ecam: T) -> Result<(), Box<dyn std::error
                 if let Ok(Some(p)) = input {
                     println!("{}", to_line(p));
                 } else {
-                    println!("Device closed");
+                    trace_shutdown!("pipe_stdin() (device)");
                     break;
                 }
             },
@@ -112,7 +113,7 @@ pub async fn pipe_stdin<T: EcamDriver>(ecam: T) -> Result<(), Box<dyn std::error
                 if let Some(value) = out {
                     ecam.write(value).await?;
                 } else {
-                    println!("Input closed");
+                    trace_shutdown!("pipe_stdin() (input)");
                     break;
                 }
             }
@@ -122,7 +123,7 @@ pub async fn pipe_stdin<T: EcamDriver>(ecam: T) -> Result<(), Box<dyn std::error
         }
     }
     let _ = tx.send(false);
-    println!("Pipe shutting down");
+    trace_shutdown!("pipe_stdin()");
 
     Result::Ok(())
 }

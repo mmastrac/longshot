@@ -16,21 +16,14 @@ const CHARACTERISTIC_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_0812
 /// The concrete peripheral type to avoid going crazy here managaing an unsized trait.
 type Peripheral = <Adapter as Central>::Peripheral;
 
+/// Bluetooth implementation of [`EcamDriver`], running on top of [`btleplug`].
 pub struct EcamBT {
     peripheral: EcamPeripheral,
     notifications: EcamPacketReceiver,
 }
 
 impl EcamBT {
-    /// Send a packet to the ECAM
-    pub async fn send(&self, data: EcamDriverPacket) -> Result<(), EcamError> {
-        self.peripheral.write(data.packetize()).await
-    }
-
-    pub async fn alive(&self) -> Result<bool, EcamError> {
-        self.peripheral.is_alive().await
-    }
-
+    /// Returns the given [`EcamBT`] instance identified by the [`Uuid`].
     pub async fn get(uuid: Uuid) -> Result<Self, EcamError> {
         let manager = Manager::new().await?;
         Self::get_ecam_from_manager(&manager, uuid).await
@@ -117,11 +110,11 @@ impl EcamDriver for EcamBT {
     }
 
     fn write<'a>(&self, data: EcamDriverPacket) -> AsyncFuture<()> {
-        Box::pin(self.send(data))
+        Box::pin(self.peripheral.write(data.packetize()))
     }
 
     fn alive(&self) -> AsyncFuture<bool> {
-        Box::pin(self.alive())
+        Box::pin(self.peripheral.is_alive())
     }
 
     fn scan<'a>() -> AsyncFuture<'a, (String, Uuid)>
@@ -132,6 +125,7 @@ impl EcamDriver for EcamBT {
     }
 }
 
+/// Holds most of the device BTLE communication functionality.
 #[derive(Clone)]
 struct EcamPeripheral {
     pub local_name: String,
@@ -171,7 +165,7 @@ impl EcamPeripheral {
             while peripheral.is_connected().await.unwrap_or_default() {
                 tokio::time::sleep(Duration::from_millis(50)).await;
             }
-            trace_packet!("disconnected");
+            trace_shutdown!("peripheral.is_connected");
             drop(trigger);
         });
 
