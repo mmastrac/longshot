@@ -147,7 +147,7 @@ mod test {
             packet.extend_from_slice(&[1, 2, 3]);
         }
         println!("{:?}", packet);
-        for i in 0..7 {
+        for i in 0..12 {
             let mut p = PacketBuilder::new();
             assert!(p.accumulate(&packet[..i]).is_none());
             assert_eq!(Some(expected.clone()), p.accumulate(&packet[i..]));
