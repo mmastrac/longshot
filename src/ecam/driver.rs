@@ -18,6 +18,9 @@ pub trait EcamDriver: Send + Sync {
     /// Write one item to the ECAM.
     fn write(&self, data: EcamDriverPacket) -> AsyncFuture<()>;
 
+    /// Returns true if the driver is alive.
+    fn alive(&self) -> AsyncFuture<bool>;
+
     /// Scan for the first matching device.
     fn scan<'a>() -> AsyncFuture<'a, (String, Uuid)>
     where
@@ -63,6 +66,10 @@ mod test {
         fn write(&self, data: EcamDriverPacket) -> crate::prelude::AsyncFuture<()> {
             self.write_items.lock().unwrap().push(data);
             Box::pin(async { Ok(()) })
+        }
+
+        fn alive(&self) -> AsyncFuture<bool> {
+            Box::pin(async { Ok(true) })
         }
 
         fn scan<'a>() -> crate::prelude::AsyncFuture<'a, (String, uuid::Uuid)>

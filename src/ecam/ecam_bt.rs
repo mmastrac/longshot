@@ -27,6 +27,10 @@ impl EcamBT {
         self.peripheral.write(data.packetize()).await
     }
 
+    pub async fn alive(&self) -> Result<bool, EcamError> {
+        self.peripheral.is_alive().await
+    }
+
     pub async fn get(uuid: Uuid) -> Result<Self, EcamError> {
         let manager = Manager::new().await?;
         Self::get_ecam_from_manager(&manager, uuid).await
@@ -116,6 +120,10 @@ impl EcamDriver for EcamBT {
         Box::pin(self.send(data))
     }
 
+    fn alive(&self) -> AsyncFuture<bool> {
+        Box::pin(self.alive())
+    }
+
     fn scan<'a>() -> AsyncFuture<'a, (String, Uuid)>
     where
         Self: Sized,
@@ -143,6 +151,10 @@ impl EcamPeripheral {
                 )
                 .await?,
         )
+    }
+
+    pub async fn is_alive(&self) -> Result<bool, EcamError> {
+        Ok(self.peripheral.is_connected().await?)
     }
 
     pub fn id(&self) -> Uuid {

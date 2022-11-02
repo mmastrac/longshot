@@ -1,9 +1,8 @@
 use crate::prelude::*;
 
-use std::process::Stdio;
-
 use async_stream::stream;
 use futures::TryFutureExt;
+use std::process::Stdio;
 use tokio::{
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
     process::ChildStdin,
@@ -19,6 +18,7 @@ use crate::{
 pub struct EcamSubprocess {
     stdin: Arc<Mutex<ChildStdin>>,
     receiver: EcamPacketReceiver,
+    alive: Arc<Mutex<bool>>,
 }
 
 impl EcamSubprocess {
@@ -32,6 +32,10 @@ impl EcamSubprocess {
             .await?;
         Ok(())
     }
+
+    async fn is_alive(&self) -> Result<bool, EcamError> {
+        Ok(*self.alive.lock().await)
+    }
 }
 
 impl EcamDriver for EcamSubprocess {
@@ -41,6 +45,10 @@ impl EcamDriver for EcamSubprocess {
 
     fn write<'a>(&self, data: EcamDriverPacket) -> AsyncFuture<()> {
         Box::pin(self.write_stdin(data))
+    }
+
+    fn alive(&self) -> AsyncFuture<bool> {
+        Box::pin(self.is_alive())
     }
 
     fn scan<'a>() -> AsyncFuture<'a, (String, uuid::Uuid)>
@@ -53,6 +61,7 @@ impl EcamDriver for EcamSubprocess {
 
 pub async fn stream(
     mut child: tokio::process::Child,
+    alive: Arc<Mutex<bool>>,
 ) -> Result<impl StreamExt<Item = EcamDriverOutput>, EcamError> {
     let mut stderr =
         LinesStream::new(BufReader::new(child.stderr.take().expect("stderr was missing")).lines());
@@ -90,6 +99,7 @@ pub async fn stream(
 
     let termination = stream! {
         let _ = child.wait().await;
+        *alive.lock().await = false;
         yield EcamDriverOutput::Done
     };
 
@@ -109,9 +119,11 @@ pub async fn connect(device_name: &str) -> Result<EcamSubprocess, EcamError> {
     let mut child = cmd.spawn()?;
     let stdin = Arc::new(Mutex::new(child.stdin.take().expect("stdin was missing")));
 
-    let s = Box::pin(stream(child).await?);
+    let alive = Arc::new(Mutex::new(true));
+    let s = Box::pin(stream(child, alive.clone()).await?);
     Result::Ok(EcamSubprocess {
         stdin,
         receiver: EcamPacketReceiver::from_stream(s, false),
+        alive,
     })
 }
