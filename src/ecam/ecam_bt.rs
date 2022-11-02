@@ -18,7 +18,6 @@ type Peripheral = <Adapter as Central>::Peripheral;
 
 pub struct EcamBT {
     peripheral: EcamPeripheral,
-    characteristic: Characteristic,
     notifications: EcamPacketReceiver,
 }
 
@@ -26,19 +25,6 @@ impl EcamBT {
     /// Send a packet to the ECAM
     pub async fn send(&self, data: EcamDriverPacket) -> Result<(), EcamError> {
         self.peripheral.write(data.packetize()).await
-    }
-
-    async fn scan() -> Result<(String, Uuid), EcamError> {
-        let manager = Manager::new().await?;
-        let adapter_list = manager.adapters().await?;
-        for adapter in adapter_list.into_iter() {
-            if let Ok(Some(p)) = Self::get_ecam_from_adapter(&adapter).await {
-                let id = p.id();
-                return Ok((p.local_name, id));
-            }
-        }
-
-        Err(EcamError::NotFound)
     }
 
     pub async fn get(uuid: Uuid) -> Result<Self, EcamError> {
@@ -57,14 +43,6 @@ impl EcamBT {
             adapter.start_scan(ScanFilter::default()).await?;
             let tx = tx.clone();
             let _ = tokio::spawn(async move {
-                let characteristic = Characteristic {
-                    uuid: CHARACTERISTIC_UUID,
-                    service_uuid: SERVICE_UUID,
-                    properties: CharPropFlags::WRITE
-                        | CharPropFlags::READ
-                        | CharPropFlags::INDICATE,
-                };
-
                 trace_packet!("Looking for peripheral {}", uuid);
                 loop {
                     if let Ok(peripheral) = adapter.peripheral(&PeripheralId::from(uuid)).await {
@@ -80,7 +58,6 @@ impl EcamBT {
                         let _ = tx
                             .send(EcamBT {
                                 peripheral,
-                                characteristic,
                                 notifications,
                             })
                             .await;
@@ -95,6 +72,20 @@ impl EcamBT {
         Ok(rx.recv().await.expect("Failed to receive anything"))
     }
 
+    /// Scans for ECAM devices.
+    async fn scan() -> Result<(String, Uuid), EcamError> {
+        let manager = Manager::new().await?;
+        let adapter_list = manager.adapters().await?;
+        for adapter in adapter_list.into_iter() {
+            if let Ok(Some(p)) = Self::get_ecam_from_adapter(&adapter).await {
+                let id = p.id();
+                return Ok((p.local_name, id));
+            }
+        }
+        Err(EcamError::NotFound)
+    }
+
+    /// Searches an adapter for something that meets the definition of [`EcamPeripheral`].
     async fn get_ecam_from_adapter(adapter: &Adapter) -> Result<Option<EcamPeripheral>, EcamError> {
         trace_packet!("Starting scan on {}...", adapter.adapter_info().await?);
         let filter = ScanFilter {
@@ -112,31 +103,7 @@ impl EcamBT {
             }
         }
 
-        Result::Err(EcamError::NotFound)
-    }
-
-    async fn validate_peripheral(
-        peripheral: &Peripheral,
-    ) -> Result<Option<(String, Characteristic)>, EcamError> {
-        let properties = peripheral.properties().await?;
-        let is_connected = peripheral.is_connected().await?;
-        let properties = properties.unwrap();
-        if let Some(local_name) = properties.local_name {
-            if !is_connected {
-                peripheral.connect().await?
-            }
-            peripheral.is_connected().await?;
-            peripheral.discover_services().await?;
-            for service in peripheral.services() {
-                for characteristic in service.characteristics {
-                    if characteristic.uuid == CHARACTERISTIC_UUID {
-                        return Result::Ok(Some((local_name, characteristic)));
-                    }
-                }
-            }
-            return Result::Ok(None);
-        }
-        Result::Ok(None)
+        Ok(None)
     }
 }
 
