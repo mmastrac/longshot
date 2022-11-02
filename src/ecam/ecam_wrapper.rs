@@ -136,6 +136,9 @@ impl Alive {
 
     fn deaden(&self) {
         if let Ok(mut alive) = self.0.lock() {
+            if *alive {
+                trace_shutdown!("Alive::deaden");
+            }
             *alive = false;
         }
     }
@@ -383,7 +386,7 @@ impl Ecam {
                 }
             }
         }
-        warning!("Sending loop died.");
+        trace_shutdown!("Ecam::write_monitor_loop()");
         alive.deaden();
         Ok(())
     }

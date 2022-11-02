@@ -76,7 +76,7 @@ pub async fn pipe_stdin<T: EcamDriver>(ecam: T) -> Result<(), Box<dyn std::error
         loop {
             match rx.recv_timeout(Duration::from_millis(250)) {
                 Err(_) => {
-                    println!("Watchdog expired, exiting process");
+                    trace_shutdown!("pipe_stdin() (watchdog expired)");
                     std::process::exit(1);
                 }
                 Ok(false) => {
