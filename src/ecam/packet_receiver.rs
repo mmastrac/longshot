@@ -23,6 +23,7 @@ impl EcamPacketReceiver {
             while let Some(m) = stream.next().await {
                 tx.send(m).await.expect("Failed to forward notification");
             }
+            trace_packet!("EcamPacketReceiver shutting down");
             if wrap_start_end {
                 tx.send(EcamDriverOutput::Done)
                     .await

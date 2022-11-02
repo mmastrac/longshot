@@ -107,7 +107,7 @@ pub async fn get_ecam_simulator() -> Result<impl EcamDriver, EcamError> {
         }
 
         // Ready forever
-        for _ in 0..100 {
+        for _ in 0..10 {
             send(
                 &tx,
                 make_simulated_response(EcamMachineState::ReadyOrDispensing, 0, 0),
@@ -116,6 +116,7 @@ pub async fn get_ecam_simulator() -> Result<impl EcamDriver, EcamError> {
             tokio::time::sleep(DELAY).await;
         }
 
+        trace_packet!("Done");
         Result::<(), EcamError>::Ok(())
     });
     Ok(EcamSimulate { rx: Mutex::new(rx) })

@@ -124,6 +124,7 @@ async fn get_notifications_from_peripheral(
                 trace_packet!("Warning: Ignoring spurious or malformed packet: {:?}", b);
             }
         }
+        trace_packet!("Main receive loop shutting down");
     };
 
     // Use a forwarding task to make this stream Sync
@@ -143,7 +144,7 @@ async fn get_notifications_from_peripheral(
             Some(m[2..m.len() - 2].to_vec())
         }
     };
-    let n = Box::pin(n.filter_map(f).take_until_if(tripwire));
+    let n = Box::pin(n.filter_map(f)).take_until_if(tripwire);
     Ok(n)
 }
 

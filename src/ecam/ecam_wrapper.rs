@@ -263,18 +263,24 @@ impl Ecam {
                 _ => {}
             }
         }
-        println!("Closed");
+        trace_packet!("Ecam is closing");
         alive.deaden();
         Ok(())
     }
 
+    /// Is this ECAM still alive?
+    pub fn is_alive(&self) -> bool {
+        self.alive.is_alive()
+    }
+
     /// Blocks until the device state reaches our desired state.
     pub async fn wait_for_state(&self, state: EcamStatus) -> Result<(), EcamError> {
+        let alive = self.alive.clone();
         let mut internals = self.internals.lock().await;
         let mut rx = internals.last_status.clone();
         let status_interest = internals.status_interest.lock();
         drop(internals);
-        loop {
+        while alive.is_alive() {
             if let Some(test) = rx.borrow().as_ref() {
                 if state.matches(test) {
                     drop(status_interest);
@@ -284,6 +290,7 @@ impl Ecam {
             // TODO: timeout
             rx.changed().await.map_err(|_| EcamError::Unknown)?;
         }
+        Err(EcamError::Unknown)
     }
 
     /// Wait for the connection to establish, but not any particular state.

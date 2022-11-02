@@ -10,7 +10,7 @@ use crate::{
 pub async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
     let mut tap = ecam.packet_tap().await?;
     let ecam = ecam.clone();
-    let _handle = tokio::spawn(async move {
+    let handle = tokio::spawn(async move {
         while let Some(packet) = tap.next().await {
             // println!("{:?}", packet);
             if packet == EcamOutput::Done {
@@ -28,7 +28,7 @@ pub async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
     }
 
     let mut debounce = Instant::now();
-    loop {
+    while ecam.is_alive() {
         // Poll for current state
         let next_state = ecam.current_state().await?;
         if next_state != state || debounce.elapsed() > Duration::from_millis(250) {
@@ -38,6 +38,8 @@ pub async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
             debounce = Instant::now();
         }
     }
+
+    let _ = handle.await;
 
     Ok(())
 }

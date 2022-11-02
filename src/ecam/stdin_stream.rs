@@ -89,6 +89,7 @@ pub async fn pipe_stdin<T: EcamDriver>(ecam: T) -> Result<(), Box<dyn std::error
             }
         }
     }
+    println!("Pipe shutting down");
 
     Result::Ok(())
 }
