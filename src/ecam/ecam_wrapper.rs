@@ -203,16 +203,27 @@ impl Ecam {
             alive,
         };
 
-        let (driver, internals, alive) = (
+        tokio::spawn(Self::operation_loop(
+            ready_lock_semaphore,
+            tx,
             ecam_result.driver.clone(),
             ecam_result.internals.clone(),
             ecam_result.alive.clone(),
-        );
-        tokio::spawn(async move {
-            Self::operation_loop(ready_lock_semaphore, tx, driver, internals, alive).await
-        });
-
+        ));
+        let (driver, alive) = (ecam_result.driver.clone(), ecam_result.alive.clone());
+        tokio::spawn(Self::alive_watch(driver, alive));
         ecam_result
+    }
+
+    async fn alive_watch(driver: Arc<Box<dyn EcamDriver>>, alive: Alive) -> Result<(), EcamError> {
+        while let Ok(b) = driver.alive().await {
+            if !alive.is_alive() || !b {
+                break;
+            }
+        }
+        trace_packet!("Alive watch is closing!");
+        alive.deaden();
+        Ok(())
     }
 
     async fn operation_loop(

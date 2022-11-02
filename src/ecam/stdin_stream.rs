@@ -68,10 +68,38 @@ fn packet_stdio_stream() -> impl Stream<Item = EcamDriverPacket> {
 /// Pipes an EcamDriver to/from stdio.
 pub async fn pipe_stdin<T: EcamDriver>(ecam: T) -> Result<(), Box<dyn std::error::Error>> {
     let mut bt_out = Box::pin(packet_stdio_stream());
+    let (tx, rx) = std::sync::mpsc::sync_channel(1);
 
+    // Watchdog timer
+    std::thread::spawn(move || {
+        loop {
+            match rx.recv_timeout(Duration::from_millis(250)) {
+                Err(_) => {
+                    println!("Watchdog expired, exiting process");
+                    std::process::exit(1);
+                }
+                Ok(false) => {
+                    break;
+                }
+                Ok(true) => {}
+            }
+        }
+        trace_packet!("Watchdog thread shutting down.");
+    });
+
+    let keepalive = || drop(tx.send(true));
     loop {
         select! {
+            alive = ecam.alive() => {
+                keepalive();
+                if let Ok(true) = alive {
+                    continue;
+                } else {
+                    break;
+                }
+            },
             input = ecam.read() => {
+                keepalive();
                 if let Ok(Some(p)) = input {
                     println!("{}", to_line(p));
                 } else {
@@ -80,6 +108,7 @@ pub async fn pipe_stdin<T: EcamDriver>(ecam: T) -> Result<(), Box<dyn std::error
                 }
             },
             out = bt_out.next() => {
+                keepalive();
                 if let Some(value) = out {
                     ecam.write(value).await?;
                 } else {
@@ -87,11 +116,12 @@ pub async fn pipe_stdin<T: EcamDriver>(ecam: T) -> Result<(), Box<dyn std::error
                     break;
                 }
             }
-            _ = tokio::time::sleep(Duration::from_millis(1000)) => {
-                println!("Sleep");
+            _ = tokio::time::sleep(Duration::from_millis(10)) => {
+                keepalive();
             }
         }
     }
+    let _ = tx.send(false);
     println!("Pipe shutting down");
 
     Result::Ok(())
