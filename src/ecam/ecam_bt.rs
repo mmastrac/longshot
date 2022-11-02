@@ -12,6 +12,8 @@ use stream_cancel::{StreamExt as _, Tripwire};
 use tokio::time;
 use uuid::Uuid;
 
+use super::packet_stream::packet_stream;
+
 const SERVICE_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000300);
 const CHARACTERISTIC_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000301);
 
@@ -96,55 +98,9 @@ async fn get_notifications_from_peripheral(
         drop(trigger);
     });
 
-    let mut n = peripheral.notifications().await?;
-    let n = stream! {
-        while let Some(m) = n.next().await {
-            let mut b = m.value;
-            let (packet_header, packet_size) = (b[0], b[1]);
-            if packet_header == 0xd0 {
-                if (packet_size as usize) + 1 <= b.len() {
-                    // Single packet
-                    trace_packet!("{{device->host}} Packet: {}", hexdump(&b));
-                    yield b;
-                } else {
-                    // Accumulate
-                    trace_packet!("{{device->host}} size={} len={}", packet_size, b.len());
-                    trace_packet!("{{device->host}} Packet: {}", hexdump(&b));
-                    while let Some(mut m) = n.next().await {
-                        trace_packet!("{{device->host}} Cont'd: {}", hexdump(&m.value));
-                        b.append(&mut m.value);
-                        if (packet_size as usize) + 1 <= b.len() {
-                            yield b;
-                            break;
-                        }
-                    }
-                }
-            } else {
-                // Ignore malformed packet
-                trace_packet!("Warning: Ignoring spurious or malformed packet: {:?}", b);
-            }
-        }
-        trace_packet!("Main receive loop shutting down");
-    };
-
-    // Use a forwarding task to make this stream Sync
-    let f = |m: Vec<u8>| {
-        let c = protocol::checksum(&m[..m.len() - 2]);
-        if m.len() - 1 != m[1].into() {
-            trace_packet!(
-                "Warning: Invalid packet length ({} vs {})",
-                m.len() + 1,
-                m[1]
-            );
-        }
-        if c != m[m.len() - 2..m.len()] {
-            trace_packet!("Warning: bad checksum! (expected={:?}) {:?}", c, m);
-            None
-        } else {
-            Some(m[2..m.len() - 2].to_vec())
-        }
-    };
-    let n = Box::pin(n.filter_map(f)).take_until_if(tripwire);
+    let n = Box::pin(
+        packet_stream(peripheral.notifications().await?.map(|m| m.value)).take_until_if(tripwire),
+    );
     Ok(n)
 }
 
@@ -173,7 +129,9 @@ async fn get_ecam_from_manager(manager: &Manager, uuid: Uuid) -> Result<EcamBT, 
                             | CharPropFlags::INDICATE,
                     };
                     let n = get_notifications_from_peripheral(&peripheral, &characteristic).await?;
-                    let n = n.map(|v| EcamDriverOutput::Packet(EcamDriverPacket::from_vec(v)));
+                    let n = n.map(|v| {
+                        EcamDriverOutput::Packet(EcamDriverPacket::from_slice(&v[2..v.len() - 2]))
+                    });
                     let n = EcamPacketReceiver::from_stream(n, true);
                     // Ignore errors here -- we just want the first peripheral that connects
                     let _ = tx
