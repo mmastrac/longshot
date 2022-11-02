@@ -3,7 +3,7 @@ use crate::prelude::*;
 use async_stream::stream;
 use futures::{Stream, StreamExt};
 
-use crate::protocol::{checksum, hexdump, EcamDriverPacket};
+use crate::protocol::{checksum, hexdump};
 
 const SYNC_BYTE: u8 = 0xd0;
 /// Minimum packet length is four: length, one data byte, two bytes of checksum (sync byte doesn't count for length).
@@ -26,6 +26,7 @@ impl PacketBuilder {
         PacketBuilder::default()
     }
 
+    #[cfg(test)]
     pub fn is_empty(&self) -> bool {
         self.packet_buffer.is_empty()
     }
@@ -146,7 +147,6 @@ mod test {
         if garbage_after {
             packet.extend_from_slice(&[1, 2, 3]);
         }
-        println!("{:?}", packet);
         for i in 0..12 {
             let mut p = PacketBuilder::new();
             assert!(p.accumulate(&packet[..i]).is_none());

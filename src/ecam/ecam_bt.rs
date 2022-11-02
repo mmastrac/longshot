@@ -1,9 +1,8 @@
 use crate::ecam::{EcamDriver, EcamDriverOutput, EcamError, EcamPacketReceiver};
 use crate::{
     prelude::*,
-    protocol::{self, *},
+    protocol::{*},
 };
-use async_stream::stream;
 use btleplug::api::{
     Central, CharPropFlags, Characteristic, Manager as _, Peripheral as _, ScanFilter,
 };
