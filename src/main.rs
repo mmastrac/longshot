@@ -1,13 +1,13 @@
 use clap::{arg, command};
 
 use longshot::ecam::{ecam_lookup, ecam_scan, get_ecam_simulator, pipe_stdin, EcamBT};
-use longshot::operations::*;
-use longshot::protocol::*;
+use longshot::{operations::*, protocol::*};
 use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     pretty_env_logger::init();
+    longshot::display::initialize_display();
 
     let device_name = arg!(--"device-name" <name>).help("Provides the name of the device");
     let turn_on = arg!(--"turn-on").help("Turn on the machine before running this operation");

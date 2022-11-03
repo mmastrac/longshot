@@ -2,24 +2,73 @@
 
 use crate::ecam::EcamStatus;
 use colored::*;
-use std::io::Write;
+use std::sync::Mutex;
+use std::{io::Write};
+use lazy_static::lazy_static;
 
-pub trait StatusDisplay {
-    fn display(&mut self, state: EcamStatus);
+lazy_static! {
+    static ref DISPLAY: Mutex<Option<Box<dyn StatusDisplay>>> = Mutex::new(None);
 }
 
-pub struct ColouredStatusDisplay {
+/// Initializes the global display based on the TERM and COLORTERM environment variables. 
+pub fn initialize_display() {
+    let term = std::env::var("TERM").ok();
+    let colorterm = std::env::var("COLORTERM").ok();
+
+    if colorterm.is_some() {
+        *DISPLAY.lock().expect("Failed to lock display for initialization") = Some(Box::new(ColouredStatusDisplay::new(80)));
+    } else {
+        *DISPLAY.lock().expect("Failed to lock display for initialization") = Some(Box::new(BasicStatusDisplay::new(80)));
+    }
+}
+
+/// Displays the [`EcamStatus`] according to the current mode.
+pub fn display_status(state: EcamStatus) {
+    if let Ok(mut display) = DISPLAY.lock() {
+        if let Some(ref mut display) = *display {
+            display.display(state);
+            return;
+        }
+    }
+    println!("{:?}", state);
+}
+
+/// Logs the [`EcamStatus`] according to the current mode.
+pub fn log(s: &str) {
+    if let Ok(mut display) = DISPLAY.lock() {
+        if let Some(ref mut display) = *display {
+            display.log(s);
+            return;
+        }
+    }
+    println!("{:?}", s);
+}
+
+trait StatusDisplay: Send + Sync {
+    fn display(&mut self, state: EcamStatus);
+    fn log(&mut self, s: &str);
+}
+
+struct ColouredStatusDisplay {
     activity: usize,
     width: usize,
+    last_was_status: bool,
 }
 
 impl ColouredStatusDisplay {
     pub fn new(width: usize) -> Self {
-        Self { activity: 0, width }
+        Self { activity: 0, width, last_was_status: false }
     }
 }
 
 impl StatusDisplay for ColouredStatusDisplay {
+    fn log(&mut self, s: &str) {
+        if std::mem::take(&mut self.last_was_status) {
+            println!();
+        }
+        println!("{}", s);
+    }
+
     fn display(&mut self, state: EcamStatus) {
         const BUBBLE_CHARS: [char; 5] = ['⋅', '∘', '°', 'º', '⚬'];
 
@@ -85,12 +134,14 @@ impl StatusDisplay for ColouredStatusDisplay {
             );
         }
         std::io::stdout().flush().unwrap();
+        self.last_was_status = true;
     }
 }
 
-pub struct BasicStatusDisplay {
+struct BasicStatusDisplay {
     activity: u8,
     width: usize,
+    last_was_status: bool,
 }
 
 fn make_bar(s: &str, width: usize, percent: Option<usize>) -> String {
@@ -113,11 +164,18 @@ fn make_bar(s: &str, width: usize, percent: Option<usize>) -> String {
 
 impl BasicStatusDisplay {
     pub fn new(width: usize) -> Self {
-        Self { activity: 0, width }
+        Self { activity: 0, width, last_was_status: false }
     }
 }
 
 impl StatusDisplay for BasicStatusDisplay {
+    fn log(&mut self, s: &str) {
+        if std::mem::take(&mut self.last_was_status) {
+            println!();
+        }
+        println!("{}", s);
+    }
+
     fn display(&mut self, state: EcamStatus) {
         let (bar, percent) = match state {
             EcamStatus::Ready => ("Ready".to_owned(), None),
@@ -136,6 +194,7 @@ impl StatusDisplay for BasicStatusDisplay {
         );
 
         std::io::stdout().flush().unwrap();
+        self.last_was_status = true;
     }
 }
 

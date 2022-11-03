@@ -19,9 +19,8 @@ pub async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
         }
     });
 
-    let mut display: Box<dyn StatusDisplay> = Box::new(ColouredStatusDisplay::new(80));
     let mut state = ecam.current_state().await?;
-    display.display(state);
+    display_status(state);
     if turn_on && state == EcamStatus::StandBy {
         ecam.write_request(Request::AppControl(AppControl::TurnOn))
             .await?;
@@ -33,7 +32,7 @@ pub async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
         let next_state = ecam.current_state().await?;
         if next_state != state || debounce.elapsed() > Duration::from_millis(250) {
             // println!("{:?}", next_state);
-            display.display(next_state);
+            display_status(next_state);
             state = next_state;
             debounce = Instant::now();
         }

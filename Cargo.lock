@@ -574,6 +574,7 @@ dependencies = [
  "enum-iterator",
  "futures",
  "hex",
+ "lazy_static",
  "num_enum",
  "pretty_env_logger",
  "rstest",

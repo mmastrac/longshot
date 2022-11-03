@@ -13,7 +13,7 @@ pub fn enable_tracing() {
 macro_rules! trace_packet {
     ($($arg:tt)*) => {{
         if $crate::logging::TRACE_ENABLED.load(std::sync::atomic::Ordering::Relaxed) {
-            eprintln!("[TRACE] {}", std::format!($($arg)*));
+            crate::display::log(&format!("[TRACE] {}", std::format!($($arg)*)));
         }
     }};
 }
@@ -23,7 +23,7 @@ macro_rules! trace_packet {
 macro_rules! trace_shutdown {
     ($arg:literal) => {{
         if $crate::logging::TRACE_ENABLED.load(std::sync::atomic::Ordering::Relaxed) {
-            eprintln!("[TRACE] [SHUTDOWN] {}", $arg);
+            crate::display::log(&format!("[TRACE] [SHUTDOWN] {}", $arg));
         }
     }};
 }
