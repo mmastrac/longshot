@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use crate::{
     ecam::{Ecam, EcamError},
     protocol::*,
+    display::log,
 };
 
 /// Accumulates recipe responses, allowing us to fetch them one-at-a-time and account for which ones went missing in transit.
@@ -241,11 +242,11 @@ impl RecipeDetails {
                         v.push(IngredientInfo::Brew2(r2.value == 1, r2.min == r2.max))
                     }
                     _ => {
-                        println!("Unknown ingredient {:?}", ingredient)
+                        warning!("Unknown ingredient {:?}", ingredient)
                     }
                 }
             } else if m1.contains_key(key) ^ m2.contains_key(key) {
-                println!(
+                warning!(
                     "Mismatch for ingredient {:?} (recipe={:?} min_max={:?})",
                     ingredient, r1, r2
                 );
@@ -269,12 +270,12 @@ pub async fn list_recipies_for(
     };
     for i in 0..3 {
         if i == 0 {
-            println!("Fetching recipes...");
+            log("Fetching recipes...");
         } else if !recipes.get_remaining_beverages().is_empty() {
-            println!(
+            log(&format!(
                 "Fetching potentially missing recipes... {:?}",
                 recipes.get_remaining_beverages()
-            );
+            ));
         }
         'outer: for beverage in recipes.get_remaining_beverages() {
             'inner: for packet in vec![
@@ -316,7 +317,7 @@ pub async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
     let list = list_recipies_for(ecam, None).await?;
 
     for recipe in list.recipes {
-        println!("{:?} {:?}", recipe.beverage, recipe.fetch_ingredients());
+        log(&format!("{:?} {:?}", recipe.beverage, recipe.fetch_ingredients()));
     }
 
     Ok(())

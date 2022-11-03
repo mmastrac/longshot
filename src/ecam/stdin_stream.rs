@@ -53,7 +53,7 @@ fn packet_stdio_stream() -> impl Stream<Item = EcamDriverPacket> {
                     match parse_line(&s) {
                         Some(EcamDriverOutput::Packet(v)) => { yield v; }
                         Some(EcamDriverOutput::Done) => { break; }
-                        _ => { println!("Input error"); }
+                        _ => { warning!("Input error"); }
                     }
                 },
                 Err(_) => { /* Elapsed */ }

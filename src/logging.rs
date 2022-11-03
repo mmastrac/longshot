@@ -33,7 +33,7 @@ macro_rules! trace_shutdown {
 macro_rules! warning {
     ($($arg:tt)*) => {{
         if $crate::logging::TRACE_ENABLED.load(std::sync::atomic::Ordering::Relaxed) {
-            eprintln!("[TRACE] {}", std::format!($($arg)*));
+            crate::display::log(&format!("[WARMING] {}", std::format!($($arg)*)));
         }
     }};
 }

@@ -21,11 +21,12 @@ impl EcamDriver for EcamSimulate {
 
     fn write(&self, data: crate::protocol::EcamDriverPacket) -> AsyncFuture<()> {
         Box::pin(async move {
+            // TODO: Implement recipe fetch
             if data.bytes[0] == EcamRequestId::RecipeQuantityRead as u8 {
-                println!("{:?}", data.bytes);
+                // println!("{:?}", data.bytes);
             }
             if data.bytes[0] == EcamRequestId::RecipeMinMaxSync as u8 {
-                println!("{:?}", data.bytes);
+                // println!("{:?}", data.bytes);
             }
             Ok(())
         })

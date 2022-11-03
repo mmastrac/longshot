@@ -1,7 +1,7 @@
 use clap::{arg, command};
 
 use longshot::ecam::{ecam_lookup, ecam_scan, get_ecam_simulator, pipe_stdin, EcamBT};
-use longshot::{operations::*, protocol::*};
+use longshot::{operations::*, protocol::*, display::*};
 use uuid::Uuid;
 
 #[tokio::main]
@@ -124,7 +124,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Some(("list", _cmd)) => {
             let (s, uuid) = ecam_scan().await?;
-            println!("{}  {}", s, uuid);
+            log(&format!("{}  {}", s, uuid));
         }
         Some(("list-recipes", cmd)) => {
             let device_name = &cmd
