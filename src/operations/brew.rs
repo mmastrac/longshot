@@ -117,7 +117,8 @@ pub async fn brew(
                 info!("Waiting for the machine to turn on...");
                 ecam.write_request(Request::AppControl(AppControl::TurnOn))
                     .await?;
-                ecam.wait_for_state(EcamStatus::Ready, display::display_status).await?;
+                ecam.wait_for_state(EcamStatus::Ready, display::display_status)
+                    .await?;
             }
         }
         s => {
@@ -138,10 +139,7 @@ pub async fn brew(
                 warning!("{}", s)
             }
             Ok(recipe) => {
-                info!(
-                    "Brewing {:?}...",
-                    ingredients.beverage,
-                );
+                info!("Brewing {:?}...", ingredients.beverage,);
 
                 let req = Request::BeverageDispensingMode(
                     MachineEnum::Value(ingredients.beverage),

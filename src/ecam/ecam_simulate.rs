@@ -8,14 +8,14 @@ use crate::protocol::{
 };
 
 struct EcamSimulate {
-    rx: Mutex<tokio::sync::mpsc::Receiver<Vec<u8>>>,
+    rx: Mutex<tokio::sync::mpsc::Receiver<EcamDriverOutput>>,
 }
 
 impl EcamDriver for EcamSimulate {
     fn read(&self) -> AsyncFuture<Option<EcamDriverOutput>> {
         Box::pin(async {
             let packet = self.rx.lock().await.recv().await;
-            Ok(packet.map(|x| EcamDriverOutput::Packet(EcamDriverPacket::from_vec(x))))
+            Ok(packet)
         })
     }
 
@@ -63,17 +63,25 @@ fn make_simulated_response(state: EcamMachineState, progress: u8, percentage: u8
     v
 }
 
-async fn send(tx: &tokio::sync::mpsc::Sender<Vec<u8>>, v: Vec<u8>) -> Result<(), EcamError> {
-    trace_packet!("{}", hexdump(&v));
-    tx.send(v).await.map_err(|e| {
+async fn send_output(tx: &tokio::sync::mpsc::Sender<EcamDriverOutput>, packet: EcamDriverOutput) -> Result<(), EcamError> {
+    tx.send(packet).await.map_err(|e| {
         warning!("{:?}", e);
         EcamError::Unknown
     })
 }
 
+async fn send(
+    tx: &tokio::sync::mpsc::Sender<EcamDriverOutput>,
+    v: Vec<u8>,
+) -> Result<(), EcamError> {
+    trace_packet!("{}", hexdump(&v));
+    send_output(tx, EcamDriverOutput::Packet(EcamDriverPacket::from_vec(v))).await
+}
+
 pub async fn get_ecam_simulator() -> Result<impl EcamDriver, EcamError> {
     let (tx, rx) = tokio::sync::mpsc::channel(1);
     const DELAY: Duration = Duration::from_millis(250);
+    send_output(&tx, EcamDriverOutput::Ready).await?;
     tokio::spawn(async move {
         // Start in standby
         for _ in 0..5 {
@@ -125,6 +133,8 @@ pub async fn get_ecam_simulator() -> Result<impl EcamDriver, EcamError> {
             tokio::time::sleep(DELAY).await;
         }
 
+        send_output(&tx, EcamDriverOutput::Done).await?;
+        
         trace_shutdown!("EcamSimulate");
         Result::<(), EcamError>::Ok(())
     });
