@@ -1,5 +1,5 @@
 use crate::{display, prelude::*};
-use std::collections::{binary_heap::Iter, HashMap};
+use std::collections::HashMap;
 
 use crate::{
     ecam::{Ecam, EcamError},
@@ -177,16 +177,16 @@ impl IngredientInfo {
                     .map(|e| e.to_arg_string())
                     .collect::<Vec<_>>()
                     .join("|"),
-                    value.to_arg_string(),
-                )),
+                value.to_arg_string(),
+            )),
             Self::Temperature(value) => Some(format!(
                 "--temp <{}, default={}>",
                 EcamTemperature::all()
                     .map(|e| e.to_arg_string())
                     .collect::<Vec<_>>()
                     .join("|"),
-                    value.to_arg_string(),
-                )),
+                value.to_arg_string(),
+            )),
             // We don't support these for now
             Self::Accessory(..) | Self::Inversion(..) | Self::Brew2(..) => None,
         }
@@ -246,6 +246,35 @@ impl RecipeDetails {
             }
 
             if let (Some(r1), Some(r2)) = (r1, r2) {
+                if matches!(
+                    ingredient,
+                    EcamIngredients::Coffee | EcamIngredients::Milk | EcamIngredients::HotWater
+                ) {
+                    // This appears to be the case for invalid ingredients in custom recipes
+                    if r1.value == 0 && r2.min > 0 {
+                        warning!(
+                            "Specified ingredient {:?} with invalid ranges ({}<={}<={}, value={})",
+                            self.beverage,
+                            r2.min,
+                            r2.value,
+                            r2.max,
+                            r1.value
+                        );
+                        continue;
+                    }
+                    // This shows up on the Cortado recipe on the Dinamica Plus
+                    if r2.min == r2.value && r2.value == r2.max && r2.value == 0 {
+                        warning!(
+                            "Specified ingredient {:?} with zero ranges ({}<={}<={}, value={})",
+                            self.beverage,
+                            r2.min,
+                            r2.value,
+                            r2.max,
+                            r1.value
+                        );
+                        continue;
+                    }
+                }
                 match ingredient {
                     EcamIngredients::Coffee => {
                         v.push(IngredientInfo::Coffee(r2.min, r1.value, r2.max))
