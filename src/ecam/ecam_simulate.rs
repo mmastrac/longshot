@@ -3,7 +3,7 @@ use tokio::sync::Mutex;
 use crate::ecam::{EcamDriver, EcamDriverOutput, EcamError};
 use crate::prelude::*;
 use crate::protocol::{
-    EcamAccessory, EcamDriverPacket, EcamMachineState, EcamMachineSwitch, EcamRequestId,
+    hexdump, EcamAccessory, EcamDriverPacket, EcamMachineState, EcamMachineSwitch, EcamRequestId,
     MachineEnum, MonitorV2Response, PartialEncode, SwitchSet,
 };
 
@@ -64,7 +64,11 @@ fn make_simulated_response(state: EcamMachineState, progress: u8, percentage: u8
 }
 
 async fn send(tx: &tokio::sync::mpsc::Sender<Vec<u8>>, v: Vec<u8>) -> Result<(), EcamError> {
-    tx.send(v).await.map_err(|_| EcamError::Unknown)
+    trace_packet!("{:?}", hexdump(&v));
+    tx.send(v).await.map_err(|e| {
+        warning!("{:?}", e);
+        EcamError::Unknown
+    })
 }
 
 pub async fn get_ecam_simulator() -> Result<impl EcamDriver, EcamError> {

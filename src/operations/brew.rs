@@ -1,5 +1,5 @@
-use crate::prelude::*;
 use super::{IngredientInfo, RecipeDetails};
+use crate::prelude::*;
 use crate::{
     ecam::{Ecam, EcamError, EcamStatus},
     operations::{list_recipies_for, monitor},

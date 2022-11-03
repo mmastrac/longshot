@@ -224,6 +224,8 @@ impl Ecam {
             if !alive.is_alive() || !b {
                 break;
             }
+            // Don't spin on this if the alive check is cheap (ie: EcamSimulator)
+            tokio::time::sleep(Duration::from_millis(10)).await;
         }
         trace_shutdown!("Ecam::alive_watch()");
         alive.deaden();

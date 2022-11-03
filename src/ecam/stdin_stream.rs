@@ -1,13 +1,13 @@
 use crate::prelude::*;
 use std::time::Duration;
-
+use tuples::*;
 use async_stream::stream;
-use tokio::select;
+use tokio::join;
 use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
 
 use crate::protocol::EcamDriverPacket;
 
-use super::{EcamDriver, EcamDriverOutput};
+use super::{EcamDriver, EcamDriverOutput, EcamError};
 
 /// Converts a stdio line to an EcamDriverOutput.
 fn parse_line(s: &str) -> Option<EcamDriverOutput> {
@@ -66,9 +66,28 @@ fn packet_stdio_stream() -> impl Stream<Item = EcamDriverPacket> {
     }
 }
 
+macro_rules! spawn_loop {
+    ($name:literal, $tx:expr, $async:block) => {
+        {
+            let tx = $tx.clone();
+            tokio::spawn(async move {
+                while let Ok(_) = tx.send(true) {
+                    $async
+                }
+                trace_shutdown!($name);
+                drop(tx.send(false));
+                Result::<(), EcamError>::Ok(())
+            })
+        }
+    };
+}
+
 /// Pipes an EcamDriver to/from stdio.
-pub async fn pipe_stdin<T: EcamDriver>(ecam: T) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn pipe_stdin<T: EcamDriver + 'static>(
+    ecam: T,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut bt_out = Box::pin(packet_stdio_stream());
+    let ecam = Arc::new(Box::new(ecam));
     let (tx, rx) = std::sync::mpsc::sync_channel(1);
 
     // Watchdog timer
@@ -88,42 +107,33 @@ pub async fn pipe_stdin<T: EcamDriver>(ecam: T) -> Result<(), Box<dyn std::error
         trace_shutdown!("pipe_stdin() (watchdog)");
     });
 
-    let keepalive = || drop(tx.send(true));
-    loop {
-        select! {
-            alive = ecam.alive() => {
-                keepalive();
-                if let Ok(true) = alive {
-                    continue;
-                } else {
-                    break;
-                }
-            },
-            input = ecam.read() => {
-                keepalive();
-                if let Ok(Some(p)) = input {
-                    println!("{}", to_line(p));
-                } else {
-                    trace_shutdown!("pipe_stdin() (device)");
-                    break;
-                }
-            },
-            out = bt_out.next() => {
-                keepalive();
-                if let Some(value) = out {
-                    ecam.write(value).await?;
-                } else {
-                    trace_shutdown!("pipe_stdin() (input)");
-                    break;
-                }
-            }
-            _ = tokio::time::sleep(Duration::from_millis(10)) => {
-                keepalive();
-            }
+    let ecam2 = ecam.clone();
+    let a = spawn_loop!("alive", tx, {
+        if ecam2.alive().await? == false {
+            break;
         }
-    }
-    let _ = tx.send(false);
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    });
+    let ecam2 = ecam.clone();
+    let b = spawn_loop!("device read", tx, {
+        if let Some(p) = ecam2.read().await? {
+            println!("{}", to_line(p));
+        } else {
+            break;
+        }
+    });
+    let c = spawn_loop!("stdio read", tx, {
+        if let Some(value) = bt_out.next().await {
+            ecam.write(value).await?;
+        } else {
+            break;
+        }
+    });
+
     trace_shutdown!("pipe_stdin()");
+
+    let x: Result<_, EcamError> = join!(a, b, c).map(|x| x.expect("Error joining task")).transpose();
+    x?;
 
     Result::Ok(())
 }

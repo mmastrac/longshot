@@ -3,25 +3,34 @@
 use crate::ecam::EcamStatus;
 use atty::Stream;
 use colored::*;
-use std::sync::Mutex;
-use std::{io::Write};
 use lazy_static::lazy_static;
+use std::io::Write;
+use std::sync::Mutex;
 
 lazy_static! {
     static ref DISPLAY: Mutex<Option<Box<dyn StatusDisplay>>> = Mutex::new(None);
 }
 
-/// Initializes the global display based on the `TERM` and `COLORTERM` environment variables. 
+/// Initializes the global display based on the `TERM` and `COLORTERM` environment variables.
 pub fn initialize_display() {
     let term = std::env::var("TERM").ok();
     let colorterm = std::env::var("COLORTERM").ok();
 
     if term.is_none() || !atty::is(Stream::Stdout) || !atty::is(Stream::Stderr) {
-        *DISPLAY.lock().expect("Failed to lock display for initialization") = Some(Box::new(NoTtyStatusDisplay::default()));
+        *DISPLAY
+            .lock()
+            .expect("Failed to lock display for initialization") =
+            Some(Box::new(NoTtyStatusDisplay::default()));
     } else if colorterm.is_some() {
-        *DISPLAY.lock().expect("Failed to lock display for initialization") = Some(Box::new(ColouredStatusDisplay::new(80)));
+        *DISPLAY
+            .lock()
+            .expect("Failed to lock display for initialization") =
+            Some(Box::new(ColouredStatusDisplay::new(80)));
     } else {
-        *DISPLAY.lock().expect("Failed to lock display for initialization") = Some(Box::new(BasicStatusDisplay::new(80)));
+        *DISPLAY
+            .lock()
+            .expect("Failed to lock display for initialization") =
+            Some(Box::new(BasicStatusDisplay::new(80)));
     }
 }
 
@@ -47,10 +56,10 @@ pub enum LogLevel {
 impl LogLevel {
     pub fn prefix(&self) -> &'static str {
         match self {
-            LogLevel::Trace => { "[TRACE] " }
-            LogLevel::Warning => { "[WARNING] " }
-            LogLevel::Error => { "[ERROR] " }
-            LogLevel::Info => { "" }
+            LogLevel::Trace => "[TRACE] ",
+            LogLevel::Warning => "[WARNING] ",
+            LogLevel::Error => "[ERROR] ",
+            LogLevel::Info => "",
         }
     }
 }
@@ -97,7 +106,11 @@ struct ColouredStatusDisplay {
 
 impl ColouredStatusDisplay {
     pub fn new(width: usize) -> Self {
-        Self { activity: 0, width, last_was_status: false }
+        Self {
+            activity: 0,
+            width,
+            last_was_status: false,
+        }
     }
 }
 
@@ -118,27 +131,28 @@ impl StatusDisplay for ColouredStatusDisplay {
 
         self.activity += 1;
 
-        let (percent, status_text) = match state {
-            EcamStatus::Ready => (0, "✅ Ready".to_string()),
-            EcamStatus::StandBy => (0, "💤 Standby".to_string()),
-            EcamStatus::Busy(percent) => (percent, format!("☕ Dispensing... ({}%)", percent)),
-            EcamStatus::TurningOn(percent) => (percent, format!("💡 Turning on... ({}%)", percent)),
+        let (percent, emoji, status_text) = match state {
+            EcamStatus::Ready => (0, "✅", "Ready".to_string()),
+            EcamStatus::StandBy => (0, "💤", "Standby".to_string()),
+            EcamStatus::Busy(percent) => (percent, "☕", format!("Dispensing... ({}%)", percent)),
+            EcamStatus::TurningOn(percent) => {
+                (percent, "💡", format!("Turning on... ({}%)", percent))
+            }
             EcamStatus::ShuttingDown(percent) => {
-                (percent, format!("🛏 Shutting down... ({}%)", percent))
+                (percent, "🛏", format!("Shutting down... ({}%)", percent))
             }
-            EcamStatus::Alarm(alarm) => (0, format!("🔔 Alarm ({:?})", alarm)),
-            EcamStatus::Fetching(percent) => {
-                (percent, format!("👓 Fetching... ({}%)", percent))
-            }
+            EcamStatus::Alarm(alarm) => (0, "🔔", format!("Alarm ({:?})", alarm)),
+            EcamStatus::Fetching(percent) => (percent, "👓", format!("Fetching... ({}%)", percent)),
         };
 
         let mut status = " ".to_owned() + &status_text;
-        let pad = " ".repeat(self.width - status.len());
+        let pad = " ".repeat(self.width - status.len() - 4);
         status = status + &pad;
         let temp_vec = vec![];
         if percent == 0 {
             print!(
-                "\r▐{}▌ ",
+                "\r{} ▐{}▌ ",
+                emoji,
                 status.truecolor(153, 141, 109).on_truecolor(92, 69, 6)
             );
         } else {
@@ -171,7 +185,8 @@ impl StatusDisplay for ColouredStatusDisplay {
             }
 
             print!(
-                "\r▐{}{}{}▌ ",
+                "\r{} ▐{}{}{}▌ ",
+                emoji,
                 left.iter()
                     .collect::<String>()
                     .truecolor(183, 161, 129)
@@ -211,7 +226,11 @@ fn make_bar(s: &str, width: usize, percent: Option<usize>) -> String {
 
 impl BasicStatusDisplay {
     pub fn new(width: usize) -> Self {
-        Self { activity: 0, width, last_was_status: false }
+        Self {
+            activity: 0,
+            width,
+            last_was_status: false,
+        }
     }
 }
 

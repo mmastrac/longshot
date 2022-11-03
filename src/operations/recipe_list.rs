@@ -247,7 +247,9 @@ impl RecipeDetails {
             } else if m1.contains_key(key) ^ m2.contains_key(key) {
                 warning!(
                     "Mismatch for ingredient {:?} (recipe={:?} min_max={:?})",
-                    ingredient, r1, r2
+                    ingredient,
+                    r1,
+                    r2
                 );
             }
         }
@@ -282,7 +284,9 @@ pub async fn list_recipies_for(
                 Request::RecipeMinMaxSync(MachineEnum::Value(beverage)),
                 Request::RecipeQuantityRead(1, MachineEnum::Value(beverage)),
             ] {
-                crate::display::display_status(crate::ecam::EcamStatus::Fetching((total - recipes.get_remaining_beverages().len()) * 100 / total));
+                crate::display::display_status(crate::ecam::EcamStatus::Fetching(
+                    (total - recipes.get_remaining_beverages().len()) * 100 / total,
+                ));
                 let request_id = packet.ecam_request_id();
                 ecam.write_request(packet).await?;
                 let now = std::time::Instant::now();
