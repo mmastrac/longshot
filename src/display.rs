@@ -30,23 +30,42 @@ pub fn display_status(state: EcamStatus) {
             return;
         }
     }
-    println!("{:?}", state);
+    println!("[default] {:?}", state);
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LogLevel {
+    Trace,
+    Info,
+    Warning,
+    Error,
+}
+
+impl LogLevel {
+    pub fn prefix(&self) -> &'static str {
+        match self {
+            LogLevel::Trace => { "[TRACE] " }
+            LogLevel::Warning => { "[WARNING] " }
+            LogLevel::Error => { "[ERROR] " }
+            LogLevel::Info => { "" }
+        }
+    }
 }
 
 /// Logs the [`EcamStatus`] according to the current mode.
-pub fn log(s: &str) {
+pub fn log(level: LogLevel, s: &str) {
     if let Ok(mut display) = DISPLAY.lock() {
         if let Some(ref mut display) = *display {
-            display.log(s);
+            display.log(level, s);
             return;
         }
     }
-    println!("{:?}", s);
+    println!("[default] {:?}", s);
 }
 
 trait StatusDisplay: Send + Sync {
     fn display(&mut self, state: EcamStatus);
-    fn log(&mut self, s: &str);
+    fn log(&mut self, level: LogLevel, s: &str);
 }
 
 struct ColouredStatusDisplay {
@@ -62,11 +81,15 @@ impl ColouredStatusDisplay {
 }
 
 impl StatusDisplay for ColouredStatusDisplay {
-    fn log(&mut self, s: &str) {
+    fn log(&mut self, level: LogLevel, s: &str) {
         if std::mem::take(&mut self.last_was_status) {
             println!();
         }
-        println!("{}", s);
+        if level == LogLevel::Info {
+            println!("{}", s);
+        } else {
+            eprintln!("{}{}", level.prefix(), s);
+        }
     }
 
     fn display(&mut self, state: EcamStatus) {
@@ -169,11 +192,15 @@ impl BasicStatusDisplay {
 }
 
 impl StatusDisplay for BasicStatusDisplay {
-    fn log(&mut self, s: &str) {
+    fn log(&mut self, level: LogLevel, s: &str) {
         if std::mem::take(&mut self.last_was_status) {
             println!();
         }
-        println!("{}", s);
+        if level == LogLevel::Info {
+            println!("{}", s);
+        } else {
+            eprintln!("{}{}", level.prefix(), s);
+        }
     }
 
     fn display(&mut self, state: EcamStatus) {

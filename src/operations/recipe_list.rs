@@ -4,7 +4,6 @@ use std::collections::HashMap;
 use crate::{
     ecam::{Ecam, EcamError},
     protocol::*,
-    display::log,
 };
 
 /// Accumulates recipe responses, allowing us to fetch them one-at-a-time and account for which ones went missing in transit.
@@ -270,12 +269,12 @@ pub async fn list_recipies_for(
     };
     for i in 0..3 {
         if i == 0 {
-            log("Fetching recipes...");
+            info!("Fetching recipes...");
         } else if !recipes.get_remaining_beverages().is_empty() {
-            log(&format!(
+            info!(
                 "Fetching potentially missing recipes... {:?}",
                 recipes.get_remaining_beverages()
-            ));
+            );
         }
         'outer: for beverage in recipes.get_remaining_beverages() {
             'inner: for packet in vec![
@@ -317,7 +316,7 @@ pub async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
     let list = list_recipies_for(ecam, None).await?;
 
     for recipe in list.recipes {
-        log(&format!("{:?} {:?}", recipe.beverage, recipe.fetch_ingredients()));
+        info!("{:?} {:?}", recipe.beverage, recipe.fetch_ingredients());
     }
 
     Ok(())

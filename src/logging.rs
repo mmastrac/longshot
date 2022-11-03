@@ -13,7 +13,7 @@ pub fn enable_tracing() {
 macro_rules! trace_packet {
     ($($arg:tt)*) => {{
         if $crate::logging::TRACE_ENABLED.load(std::sync::atomic::Ordering::Relaxed) {
-            crate::display::log(&format!("[TRACE] {}", std::format!($($arg)*)));
+            $crate::display::log($crate::display::LogLevel::Trace, &format!("{}", std::format!($($arg)*)));
         }
     }};
 }
@@ -23,7 +23,7 @@ macro_rules! trace_packet {
 macro_rules! trace_shutdown {
     ($arg:literal) => {{
         if $crate::logging::TRACE_ENABLED.load(std::sync::atomic::Ordering::Relaxed) {
-            crate::display::log(&format!("[TRACE] [SHUTDOWN] {}", $arg));
+            $crate::display::log($crate::display::LogLevel::Trace, &format!("{}", $arg));
         }
     }};
 }
@@ -33,7 +33,15 @@ macro_rules! trace_shutdown {
 macro_rules! warning {
     ($($arg:tt)*) => {{
         if $crate::logging::TRACE_ENABLED.load(std::sync::atomic::Ordering::Relaxed) {
-            crate::display::log(&format!("[WARMING] {}", std::format!($($arg)*)));
+            $crate::display::log($crate::display::LogLevel::Warning, &std::format!($($arg)*));
         }
+    }};
+}
+
+/// Writes a warning of the given event if [`enable_tracing`] has been called.
+#[macro_export]
+macro_rules! info {
+    ($($arg:tt)*) => {{
+        $crate::display::log($crate::display::LogLevel::Info, &std::format!($($arg)*));
     }};
 }
