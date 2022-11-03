@@ -202,6 +202,17 @@ pub struct RecipeDetails {
 }
 
 impl RecipeDetails {
+    /// Formats this recipe as an argument string.
+    pub fn to_arg_string(&self) -> String {
+        let args = self
+            .fetch_ingredients()
+            .iter()
+            .filter_map(|i| i.to_arg_string())
+            .collect::<Vec<String>>()
+            .join(" ");
+        format!("--beverage {} {}", self.beverage.to_arg_string(), args)
+    }
+
     /// Processes this [`RecipeDetails`] into a [`Vec<IngredientInfo>`], suitable for dispensing.
     pub fn fetch_ingredients(&self) -> Vec<IngredientInfo> {
         let mut v = vec![];
@@ -385,13 +396,7 @@ pub async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
     let list = list_recipies_for(ecam, None).await?;
     info!("Beverages supported:");
     for recipe in list.recipes {
-        let args = recipe
-            .fetch_ingredients()
-            .iter()
-            .filter_map(|i| i.to_arg_string())
-            .collect::<Vec<String>>()
-            .join(" ");
-        info!("  --beverage {} {}", recipe.beverage.to_arg_string(), args);
+        info!("  {}", recipe.to_arg_string());
     }
 
     Ok(())

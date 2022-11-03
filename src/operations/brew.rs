@@ -138,13 +138,8 @@ pub async fn brew(
             }
             Ok(recipe) => {
                 info!(
-                    "Brewing {:?} with {}",
+                    "Brewing {:?}...",
                     ingredients.beverage,
-                    recipe
-                        .iter()
-                        .map(|x| format!("--{:?}={}", x.ingredient, x.value))
-                        .collect::<Vec<String>>()
-                        .join(" ")
                 );
 
                 let req = Request::BeverageDispensingMode(
