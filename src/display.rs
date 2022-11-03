@@ -104,7 +104,7 @@ impl ColouredStatusDisplay {
 impl StatusDisplay for ColouredStatusDisplay {
     fn log(&mut self, level: LogLevel, s: &str) {
         if std::mem::take(&mut self.last_was_status) {
-            println!();
+            print!("\r{}\r", " ".repeat(self.width));
         }
         if level == LogLevel::Info {
             println!("{}", s);
@@ -218,7 +218,7 @@ impl BasicStatusDisplay {
 impl StatusDisplay for BasicStatusDisplay {
     fn log(&mut self, level: LogLevel, s: &str) {
         if std::mem::take(&mut self.last_was_status) {
-            println!();
+            print!("\r{}\r", " ".repeat(self.width));
         }
         if level == LogLevel::Info {
             println!("{}", s);
