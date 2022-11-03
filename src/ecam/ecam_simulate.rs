@@ -64,7 +64,7 @@ fn make_simulated_response(state: EcamMachineState, progress: u8, percentage: u8
 }
 
 async fn send(tx: &tokio::sync::mpsc::Sender<Vec<u8>>, v: Vec<u8>) -> Result<(), EcamError> {
-    trace_packet!("{:?}", hexdump(&v));
+    trace_packet!("{}", hexdump(&v));
     tx.send(v).await.map_err(|e| {
         warning!("{:?}", e);
         EcamError::Unknown

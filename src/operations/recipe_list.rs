@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{display, prelude::*};
 use std::collections::HashMap;
 
 use crate::{
@@ -322,7 +322,7 @@ pub async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
     // Wait for device to settle
     ecam.wait_for_connection().await?;
     let list = list_recipies_for(ecam, None).await?;
-
+    display::clear_status();
     for recipe in list.recipes {
         info!("{:?} {:?}", recipe.beverage, recipe.fetch_ingredients());
     }

@@ -45,6 +45,14 @@ pub fn display_status(state: EcamStatus) {
     println!("[default] {:?}", state);
 }
 
+pub fn clear_status() {
+    if let Ok(mut display) = DISPLAY.lock() {
+        if let Some(ref mut display) = *display {
+            display.clear_status();
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LogLevel {
     Trace,
@@ -77,6 +85,7 @@ pub fn log(level: LogLevel, s: &str) {
 
 trait StatusDisplay: Send + Sync {
     fn display(&mut self, state: EcamStatus);
+    fn clear_status(&mut self);
     fn log(&mut self, level: LogLevel, s: &str);
 }
 
@@ -89,6 +98,8 @@ impl StatusDisplay for NoTtyStatusDisplay {
         println!("{:?}", state);
     }
 
+    fn clear_status(&mut self) {}
+
     fn log(&mut self, level: LogLevel, s: &str) {
         if level == LogLevel::Info {
             println!("{}", s);
@@ -98,38 +109,99 @@ impl StatusDisplay for NoTtyStatusDisplay {
     }
 }
 
-struct ColouredStatusDisplay {
-    activity: usize,
-    width: usize,
+struct TtyStatus {
+    pub activity: usize,
+    pub width: usize,
     last_was_status: bool,
+    last_status: Option<String>,
+    lock: Mutex<()>,
+}
+
+impl TtyStatus {
+    fn new(width: usize) -> Self {
+        Self {
+            activity: 0,
+            width,
+            last_was_status: false,
+            last_status: None,
+            lock: Mutex::new(()),
+        }
+    }
+
+    fn log(&mut self, level: LogLevel, s: &str) {
+        let lock = self.lock.lock();
+        if std::mem::take(&mut self.last_was_status) {
+            print!("\r{}\r", " ".repeat(self.width));
+            std::io::stdout().flush().unwrap();
+        }
+        if level == LogLevel::Info {
+            println!("{}", s);
+            std::io::stdout().flush().unwrap();
+        } else {
+            eprintln!("{}{}", level.prefix(), s);
+            std::io::stderr().flush().unwrap();
+        }
+        if let Some(s) = &self.last_status {
+            print!("{}", s);
+            self.last_was_status = true;
+            std::io::stdout().flush().unwrap();
+        }
+        drop(lock);
+    }
+
+    fn clear_status(&mut self) {
+        let lock = self.lock.lock();
+        if std::mem::take(&mut self.last_was_status) {
+            print!("\r{}\r", " ".repeat(self.width));
+            std::io::stdout().flush().unwrap();
+        }
+        self.last_status = None;
+        drop(lock);
+    }
+
+    fn status(&mut self, s: &str) {
+        let lock = self.lock.lock();
+        self.last_status = Some(s.to_owned());
+        print!("{}", s);
+        self.last_was_status = true;
+        std::io::stdout().flush().unwrap();
+        drop(lock);
+    }
+
+    fn random<T: From<usize>>(&self, n: usize, i: usize) -> T {
+        let n = (self.activity * 321 + 677 * i) % n;
+        n.into()
+    }
+
+    fn pick_str<'a>(&self, s: &'a str, i: usize) -> &'a str {
+        let r = self.random(s.len(), i);
+        &s[r..=r]
+    }
+}
+
+struct ColouredStatusDisplay {
+    tty: TtyStatus,
 }
 
 impl ColouredStatusDisplay {
     pub fn new(width: usize) -> Self {
         Self {
-            activity: 0,
-            width,
-            last_was_status: false,
+            tty: TtyStatus::new(width),
         }
     }
 }
 
 impl StatusDisplay for ColouredStatusDisplay {
     fn log(&mut self, level: LogLevel, s: &str) {
-        if std::mem::take(&mut self.last_was_status) {
-            print!("\r{}\r", " ".repeat(self.width));
-        }
-        if level == LogLevel::Info {
-            println!("{}", s);
-        } else {
-            eprintln!("{}{}", level.prefix(), s);
-        }
+        self.tty.log(level, s);
+    }
+
+    fn clear_status(&mut self) {
+        self.tty.clear_status();
     }
 
     fn display(&mut self, state: EcamStatus) {
-        const BUBBLE_CHARS: [char; 5] = ['⋅', '∘', '°', 'º', '⚬'];
-
-        self.activity += 1;
+        const BUBBLE_CHARS: &str = "⋅º.∘°⚬";
 
         let (percent, emoji, status_text) = match state {
             EcamStatus::Ready => (0, "✅", "Ready".to_string()),
@@ -146,15 +218,15 @@ impl StatusDisplay for ColouredStatusDisplay {
         };
 
         let mut status = " ".to_owned() + &status_text;
-        let pad = " ".repeat(self.width - status.len() - 4);
+        let pad = " ".repeat(self.tty.width - status.len() - 6);
         status = status + &pad;
         let temp_vec = vec![];
         if percent == 0 {
-            print!(
+            self.tty.status(&format!(
                 "\r{} ▐{}▌ ",
                 emoji,
                 status.truecolor(153, 141, 109).on_truecolor(92, 69, 6)
-            );
+            ));
         } else {
             let status = status.chars().collect::<Vec<char>>();
 
@@ -168,23 +240,22 @@ impl StatusDisplay for ColouredStatusDisplay {
             let mut left = left.to_owned();
             if left.len() > 10 {
                 for i in 0..2 {
-                    let random = |n| (self.activity * 321 + 677 * i) % n;
                     // Pick a spot at random
-                    let pos = random(left.len());
+                    let pos = self.tty.random(left.len(), i);
                     if pos < status_text.len() + 3 {
                         continue;
                     }
                     let (a, b) = left.split_at(pos);
                     if b[0] == ' ' {
                         let mut temp = a.to_owned();
-                        temp.push(BUBBLE_CHARS[random(BUBBLE_CHARS.len())]);
+                        temp.extend(self.tty.pick_str(&BUBBLE_CHARS, i).chars());
                         temp.extend_from_slice(&b[1..]);
                         left = temp;
                     }
                 }
             }
 
-            print!(
+            self.tty.status(&format!(
                 "\r{} ▐{}{}{}▌ ",
                 emoji,
                 left.iter()
@@ -193,17 +264,13 @@ impl StatusDisplay for ColouredStatusDisplay {
                     .on_truecolor(92, 69, 6),
                 mid.iter().collect::<String>().black().on_white(),
                 right.iter().collect::<String>().white().on_black()
-            );
+            ));
         }
-        std::io::stdout().flush().unwrap();
-        self.last_was_status = true;
     }
 }
 
 struct BasicStatusDisplay {
-    activity: u8,
-    width: usize,
-    last_was_status: bool,
+    tty: TtyStatus,
 }
 
 fn make_bar(s: &str, width: usize, percent: Option<usize>) -> String {
@@ -227,23 +294,18 @@ fn make_bar(s: &str, width: usize, percent: Option<usize>) -> String {
 impl BasicStatusDisplay {
     pub fn new(width: usize) -> Self {
         Self {
-            activity: 0,
-            width,
-            last_was_status: false,
+            tty: TtyStatus::new(width),
         }
     }
 }
 
 impl StatusDisplay for BasicStatusDisplay {
     fn log(&mut self, level: LogLevel, s: &str) {
-        if std::mem::take(&mut self.last_was_status) {
-            print!("\r{}\r", " ".repeat(self.width));
-        }
-        if level == LogLevel::Info {
-            println!("{}", s);
-        } else {
-            eprintln!("{}{}", level.prefix(), s);
-        }
+        self.tty.log(level, s);
+    }
+
+    fn clear_status(&mut self) {
+        self.tty.clear_status();
     }
 
     fn display(&mut self, state: EcamStatus) {
@@ -257,15 +319,11 @@ impl StatusDisplay for BasicStatusDisplay {
             EcamStatus::Fetching(percent) => ("Fetching...".to_owned(), Some(percent)),
         };
 
-        self.activity = (self.activity + 1) % 8;
-        print!(
+        self.tty.status(&format!(
             "\r{} {}",
-            make_bar(&bar, self.width - 2, percent),
-            "/-\\|/-\\|"[self.activity as usize..self.activity as usize + 1].to_owned()
-        );
-
-        std::io::stdout().flush().unwrap();
-        self.last_was_status = true;
+            make_bar(&bar, self.tty.width - 2, percent),
+            self.tty.pick_str("/-\\|", 0),
+        ));
     }
 }
 

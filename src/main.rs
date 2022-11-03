@@ -151,5 +151,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         _ => {}
     }
 
+    longshot::display::clear_status();
     Ok(())
 }

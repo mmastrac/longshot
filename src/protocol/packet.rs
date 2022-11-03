@@ -126,7 +126,7 @@ pub fn hexdump(buffer: &[u8]) -> String {
         .iter()
         .enumerate()
         .map(|(_i, b)| {
-            if *b >= 20 && *b < 127 {
+            if *b >= 32 && *b < 127 {
                 *b as char
             } else {
                 '.'
