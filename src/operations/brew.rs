@@ -1,6 +1,7 @@
 use super::{IngredientInfo, RecipeDetails};
 use crate::prelude::*;
 use crate::{
+    display,
     ecam::{Ecam, EcamError, EcamStatus},
     operations::{list_recipies_for, monitor},
     protocol::*,
@@ -116,7 +117,7 @@ pub async fn brew(
                 info!("Waiting for the machine to turn on...");
                 ecam.write_request(Request::AppControl(AppControl::TurnOn))
                     .await?;
-                ecam.wait_for_state(EcamStatus::Ready).await?;
+                ecam.wait_for_state(EcamStatus::Ready, display::display_status).await?;
             }
         }
         s => {

@@ -291,7 +291,7 @@ impl Ecam {
     }
 
     /// Blocks until the device state reaches our desired state.
-    pub async fn wait_for_state(&self, state: EcamStatus) -> Result<(), EcamError> {
+    pub async fn wait_for_state(&self, state: EcamStatus, monitor: fn(EcamStatus) -> ()) -> Result<(), EcamError> {
         let alive = self.alive.clone();
         let mut internals = self.internals.lock().await;
         let mut rx = internals.last_status.clone();
@@ -299,6 +299,7 @@ impl Ecam {
         drop(internals);
         while alive.is_alive() {
             if let Some(test) = rx.borrow().as_ref() {
+                monitor(EcamStatus::extract(test));
                 if state.matches(test) {
                     drop(status_interest);
                     return Ok(());
