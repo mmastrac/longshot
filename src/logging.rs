@@ -38,7 +38,7 @@ macro_rules! warning {
     }};
 }
 
-/// Writes a warning of the given event if [`enable_tracing`] has been called.
+/// Writes info text for the given event.
 #[macro_export]
 macro_rules! info {
     ($($arg:tt)*) => {{

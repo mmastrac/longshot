@@ -11,7 +11,7 @@ lazy_static! {
     static ref DISPLAY: Mutex<Option<Box<dyn StatusDisplay>>> = Mutex::new(None);
 }
 
-/// Initializes the global display based on the TERM and COLORTERM environment variables. 
+/// Initializes the global display based on the `TERM` and `COLORTERM` environment variables. 
 pub fn initialize_display() {
     let term = std::env::var("TERM").ok();
     let colorterm = std::env::var("COLORTERM").ok();
