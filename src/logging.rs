@@ -23,7 +23,10 @@ macro_rules! trace_packet {
 macro_rules! trace_shutdown {
     ($arg:literal) => {{
         if $crate::logging::TRACE_ENABLED.load(std::sync::atomic::Ordering::Relaxed) {
-            $crate::display::log($crate::display::LogLevel::Trace, &format!("[SHUTDOWN] {}", $arg));
+            $crate::display::log(
+                $crate::display::LogLevel::Trace,
+                &format!("[SHUTDOWN] {}", $arg),
+            );
         }
     }};
 }

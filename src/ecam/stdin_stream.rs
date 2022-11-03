@@ -1,9 +1,9 @@
 use crate::prelude::*;
-use std::time::Duration;
-use tuples::*;
 use async_stream::stream;
+use std::{thread::spawn, time::Duration};
 use tokio::join;
 use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
+use tuples::*;
 
 use crate::protocol::EcamDriverPacket;
 
@@ -67,19 +67,17 @@ fn packet_stdio_stream() -> impl Stream<Item = EcamDriverPacket> {
 }
 
 macro_rules! spawn_loop {
-    ($name:literal, $tx:expr, $async:block) => {
-        {
-            let tx = $tx.clone();
-            tokio::spawn(async move {
-                while let Ok(_) = tx.send(true) {
-                    $async
-                }
-                trace_shutdown!($name);
-                drop(tx.send(false));
-                Result::<(), EcamError>::Ok(())
-            })
+    ($name:literal, $tx:expr, $async:block) => {{
+        let tx = $tx.clone();
+        async move {
+            while let Ok(_) = tx.send(true) {
+                $async
+            }
+            trace_shutdown!($name);
+            drop(tx.send(false));
+            Result::<(), EcamError>::Ok(())
         }
-    };
+    }};
 }
 
 /// Pipes an EcamDriver to/from stdio.
@@ -90,10 +88,11 @@ pub async fn pipe_stdin<T: EcamDriver + 'static>(
     let ecam = Arc::new(Box::new(ecam));
     let (tx, rx) = std::sync::mpsc::sync_channel(1);
 
-    // Watchdog timer
+    // Watchdog timer: if we don't get _some_ event within the timeout, we assume that things havegone sideways
+    // in the underlying driver.
     std::thread::spawn(move || {
         loop {
-            match rx.recv_timeout(Duration::from_millis(250)) {
+            match rx.recv_timeout(Duration::from_millis(500)) {
                 Err(_) => {
                     trace_shutdown!("pipe_stdin() (watchdog expired)");
                     std::process::exit(1);
@@ -132,7 +131,7 @@ pub async fn pipe_stdin<T: EcamDriver + 'static>(
 
     trace_shutdown!("pipe_stdin()");
 
-    let x: Result<_, EcamError> = join!(a, b, c).map(|x| x.expect("Error joining task")).transpose();
+    let x: Result<_, EcamError> = join!(a, b, c).map(|x| x).transpose();
     x?;
 
     Result::Ok(())
