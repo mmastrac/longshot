@@ -1,6 +1,7 @@
 //! Status display utilities.
 
 use crate::ecam::EcamStatus;
+use atty::Stream;
 use colored::*;
 use std::sync::Mutex;
 use std::{io::Write};
@@ -15,7 +16,9 @@ pub fn initialize_display() {
     let term = std::env::var("TERM").ok();
     let colorterm = std::env::var("COLORTERM").ok();
 
-    if colorterm.is_some() {
+    if term.is_none() || !atty::is(Stream::Stdout) || !atty::is(Stream::Stderr) {
+        *DISPLAY.lock().expect("Failed to lock display for initialization") = Some(Box::new(NoTtyStatusDisplay::default()));
+    } else if colorterm.is_some() {
         *DISPLAY.lock().expect("Failed to lock display for initialization") = Some(Box::new(ColouredStatusDisplay::new(80)));
     } else {
         *DISPLAY.lock().expect("Failed to lock display for initialization") = Some(Box::new(BasicStatusDisplay::new(80)));
@@ -68,6 +71,24 @@ trait StatusDisplay: Send + Sync {
     fn log(&mut self, level: LogLevel, s: &str);
 }
 
+/// [`StatusDisplay`] for basic terminals, or non-TTY stdio.
+#[derive(Default)]
+struct NoTtyStatusDisplay {}
+
+impl StatusDisplay for NoTtyStatusDisplay {
+    fn display(&mut self, state: EcamStatus) {
+        println!("{:?}", state);
+    }
+
+    fn log(&mut self, level: LogLevel, s: &str) {
+        if level == LogLevel::Info {
+            println!("{}", s);
+        } else {
+            eprintln!("{}{}", level.prefix(), s);
+        }
+    }
+}
+
 struct ColouredStatusDisplay {
     activity: usize,
     width: usize,
@@ -106,6 +127,9 @@ impl StatusDisplay for ColouredStatusDisplay {
                 (percent, format!("🛏 Shutting down... ({}%)", percent))
             }
             EcamStatus::Alarm(alarm) => (0, format!("🔔 Alarm ({:?})", alarm)),
+            EcamStatus::Fetching(percent) => {
+                (percent, format!("👓 Fetching... ({}%)", percent))
+            }
         };
 
         let mut status = " ".to_owned() + &status_text;
@@ -211,6 +235,7 @@ impl StatusDisplay for BasicStatusDisplay {
             EcamStatus::ShuttingDown(percent) => ("Shutting down...".to_owned(), Some(percent)),
             EcamStatus::Busy(percent) => ("Dispensing...".to_owned(), Some(percent)),
             EcamStatus::Alarm(alarm) => (format!("Alarm: {:?}", alarm), None),
+            EcamStatus::Fetching(percent) => ("Fetching...".to_owned(), Some(percent)),
         };
 
         self.activity = (self.activity + 1) % 8;

@@ -182,7 +182,7 @@ impl RecipeDetails {
             m2.insert(r.ingredient, r);
         }
 
-        for ingredient in enum_iterator::all() {
+        for ingredient in EcamIngredients::all() {
             let key = &MachineEnum::Value(ingredient);
             if matches!(
                 ingredient,
@@ -267,6 +267,7 @@ pub async fn list_recipies_for(
     } else {
         RecipeAccumulator::new()
     };
+    let total = recipes.get_remaining_beverages().len();
     for i in 0..3 {
         if i == 0 {
             info!("Fetching recipes...");
@@ -281,6 +282,7 @@ pub async fn list_recipies_for(
                 Request::RecipeMinMaxSync(MachineEnum::Value(beverage)),
                 Request::RecipeQuantityRead(1, MachineEnum::Value(beverage)),
             ] {
+                crate::display::display_status(crate::ecam::EcamStatus::Fetching((total - recipes.get_remaining_beverages().len()) * 100 / total));
                 let request_id = packet.ecam_request_id();
                 ecam.write_request(packet).await?;
                 let now = std::time::Instant::now();
@@ -306,6 +308,8 @@ pub async fn list_recipies_for(
                 }
             }
         }
+        crate::display::display_status(crate::ecam::EcamStatus::Fetching(100));
+        crate::display::display_status(ecam.current_state().await?);
     }
     Ok(recipes.take())
 }

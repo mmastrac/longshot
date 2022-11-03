@@ -568,6 +568,7 @@ name = "longshot"
 version = "0.1.2"
 dependencies = [
  "async-stream",
+ "atty",
  "btleplug",
  "clap",
  "colored",

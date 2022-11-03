@@ -14,6 +14,7 @@ pub enum EcamStatus {
     Ready,
     Busy(usize),
     Alarm(MachineEnum<EcamAlarm>),
+    Fetching(usize),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
