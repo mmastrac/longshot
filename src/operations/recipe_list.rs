@@ -1,5 +1,5 @@
 use crate::{display, prelude::*};
-use std::collections::HashMap;
+use std::collections::{binary_heap::Iter, HashMap};
 
 use crate::{
     ecam::{Ecam, EcamError},
@@ -161,6 +161,38 @@ pub enum IngredientInfo {
     Brew2(bool, bool),
 }
 
+impl IngredientInfo {
+    pub fn to_arg_string(&self) -> Option<String> {
+        let number_arg = |name: &str, min, value, max| {
+            format!("--{} <{}-{}, default {}>", name, min, max, value)
+        };
+
+        match self {
+            Self::Coffee(min, value, max) => Some(number_arg("coffee", min, value, max)),
+            Self::Milk(min, value, max) => Some(number_arg("milk", min, value, max)),
+            Self::HotWater(min, value, max) => Some(number_arg("hotwater", min, value, max)),
+            Self::Taste(value) => Some(format!(
+                "--taste <{}, default={}>",
+                EcamBeverageTaste::all()
+                    .map(|e| e.to_arg_string())
+                    .collect::<Vec<_>>()
+                    .join("|"),
+                    value.to_arg_string(),
+                )),
+            Self::Temperature(value) => Some(format!(
+                "--temp <{}, default={}>",
+                EcamTemperature::all()
+                    .map(|e| e.to_arg_string())
+                    .collect::<Vec<_>>()
+                    .join("|"),
+                    value.to_arg_string(),
+                )),
+            // We don't support these for now
+            Self::Accessory(..) | Self::Inversion(..) | Self::Brew2(..) => None,
+        }
+    }
+}
+
 /// The details for a given [`EcamBeverageId`]'s recipe.
 #[derive(Clone, Debug)]
 pub struct RecipeDetails {
@@ -312,8 +344,8 @@ pub async fn list_recipies_for(
                 }
             }
         }
-        crate::display::display_status(crate::ecam::EcamStatus::Fetching(100));
-        crate::display::display_status(ecam.current_state().await?);
+        display::display_status(crate::ecam::EcamStatus::Fetching(100));
+        display::clear_status();
     }
     Ok(recipes.take())
 }
@@ -322,9 +354,15 @@ pub async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
     // Wait for device to settle
     ecam.wait_for_connection().await?;
     let list = list_recipies_for(ecam, None).await?;
-    display::clear_status();
+    info!("Beverages supported:");
     for recipe in list.recipes {
-        info!("{:?} {:?}", recipe.beverage, recipe.fetch_ingredients());
+        let args = recipe
+            .fetch_ingredients()
+            .iter()
+            .filter_map(|i| i.to_arg_string())
+            .collect::<Vec<String>>()
+            .join(" ");
+        info!("  --beverage {} {}", recipe.beverage.to_arg_string(), args);
     }
 
     Ok(())
