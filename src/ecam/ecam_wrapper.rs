@@ -416,6 +416,10 @@ mod test {
     #[case(EcamStatus::Busy(0), &crate::protocol::test::RESPONSE_STATUS_CAPPUCINO_MILK)]
     #[case(EcamStatus::Cleaning(9), &crate::protocol::test::RESPONSE_STATUS_CLEANING_AFTER_CAPPUCINO)]
     #[case(EcamStatus::Alarm(MachineEnum::Value(EcamAlarm::CleanKnob)), &crate::protocol::test::RESPONSE_STATUS_READY_AFTER_CAPPUCINO)]
+    #[case(EcamStatus::StandBy, &crate::protocol::test::RESPONSE_STATUS_STANDBY_NO_ALARMS)]
+    #[case(EcamStatus::StandBy, &crate::protocol::test::RESPONSE_STATUS_STANDBY_NO_WATER_TANK)]
+    #[case(EcamStatus::StandBy, &crate::protocol::test::RESPONSE_STATUS_STANDBY_WATER_SPOUT)]
+    #[case(EcamStatus::StandBy, &crate::protocol::test::RESPONSE_STATUS_STANDBY_NO_COFFEE_CONTAINER)]
     fn decode_ecam_status(#[case] expected_status: EcamStatus, #[case] bytes: &[u8]) {
         let response = Response::decode(unwrap_packet(bytes))
             .0
