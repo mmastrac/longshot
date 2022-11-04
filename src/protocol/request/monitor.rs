@@ -6,7 +6,7 @@ pub struct MonitorV2Response {
     pub state: MachineEnum<EcamMachineState>,
     pub accessory: MachineEnum<EcamAccessory>,
     pub switches: SwitchSet<EcamMachineSwitch>,
-    pub alarms: SwitchSet<EcamAlarm>,
+    pub alarms: SwitchSet<EcamMachineAlarm>,
     pub progress: u8,
     pub percentage: u8,
     pub unknown0: u8,
@@ -36,7 +36,7 @@ impl PartialDecode<MonitorV2Response> for MonitorV2Response {
         Some(MonitorV2Response {
             accessory: <MachineEnum<EcamAccessory>>::partial_decode(input)?,
             switches: <SwitchSet<EcamMachineSwitch>>::partial_decode(input)?,
-            alarms: <SwitchSet<EcamAlarm>>::partial_decode(input)?,
+            alarms: <SwitchSet<EcamMachineAlarm>>::partial_decode(input)?,
             state: <MachineEnum<EcamMachineState>>::partial_decode(input)?,
             progress: <u8>::partial_decode(input)?,
             percentage: <u8>::partial_decode(input)?,

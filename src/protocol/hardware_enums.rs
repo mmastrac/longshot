@@ -231,7 +231,7 @@ hardware_enum! {"The type of beverage to prepare.", EcamBeverageId {
     Custom10 = 239,
 }}
 
-hardware_enum! {"The set of alarms the machine can produce.", EcamAlarm {
+hardware_enum! {"The set of alarms the machine can produce.", EcamMachineAlarm {
     EmptyWaterTank = 0,
     CoffeeWasteContainerFull = 1,
     DescaleAlarm = 2,

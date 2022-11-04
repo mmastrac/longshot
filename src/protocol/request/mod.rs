@@ -289,7 +289,7 @@ mod test {
                     EcamMachineSwitch::MotorDown,
                     EcamMachineSwitch::WaterLevelLow,
                 ]),
-                alarms: SwitchSet::of(&[EcamAlarm::EmptyWaterTank]),
+                alarms: SwitchSet::of(&[EcamMachineAlarm::EmptyWaterTank]),
                 ..Default::default()
             })
         );

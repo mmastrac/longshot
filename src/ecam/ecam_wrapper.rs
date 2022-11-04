@@ -14,7 +14,7 @@ pub enum EcamStatus {
     Ready,
     Busy(usize),
     Cleaning(usize),
-    Alarm(MachineEnum<EcamAlarm>),
+    Alarm(MachineEnum<EcamMachineAlarm>),
     Fetching(usize),
 }
 
@@ -415,7 +415,7 @@ mod test {
     #[rstest]
     #[case(EcamStatus::Busy(0), &crate::protocol::test::RESPONSE_STATUS_CAPPUCINO_MILK)]
     #[case(EcamStatus::Cleaning(9), &crate::protocol::test::RESPONSE_STATUS_CLEANING_AFTER_CAPPUCINO)]
-    #[case(EcamStatus::Alarm(MachineEnum::Value(EcamAlarm::CleanKnob)), &crate::protocol::test::RESPONSE_STATUS_READY_AFTER_CAPPUCINO)]
+    #[case(EcamStatus::Alarm(MachineEnum::Value(EcamMachineAlarm::CleanKnob)), &crate::protocol::test::RESPONSE_STATUS_READY_AFTER_CAPPUCINO)]
     #[case(EcamStatus::StandBy, &crate::protocol::test::RESPONSE_STATUS_STANDBY_NO_ALARMS)]
     #[case(EcamStatus::StandBy, &crate::protocol::test::RESPONSE_STATUS_STANDBY_NO_WATER_TANK)]
     #[case(EcamStatus::StandBy, &crate::protocol::test::RESPONSE_STATUS_STANDBY_WATER_SPOUT)]
