@@ -29,6 +29,7 @@ atty = "0.2.14"
 
 [dev_dependencies]
 rstest = "0.15.0"
+const-decoder = "0.3.0"
 
 [lib]
 name = "longshot"

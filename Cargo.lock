@@ -223,6 +223,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "const-decoder"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5241cd7938b1b415942e943ea96f615953d500b50347b505b0b507080bad5a6f"
+
+[[package]]
 name = "core-foundation"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -572,6 +578,7 @@ dependencies = [
  "btleplug",
  "clap",
  "colored",
+ "const-decoder",
  "enum-iterator",
  "futures",
  "hex",

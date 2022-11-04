@@ -98,6 +98,15 @@ pub fn checksum(buffer: &[u8]) -> [u8; 2] {
     [(i >> 8) as u8, (i & 0xff) as u8]
 }
 
+/// Returns the contents of the packet, minus header and checksum.
+pub fn unwrap_packet<T: ?Sized>(buffer: &T) -> &[u8]
+where
+    T: AsRef<[u8]>,
+{
+    let u: &[u8] = buffer.as_ref();
+    &u[2..u.len() - 2]
+}
+
 fn packetize(buffer: &[u8]) -> Vec<u8> {
     let mut out: Vec<u8> = vec![
         0x0d,

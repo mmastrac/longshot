@@ -173,7 +173,7 @@ impl EcamPeripheral {
         let notifications = self.peripheral.notifications().await?.map(|m| m.value);
         // Parse into packets and stop when device disconnected
         let n = packet_stream(notifications)
-            .map(|v| EcamDriverOutput::Packet(EcamDriverPacket::from_slice(&v[2..v.len() - 2])))
+            .map(|v| EcamDriverOutput::Packet(EcamDriverPacket::from_slice(unwrap_packet(&v))))
             .take_until_if(tripwire);
         Ok(n)
     }

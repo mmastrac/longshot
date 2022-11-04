@@ -13,6 +13,15 @@ pub enum MachineEnum<T: MachineEnumerable> {
     Unknown(u8),
 }
 
+impl<T> Default for MachineEnum<T>
+where
+    T: MachineEnumerable,
+{
+    fn default() -> Self {
+        MachineEnum::decode(0)
+    }
+}
+
 impl<T> MachineEnum<T>
 where
     T: MachineEnumerable,
@@ -76,6 +85,12 @@ impl<T: MachineEnumerable> PartialEq<T> for MachineEnum<T> {
 pub struct SwitchSet<T: MachineEnumerable> {
     pub value: u16,
     phantom: PhantomData<T>,
+}
+
+impl<T: MachineEnumerable> Default for SwitchSet<T> {
+    fn default() -> Self {
+        SwitchSet::empty()
+    }
 }
 
 impl<T: MachineEnumerable> SwitchSet<T> {

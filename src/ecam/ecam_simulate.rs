@@ -55,15 +55,17 @@ fn make_simulated_response(state: EcamMachineState, progress: u8, percentage: u8
             alarms: SwitchSet::empty(),
             progress,
             percentage,
-            load0: 0,
-            load1: 0,
+            ..Default::default()
         }
         .encode(),
     );
     v
 }
 
-async fn send_output(tx: &tokio::sync::mpsc::Sender<EcamDriverOutput>, packet: EcamDriverOutput) -> Result<(), EcamError> {
+async fn send_output(
+    tx: &tokio::sync::mpsc::Sender<EcamDriverOutput>,
+    packet: EcamDriverOutput,
+) -> Result<(), EcamError> {
     tx.send(packet).await.map_err(|e| {
         warning!("{:?}", e);
         EcamError::Unknown
@@ -134,7 +136,7 @@ pub async fn get_ecam_simulator() -> Result<impl EcamDriver, EcamError> {
         }
 
         send_output(&tx, EcamDriverOutput::Done).await?;
-        
+
         trace_shutdown!("EcamSimulate");
         Result::<(), EcamError>::Ok(())
     });

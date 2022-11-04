@@ -1,7 +1,7 @@
 use super::PartialDecode;
 use crate::protocol::*;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct MonitorV2Response {
     pub state: MachineEnum<EcamMachineState>,
     pub accessory: MachineEnum<EcamAccessory>,
@@ -9,8 +9,11 @@ pub struct MonitorV2Response {
     pub alarms: SwitchSet<EcamAlarm>,
     pub progress: u8,
     pub percentage: u8,
-    pub load0: u8,
-    pub load1: u8,
+    pub unknown0: u8,
+    pub unknown1: u8,
+    pub unknown2: u8,
+    pub unknown3: u8,
+    pub unknown4: u8,
 }
 
 impl<T: MachineEnumerable> PartialDecode<SwitchSet<T>> for SwitchSet<T> {
@@ -37,8 +40,11 @@ impl PartialDecode<MonitorV2Response> for MonitorV2Response {
             state: <MachineEnum<EcamMachineState>>::partial_decode(input)?,
             progress: <u8>::partial_decode(input)?,
             percentage: <u8>::partial_decode(input)?,
-            load0: <u8>::partial_decode(input)?,
-            load1: <u8>::partial_decode(input)?,
+            unknown0: <u8>::partial_decode(input)?,
+            unknown1: <u8>::partial_decode(input)?,
+            unknown2: <u8>::partial_decode(input)?,
+            unknown3: <u8>::partial_decode(input)?,
+            unknown4: <u8>::partial_decode(input)?,
         })
     }
 }
@@ -51,8 +57,11 @@ impl PartialEncode for MonitorV2Response {
         out.push(self.state.into());
         out.push(self.progress);
         out.push(self.percentage);
-        out.push(self.load0);
-        out.push(self.load1);
+        out.push(self.unknown0);
+        out.push(self.unknown1);
+        out.push(self.unknown2);
+        out.push(self.unknown3);
+        out.push(self.unknown4);
     }
 }
 
