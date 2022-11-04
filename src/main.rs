@@ -11,6 +11,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let device_name = arg!(--"device-name" <name>).help("Provides the name of the device");
     let turn_on = arg!(--"turn-on").help("Turn on the machine before running this operation");
+    let dump_packets =
+        arg!(--"dump-packets").help("Dumps decoded packets to the terminal for debugging");
     let matches = command!()
         .arg(arg!(--"trace").help("Trace packets to/from device"))
         .subcommand(
@@ -41,13 +43,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     arg!(--"skip-brew")
                         .hide(true)
                         .help("Does everything except actually brew the beverage"),
-                ),
+                )
+                .arg(dump_packets.clone()),
         )
         .subcommand(
             command!("monitor")
                 .about("Monitor the status of the device")
                 .arg(device_name.clone())
-                .arg(turn_on.clone()),
+                .arg(turn_on.clone())
+                .arg(dump_packets.clone()),
         )
         .subcommand(
             command!("list-recipes")
@@ -73,6 +77,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let turn_on = cmd.get_flag("turn-on");
             let skip_brew = cmd.get_flag("skip-brew");
             let allow_off = cmd.get_flag("allow-off");
+            let dump_packets = cmd.get_flag("dump-packets");
             let allow_defaults = cmd.get_flag("allow-defaults");
             let device_name = &cmd
                 .get_one::<String>("device-name")
@@ -111,16 +116,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 temp,
                 allow_defaults,
             };
-            brew(ecam, turn_on, allow_off, skip_brew, ingredients).await?;
+            brew(
+                ecam,
+                turn_on,
+                allow_off,
+                skip_brew,
+                dump_packets,
+                ingredients,
+            )
+            .await?;
         }
         Some(("monitor", cmd)) => {
             let turn_on = cmd.get_flag("turn-on");
+            let dump_packets = cmd.get_flag("dump-packets");
             let device_name = &cmd
                 .get_one::<String>("device-name")
                 .expect("Device name required")
                 .clone();
             let ecam = ecam_lookup(device_name).await?;
-            monitor(ecam, turn_on).await?;
+            monitor(ecam, turn_on, dump_packets).await?;
         }
         Some(("list", _cmd)) => {
             let (s, uuid) = ecam_scan().await?;

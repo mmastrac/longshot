@@ -25,4 +25,16 @@ pub mod test {
     /// Packet received during cleaing
     pub const RESPONSE_STATUS_CLEANING_AFTER_CAPPUCINO: [u8; 19] =
         Decoder::Hex.decode(b"d012750f04050100400c030900000000001cf0");
+    /// Packet received when no alarms are present, and the water spout is removed.
+    pub const RESPONSE_STATUS_STANDBY_NO_ALARMS: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f000000000000036400000000009080");
+    /// Packet received when the water tank is missing, and the water spout is removed.
+    pub const RESPONSE_STATUS_STANDBY_NO_WATER_TANK: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f00100000000003640000000000a7d0");
+    /// Packet received when no alarms are present, and the water spout is present.
+    pub const RESPONSE_STATUS_STANDBY_WATER_SPOUT: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f01010000000003640000000000d696");
+    /// Packet received when the coffee grounds container is missing, and the water spout is present.
+    pub const RESPONSE_STATUS_STANDBY_NO_COFFEE_CONTAINER: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f01090000000003640000000000cd3e");
 }

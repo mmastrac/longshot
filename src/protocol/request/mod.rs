@@ -231,9 +231,8 @@ impl Request {
 
 #[cfg(test)]
 mod test {
-    use crate::protocol::unwrap_packet;
-
     use super::*;
+    use crate::protocol::*;
     use rstest::*;
 
     #[rstest]
@@ -241,10 +240,15 @@ mod test {
     #[case(&crate::protocol::test::RESPONSE_STATUS_CAPPUCINO_MILK)]
     #[case(&crate::protocol::test::RESPONSE_STATUS_READY_AFTER_CAPPUCINO)]
     #[case(&crate::protocol::test::RESPONSE_STATUS_CLEANING_AFTER_CAPPUCINO)]
+    #[case(&crate::protocol::test::RESPONSE_STATUS_STANDBY_NO_ALARMS)]
+    #[case(&crate::protocol::test::RESPONSE_STATUS_STANDBY_NO_WATER_TANK)]
+    #[case(&crate::protocol::test::RESPONSE_STATUS_STANDBY_WATER_SPOUT)]
+    #[case(&crate::protocol::test::RESPONSE_STATUS_STANDBY_NO_COFFEE_CONTAINER)]
     fn real_packets_decode_as_expected(#[case] bytes: &[u8]) {
         let (packet, remainder) = Response::decode(unwrap_packet(bytes));
         let packet = packet.expect("Expected to decode something");
         assert_eq!(remainder.to_vec(), vec![]);
+        // Not actually testing the decoding of these packets, but at least we can print it
         println!("{:?}", packet);
     }
 

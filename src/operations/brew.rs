@@ -102,6 +102,7 @@ pub async fn brew(
     turn_on: bool,
     allow_off: bool,
     skip_brew: bool,
+    dump_decoded_packets: bool,
     ingredients: BrewIngredients,
 ) -> Result<(), EcamError> {
     match ecam.current_state().await? {
@@ -153,7 +154,7 @@ pub async fn brew(
                 } else {
                     ecam.write_request(req).await?;
                 }
-                monitor(ecam, false).await?;
+                monitor(ecam, false, dump_decoded_packets).await?;
             }
         }
     } else {

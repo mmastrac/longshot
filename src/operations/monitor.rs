@@ -7,12 +7,18 @@ use crate::{
     protocol::*,
 };
 
-pub async fn monitor(ecam: Ecam, turn_on: bool) -> Result<(), EcamError> {
+pub async fn monitor(
+    ecam: Ecam,
+    turn_on: bool,
+    dump_decoded_packets: bool,
+) -> Result<(), EcamError> {
     let mut tap = ecam.packet_tap().await?;
     let ecam = ecam.clone();
     let handle = tokio::spawn(async move {
         while let Some(packet) = tap.next().await {
-            // println!("{:?}", packet);
+            if dump_decoded_packets {
+                trace_packet!("{:?}", packet);
+            }
             if packet == EcamOutput::Done {
                 break;
             }

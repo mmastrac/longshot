@@ -67,10 +67,13 @@ impl EcamStatus {
         if state.state == EcamMachineState::ShuttingDown {
             return EcamStatus::ShuttingDown(state.percentage as usize);
         }
-        if state.state == EcamMachineState::MilkCleaning || state.state == EcamMachineState::Rinsing {
+        if state.state == EcamMachineState::MilkCleaning || state.state == EcamMachineState::Rinsing
+        {
             return EcamStatus::Cleaning(state.percentage as usize);
         }
-        if state.state == EcamMachineState::MilkPreparation || (state.state == EcamMachineState::ReadyOrDispensing && state.progress != 0) {
+        if state.state == EcamMachineState::MilkPreparation
+            || (state.state == EcamMachineState::ReadyOrDispensing && state.progress != 0)
+        {
             return EcamStatus::Busy(state.percentage as usize);
         }
         #[allow(clippy::never_loop)]
@@ -414,7 +417,9 @@ mod test {
     #[case(EcamStatus::Cleaning(9), &crate::protocol::test::RESPONSE_STATUS_CLEANING_AFTER_CAPPUCINO)]
     #[case(EcamStatus::Alarm(MachineEnum::Value(EcamAlarm::CleanKnob)), &crate::protocol::test::RESPONSE_STATUS_READY_AFTER_CAPPUCINO)]
     fn decode_ecam_status(#[case] expected_status: EcamStatus, #[case] bytes: &[u8]) {
-        let response = Response::decode(unwrap_packet(bytes)).0.expect("Expected to decode a response");
+        let response = Response::decode(unwrap_packet(bytes))
+            .0
+            .expect("Expected to decode a response");
         if let Response::MonitorV2(response) = response {
             let status = EcamStatus::extract(&response);
             assert_eq!(status, expected_status);
