@@ -1,6 +1,9 @@
 use super::PartialDecode;
 use crate::protocol::*;
 
+/// The response to a monitor inquiry sent by [`Request::MonitorV2`].
+///
+/// Some fields appear not to be used and always appear to be zero.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct MonitorV2Response {
     pub state: MachineEnum<EcamMachineState>,

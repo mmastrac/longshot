@@ -1,5 +1,6 @@
 use super::PartialDecode;
 
+/// Represents a recipe or profile name with an associate icon tucked into the last byte.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WideStringWithIcon {
     name: String,

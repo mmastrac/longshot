@@ -45,6 +45,7 @@ pub fn display_status(state: EcamStatus) {
     println!("[default] {:?}", state);
 }
 
+/// Clears the currently displayed status.
 pub fn clear_status() {
     if let Ok(mut display) = DISPLAY.lock() {
         if let Some(ref mut display) = *display {

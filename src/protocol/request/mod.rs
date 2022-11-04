@@ -9,7 +9,7 @@ pub use monitor::*;
 pub use profile::*;
 pub use recipe::*;
 
-/// Implements an encode/decode pair for a request or response.
+/// Implements the encode part of an encode/decode pair for a request or response.
 pub trait PartialEncode {
     fn partial_encode(&self, out: &mut Vec<u8>);
 
@@ -47,6 +47,7 @@ impl<T: MachineEnumerable> PartialEncode for &MachineEnum<T> {
     }
 }
 
+/// Implements the decode part of an encode/decode pair for a request or response.
 pub trait PartialDecode<T> {
     /// Partially decodes this type from a buffer, advancing the input slice to the next item.
     fn partial_decode(input: &mut &[u8]) -> Option<T>;
@@ -101,6 +102,7 @@ macro_rules! packet_definition {
             ( $( $resp_name:tt $resp_type:ty ),* $(,)? )
         ),* $(,)? ) => {
 
+        /// A request sent from the host to device.
         #[allow(dead_code)]
         #[derive(Clone, Debug, Eq, PartialEq)]
         pub enum Request {
@@ -139,6 +141,7 @@ macro_rules! packet_definition {
             }
         }
 
+        /// A response sent from the device to the host.
         #[allow(dead_code)]
         #[derive(Clone, Debug, Eq, PartialEq)]
         pub enum Response {

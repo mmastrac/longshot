@@ -1,5 +1,6 @@
 use crate::protocol::*;
 
+/// Recipe information returned from [`Request::RecipeQuantityRead`].
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RecipeInfo {
     pub ingredient: MachineEnum<EcamIngredients>,
@@ -49,6 +50,7 @@ impl PartialEncode for RecipeInfo {
     }
 }
 
+/// Recipe information returned from [`Request::RecipeQuantityRead`].
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RecipeMinMaxInfo {
     pub ingredient: MachineEnum<EcamIngredients>,

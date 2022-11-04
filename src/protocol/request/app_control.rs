@@ -2,9 +2,12 @@
 
 use super::PartialEncode;
 
+/// Operations used by the application for various purposes.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AppControl {
+    /// Turns the machine on.
     TurnOn,
+    /// Uncertain, but sent by the application.
     RefreshAppId,
 }
 

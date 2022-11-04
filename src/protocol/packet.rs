@@ -86,6 +86,7 @@ impl<T> From<EcamPacket<T>> for EcamDriverPacket {
     }
 }
 
+/// Computes the checksum from a partial packet.
 pub fn checksum(buffer: &[u8]) -> [u8; 2] {
     let mut i: u16 = 7439;
     for x in buffer {
@@ -124,6 +125,7 @@ fn stringify(buffer: &[u8]) -> String {
         .collect::<String>()
 }
 
+/// Dumps a packet to a readable hex form.
 pub fn hexdump(buffer: &[u8]) -> String {
     let maybe_space = |i| if i > 0 && i % 8 == 0 { " " } else { "" };
     let s1: String = buffer
