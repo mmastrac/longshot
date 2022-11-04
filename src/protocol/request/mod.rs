@@ -234,26 +234,13 @@ mod test {
     use crate::protocol::unwrap_packet;
 
     use super::*;
-    use const_decoder::Decoder;
     use rstest::*;
 
-    /// Packet received when a brew response is sent
-    const RESPONSE_BREW_RECEIVED: [u8; 8] = Decoder::Hex.decode(b"d00783f0010064d9");
-    /// Packet received when pouring Cappucino milk
-    const RESPONSE_STATUS_CAPPUCINO_MILK: [u8; 19] =
-        Decoder::Hex.decode(b"d012750f02040100400a040000000000004183");
-    /// Packet received after pouring a Cappucino but before cleaning
-    const RESPONSE_STATUS_READY_AFTER_CAPPUCINO: [u8; 19] =
-        Decoder::Hex.decode(b"d012750f02040100400700000000000000d621");
-    /// Packet received during cleaing
-    const RESPONSE_STATUS_CLEANING_AFTER_CAPPUCINO: [u8; 19] =
-        Decoder::Hex.decode(b"d012750f04050100400c030900000000001cf0");
-
     #[rstest]
-    #[case(&RESPONSE_BREW_RECEIVED)]
-    #[case(&RESPONSE_STATUS_CAPPUCINO_MILK)]
-    #[case(&RESPONSE_STATUS_READY_AFTER_CAPPUCINO)]
-    #[case(&RESPONSE_STATUS_CLEANING_AFTER_CAPPUCINO)]
+    #[case(&crate::protocol::test::RESPONSE_BREW_RECEIVED)]
+    #[case(&crate::protocol::test::RESPONSE_STATUS_CAPPUCINO_MILK)]
+    #[case(&crate::protocol::test::RESPONSE_STATUS_READY_AFTER_CAPPUCINO)]
+    #[case(&crate::protocol::test::RESPONSE_STATUS_CLEANING_AFTER_CAPPUCINO)]
     fn real_packets_decode_as_expected(#[case] bytes: &[u8]) {
         let (packet, remainder) = Response::decode(unwrap_packet(bytes));
         let packet = packet.expect("Expected to decode something");

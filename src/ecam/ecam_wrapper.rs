@@ -13,6 +13,7 @@ pub enum EcamStatus {
     ShuttingDown(usize),
     Ready,
     Busy(usize),
+    Cleaning(usize),
     Alarm(MachineEnum<EcamAlarm>),
     Fetching(usize),
 }
@@ -60,6 +61,18 @@ impl From<EcamOutput> for EcamDriverOutput {
 
 impl EcamStatus {
     fn extract(state: &MonitorV2Response) -> EcamStatus {
+        if state.state == EcamMachineState::TurningOn {
+            return EcamStatus::TurningOn(state.percentage as usize);
+        }
+        if state.state == EcamMachineState::ShuttingDown {
+            return EcamStatus::ShuttingDown(state.percentage as usize);
+        }
+        if state.state == EcamMachineState::MilkCleaning || state.state == EcamMachineState::Rinsing {
+            return EcamStatus::Cleaning(state.percentage as usize);
+        }
+        if state.state == EcamMachineState::MilkPreparation || (state.state == EcamMachineState::ReadyOrDispensing && state.progress != 0) {
+            return EcamStatus::Busy(state.percentage as usize);
+        }
         #[allow(clippy::never_loop)]
         for alarm in state.alarms.set() {
             return EcamStatus::Alarm(alarm);
@@ -67,16 +80,7 @@ impl EcamStatus {
         if state.state == EcamMachineState::StandBy {
             return EcamStatus::StandBy;
         }
-        if state.state == EcamMachineState::TurningOn {
-            return EcamStatus::TurningOn(state.percentage as usize);
-        }
-        if state.state == EcamMachineState::ShuttingDown {
-            return EcamStatus::ShuttingDown(state.percentage as usize);
-        }
-        if state.state == EcamMachineState::ReadyOrDispensing && state.progress == 0 {
-            return EcamStatus::Ready;
-        }
-        EcamStatus::Busy(state.percentage as usize)
+        return EcamStatus::Ready;
     }
 
     fn matches(&self, state: &MonitorV2Response) -> bool {
@@ -397,5 +401,23 @@ impl Ecam {
         trace_shutdown!("Ecam::write_monitor_loop()");
         alive.deaden();
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use rstest::*;
+
+    #[rstest]
+    #[case(EcamStatus::Busy(0), &crate::protocol::test::RESPONSE_STATUS_CAPPUCINO_MILK)]
+    #[case(EcamStatus::Cleaning(9), &crate::protocol::test::RESPONSE_STATUS_CLEANING_AFTER_CAPPUCINO)]
+    #[case(EcamStatus::Alarm(MachineEnum::Value(EcamAlarm::CleanKnob)), &crate::protocol::test::RESPONSE_STATUS_READY_AFTER_CAPPUCINO)]
+    fn decode_ecam_status(#[case] expected_status: EcamStatus, #[case] bytes: &[u8]) {
+        let response = Response::decode(unwrap_packet(bytes)).0.expect("Expected to decode a response");
+        if let Response::MonitorV2(response) = response {
+            let status = EcamStatus::extract(&response);
+            assert_eq!(status, expected_status);
+        }
     }
 }

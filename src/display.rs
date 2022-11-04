@@ -207,6 +207,7 @@ impl StatusDisplay for ColouredStatusDisplay {
             EcamStatus::Ready => (0, "✅", "Ready".to_string()),
             EcamStatus::StandBy => (0, "💤", "Standby".to_string()),
             EcamStatus::Busy(percent) => (percent, "☕", format!("Dispensing... ({}%)", percent)),
+            EcamStatus::Cleaning(percent) => (percent, "💧", format!("Cleaning... ({}%)", percent)),
             EcamStatus::TurningOn(percent) => {
                 (percent, "💡", format!("Turning on... ({}%)", percent))
             }
@@ -315,6 +316,7 @@ impl StatusDisplay for BasicStatusDisplay {
             EcamStatus::TurningOn(percent) => ("Turning on...".to_owned(), Some(percent)),
             EcamStatus::ShuttingDown(percent) => ("Shutting down...".to_owned(), Some(percent)),
             EcamStatus::Busy(percent) => ("Dispensing...".to_owned(), Some(percent)),
+            EcamStatus::Cleaning(percent) => ("Cleaning...".to_owned(), Some(percent)),
             EcamStatus::Alarm(alarm) => (format!("Alarm: {:?}", alarm), None),
             EcamStatus::Fetching(percent) => ("Fetching...".to_owned(), Some(percent)),
         };
