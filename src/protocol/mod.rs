@@ -37,4 +37,13 @@ pub mod test {
     /// Packet received when the coffee grounds container is missing, and the water spout is present.
     pub const RESPONSE_STATUS_STANDBY_NO_COFFEE_CONTAINER: [u8; 19] =
         Decoder::Hex.decode(b"d012750f01090000000003640000000000cd3e");
+    /// Packet received while shutting down.
+    pub const RESPONSE_STATUS_SHUTTING_DOWN_1: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f000000000002016400000000007fc5");
+    /// Packet received while shutting down.
+    pub const RESPONSE_STATUS_SHUTTING_DOWN_2: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f0002000000020364000000000019cc");
+    /// Packet received while shutting down.
+    pub const RESPONSE_STATUS_SHUTTING_DOWN_3: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f000000000002066400000000006681");
 }

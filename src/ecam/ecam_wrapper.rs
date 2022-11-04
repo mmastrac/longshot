@@ -65,7 +65,11 @@ impl EcamStatus {
             return EcamStatus::TurningOn(state.percentage as usize);
         }
         if state.state == EcamMachineState::ShuttingDown {
-            return EcamStatus::ShuttingDown(state.percentage as usize);
+            if state.percentage < 100 {
+                return EcamStatus::ShuttingDown(state.percentage as usize);
+            }
+            // Emulate status % using progress
+            return EcamStatus::ShuttingDown((state.progress as usize * 10).clamp(0, 100));
         }
         if state.state == EcamMachineState::MilkCleaning || state.state == EcamMachineState::Rinsing
         {
@@ -420,6 +424,9 @@ mod test {
     #[case(EcamStatus::StandBy, &crate::protocol::test::RESPONSE_STATUS_STANDBY_NO_WATER_TANK)]
     #[case(EcamStatus::StandBy, &crate::protocol::test::RESPONSE_STATUS_STANDBY_WATER_SPOUT)]
     #[case(EcamStatus::StandBy, &crate::protocol::test::RESPONSE_STATUS_STANDBY_NO_COFFEE_CONTAINER)]
+    #[case(EcamStatus::ShuttingDown(10), &crate::protocol::test::RESPONSE_STATUS_SHUTTING_DOWN_1)]
+    #[case(EcamStatus::ShuttingDown(30), &crate::protocol::test::RESPONSE_STATUS_SHUTTING_DOWN_2)]
+    #[case(EcamStatus::ShuttingDown(60), &crate::protocol::test::RESPONSE_STATUS_SHUTTING_DOWN_3)]
     fn decode_ecam_status(#[case] expected_status: EcamStatus, #[case] bytes: &[u8]) {
         let response = Response::decode(unwrap_packet(bytes))
             .0
