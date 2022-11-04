@@ -71,6 +71,17 @@ fn check_ingredients(
                 )?;
                 v.push(RecipeInfo::new(EcamIngredients::Coffee, coffee))
             }
+            IngredientInfo::Milk(min, value, max) => {
+                let milk = get_u16_arg(
+                    "Milk",
+                    ingredients.allow_defaults,
+                    ingredients.milk,
+                    min,
+                    value,
+                    max,
+                )?;
+                v.push(RecipeInfo::new(EcamIngredients::Milk, milk))
+            }
             IngredientInfo::HotWater(min, value, max) => {
                 let hotwater = get_u16_arg(
                     "Hot water",
