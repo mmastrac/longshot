@@ -1,0 +1,995 @@
+# The configurations that used for the recording, feel free to edit them
+config:
+
+  # Specify a command to be executed
+  # like `/bin/bash -l`, `ls`, or any other commands
+  # the default is bash for Linux
+  # or powershell.exe for Windows
+  command: bash --noprofile
+  
+  # Specify the current working directory path
+  # the default is the current working directory path
+  cwd: /Users/matt/Documents/github/longshot
+  
+  # Export additional ENV variables
+  env:
+    recording: true
+    PS1: "$ "
+    BASH_SILENCE_DEPRECATION_WARNING: 1
+  
+  # Explicitly set the number of columns
+  # or use `auto` to take the current
+  # number of columns of your shell
+  cols: 80
+  
+  # Explicitly set the number of rows
+  # or use `auto` to take the current
+  # number of rows of your shell
+  rows: 20
+  
+  # Amount of times to repeat GIF
+  # If value is -1, play once
+  # If value is 0, loop indefinitely
+  # If value is a positive number, loop n times
+  repeat: 0
+  
+  # Quality
+  # 1 - 100
+  quality: 100
+  
+  # Delay between frames in ms
+  # If the value is `auto` use the actual recording delays
+  frameDelay: auto
+  
+  # Maximum delay between frames in ms
+  # Ignored if the `frameDelay` isn't set to `auto`
+  # Set to `auto` to prevent limiting the max idle time
+  maxIdleTime: 2000
+  
+  # The surrounding frame box
+  # The `type` can be null, window, floating, or solid`
+  # To hide the title use the value null
+  # Don't forget to add a backgroundColor style with a null as type
+  frameBox:
+    type: floating
+    title: Shell
+    style:
+      border: 0px black solid
+      # boxShadow: none
+      # margin: 0px
+  
+  # Add a watermark image to the rendered gif
+  # You need to specify an absolute path for
+  # the image on your machine or a URL, and you can also
+  # add your own CSS styles
+  watermark:
+    imagePath: null
+    style:
+      position: absolute
+      right: 15px
+      bottom: 15px
+      width: 100px
+      opacity: 0.9
+  
+  # Cursor style can be one of
+  # `block`, `underline`, or `bar`
+  cursorStyle: block
+  
+  # Font family
+  # You can use any font that is installed on your machine
+  # in CSS-like syntax
+  fontFamily: "Monaco, Lucida Console, Ubuntu Mono, Monospace"
+  
+  # The size of the font
+  fontSize: 12
+  
+  # The height of lines
+  lineHeight: 1
+  
+  # The spacing between letters
+  letterSpacing: 0
+  
+  # Theme
+  theme:
+    background: "transparent"
+    foreground: "#afafaf"
+    cursor: "#c7c7c7"
+    black: "#232628"
+    red: "#fc4384"
+    green: "#b3e33b"
+    yellow: "#ffa727"
+    blue: "#75dff2"
+    magenta: "#ae89fe"
+    cyan: "#708387"
+    white: "#d5d5d0"
+    brightBlack: "#626566"
+    brightRed: "#ff7fac"
+    brightGreen: "#c8ed71"
+    brightYellow: "#ebdf86"
+    brightBlue: "#75dff2"
+    brightMagenta: "#ae89fe"
+    brightCyan: "#b1c6ca"
+    brightWhite: "#f9f9f4"
+  
+# Records, feel free to edit them
+records:
+  - delay: 7
+    content: ' '
+  - delay: 7
+    content: "\r$ "
+  - delay: 790
+    content: l
+  - delay: 171
+    content: o
+  - delay: 428
+    content: 'n'
+  - delay: 55
+    content: g
+  - delay: 226
+    content: 'shot '
+  - delay: 200
+    content: 'brew '
+  - delay: 226
+    content: --device-name 69c7a1de-2572-67f7-afb6-5c16696a6f81
+  - delay: 5
+    content: "\r\n--turn-on --be"
+  - delay: 5
+    content: "verage capp"
+  - delay: 5
+    content: "uccino --coff"
+  - delay: 5
+    content: "ee 65 --taste st"
+  - delay: 5
+    content: "rong --m"
+  - delay: 5
+    content: "ilk 150"
+  - delay: 30
+    content: "\r\n"
+  - delay: 723
+    content: "Fetching recipe for Cappuccino...\r\nFetching recipes...\r\n\r\U0001F453 ▐\e[48;2;92;69;6;38;2;153;141;109m Fetching... (0%)                                                         \e[0m▌ "
+  - delay: 76
+    content: "\r\U0001F453 ▐\e[48;2;92;69;6;38;2;153;141;109m Fetching... (0%)                                                         \e[0m▌ "
+  - delay: 59
+    content: "\r\U0001F453 ▐\e[48;2;92;69;6;38;2;183;161;129m Fetching... (100%)                                                       \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ \r                                                                                \r\r\U0001F453 ▐\e[48;2;92;69;6;38;2;183;161;129m Fetching... (100%)                                                       \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ \r                                                                                \r\r\U0001F453 ▐\e[48;2;92;69;6;38;2;183;161;129m Fetching... (100%)                                                       \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ \r                                                                                \rBrewing Cappuccino...\r\n\r✅ ▐\e[48;2;92;69;6;38;2;153;141;109m Ready                                                                    \e[0m▌ "
+  - delay: 250
+    content: "\r✅ ▐\e[48;2;92;69;6;38;2;153;141;109m Ready                                                                    \e[0m▌ "
+  - delay: 64
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;153;141;109m Dispensing... (0%)                                                       \e[0m▌ "
+  - delay: 93
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m\e[0m\e[47;30m D\e[0m\e[40;37mispensing... (1%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m\e[0m\e[47;30m D\e[0m\e[40;37mispensing... (1%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m\e[0m\e[47;30m D\e[0m\e[40;37mispensing... (1%)                                                       \e[0m▌ "
+  - delay: 160
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m D\e[0m\e[47;30mis\e[0m\e[40;37mpensing... (3%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m D\e[0m\e[47;30mis\e[0m\e[40;37mpensing... (3%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m D\e[0m\e[47;30mis\e[0m\e[40;37mpensing... (3%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dis\e[0m\e[47;30mpe\e[0m\e[40;37mnsing... (6%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dis\e[0m\e[47;30mpe\e[0m\e[40;37mnsing... (6%)                                                       \e[0m▌ "
+  - delay: 215
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Disp\e[0m\e[47;30men\e[0m\e[40;37msing... (8%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Disp\e[0m\e[47;30men\e[0m\e[40;37msing... (8%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Disp\e[0m\e[47;30men\e[0m\e[40;37msing... (8%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Disp\e[0m\e[47;30men\e[0m\e[40;37msing... (8%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Disp\e[0m\e[47;30men\e[0m\e[40;37msing... (8%)                                                       \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Disp\e[0m\e[47;30men\e[0m\e[40;37msing... (8%)                                                       \e[0m▌ "
+  - delay: 205
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensi\e[0m\e[47;30mng\e[0m\e[40;37m... (13%)                                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensi\e[0m\e[47;30mng\e[0m\e[40;37m... (13%)                                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensi\e[0m\e[47;30mng\e[0m\e[40;37m... (13%)                                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensi\e[0m\e[47;30mng\e[0m\e[40;37m... (13%)                                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensi\e[0m\e[47;30mng\e[0m\e[40;37m... (13%)                                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensi\e[0m\e[47;30mng\e[0m\e[40;37m... (13%)                                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensi\e[0m\e[47;30mng\e[0m\e[40;37m... (13%)                                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensi\e[0m\e[47;30mng\e[0m\e[40;37m... (13%)                                                      \e[0m▌ "
+  - delay: 215
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing...\e[0m\e[47;30m (\e[0m\e[40;37m20%)                                                      \e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing...\e[0m\e[47;30m (\e[0m\e[40;37m20%)                                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing...\e[0m\e[47;30m (\e[0m\e[40;37m20%)                                                      \e[0m▌ "
+  - delay: 69
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (\e[0m\e[47;30m22\e[0m\e[40;37m%)                                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (\e[0m\e[47;30m22\e[0m\e[40;37m%)                                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (\e[0m\e[47;30m22\e[0m\e[40;37m%)                                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (\e[0m\e[47;30m22\e[0m\e[40;37m%)                                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (\e[0m\e[47;30m22\e[0m\e[40;37m%)                                                      \e[0m▌ "
+  - delay: 20
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (26%\e[0m\e[47;30m) \e[0m\e[40;37m                                                     \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (26%\e[0m\e[47;30m) \e[0m\e[40;37m                                                     \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (26%\e[0m\e[47;30m) \e[0m\e[40;37m                                                     \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (26%\e[0m\e[47;30m) \e[0m\e[40;37m                                                     \e[0m▌ "
+  - delay: 210
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (29%) \e[0m\e[47;30m  \e[0m\e[40;37m                                                   \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (29%) \e[0m\e[47;30m  \e[0m\e[40;37m                                                   \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (29%) \e[0m\e[47;30m  \e[0m\e[40;37m                                                   \e[0m▌ "
+  - delay: 70
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (31%)  \e[0m\e[47;30m  \e[0m\e[40;37m                                                  \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (31%)  \e[0m\e[47;30m  \e[0m\e[40;37m                                                  \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (31%)  \e[0m\e[47;30m  \e[0m\e[40;37m                                                  \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (31%)  \e[0m\e[47;30m  \e[0m\e[40;37m                                                  \e[0m▌ "
+  - delay: 150
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (34%)     \e[0m\e[47;30m  \e[0m\e[40;37m                                               \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (34%)     \e[0m\e[47;30m  \e[0m\e[40;37m                                               \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (34%)     \e[0m\e[47;30m  \e[0m\e[40;37m                                               \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (34%)     \e[0m\e[47;30m  \e[0m\e[40;37m                                               \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (34%)     \e[0m\e[47;30m  \e[0m\e[40;37m                                               \e[0m▌ "
+  - delay: 110
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (38%)        \e[0m\e[47;30m  \e[0m\e[40;37m                                            \e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (38%)        \e[0m\e[47;30m  \e[0m\e[40;37m                                            \e[0m▌ "
+  - delay: 249
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (38%)        \e[0m\e[47;30m  \e[0m\e[40;37m                                            \e[0m▌ "
+  - delay: 160
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (40%)         \e[0m\e[47;30m  \e[0m\e[40;37m                                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (40%)         \e[0m\e[47;30m  \e[0m\e[40;37m                                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (40%)         \e[0m\e[47;30m  \e[0m\e[40;37m                                           \e[0m▌ "
+  - delay: 55
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (42%)      .    \e[0m\e[47;30m  \e[0m\e[40;37m                                         \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (42%)      .    \e[0m\e[47;30m  \e[0m\e[40;37m                                         \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (42%)      .    \e[0m\e[47;30m  \e[0m\e[40;37m                                         \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (42%)      .    \e[0m\e[47;30m  \e[0m\e[40;37m                                         \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (42%)      .    \e[0m\e[47;30m  \e[0m\e[40;37m                                         \e[0m▌ "
+  - delay: 156
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (47%)           .  \e[0m\e[47;30m  \e[0m\e[40;37m                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (47%)           .  \e[0m\e[47;30m  \e[0m\e[40;37m                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (47%)           .  \e[0m\e[47;30m  \e[0m\e[40;37m                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (47%)           .  \e[0m\e[47;30m  \e[0m\e[40;37m                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (47%)           .  \e[0m\e[47;30m  \e[0m\e[40;37m                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (47%)           .  \e[0m\e[47;30m  \e[0m\e[40;37m                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (47%)           .  \e[0m\e[47;30m  \e[0m\e[40;37m                                      \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (47%)           .  \e[0m\e[47;30m  \e[0m\e[40;37m                                      \e[0m▌ "
+  - delay: 109
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (53%)                   \e[0m\e[47;30m  \e[0m\e[40;37m                                 \e[0m▌ "
+  - delay: 150
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (61%)                         \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 78
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (63%)             .            \e[0m\e[47;30m  \e[0m\e[40;37m                          \e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (63%)             .            \e[0m\e[47;30m  \e[0m\e[40;37m                          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (63%)             .            \e[0m\e[47;30m  \e[0m\e[40;37m                          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (63%)             .            \e[0m\e[47;30m  \e[0m\e[40;37m                          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (63%)             .            \e[0m\e[47;30m  \e[0m\e[40;37m                          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (63%)             .            \e[0m\e[47;30m  \e[0m\e[40;37m                          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (63%)             .            \e[0m\e[47;30m  \e[0m\e[40;37m                          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (63%)             .            \e[0m\e[47;30m  \e[0m\e[40;37m                          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (63%)             .            \e[0m\e[47;30m  \e[0m\e[40;37m                          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (63%)             .            \e[0m\e[47;30m  \e[0m\e[40;37m                          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (63%)             .            \e[0m\e[47;30m  \e[0m\e[40;37m                          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (63%)             .            \e[0m\e[47;30m  \e[0m\e[40;37m                          \e[0m▌ "
+  - delay: 39
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (72%)                     .           \e[0m\e[47;30m  \e[0m\e[40;37m                   \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (72%)                     .           \e[0m\e[47;30m  \e[0m\e[40;37m                   \e[0m▌ "
+  - delay: 185
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (74%)         .                        \e[0m\e[47;30m  \e[0m\e[40;37m                  \e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (74%)         .                        \e[0m\e[47;30m  \e[0m\e[40;37m                  \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (74%)         .                        \e[0m\e[47;30m  \e[0m\e[40;37m                  \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (74%)         .                        \e[0m\e[47;30m  \e[0m\e[40;37m                  \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (74%)         .                        \e[0m\e[47;30m  \e[0m\e[40;37m                  \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (74%)         .                        \e[0m\e[47;30m  \e[0m\e[40;37m                  \e[0m▌ "
+  - delay: 70
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (77%)                                    \e[0m\e[47;30m  \e[0m\e[40;37m                \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (77%)                                    \e[0m\e[47;30m  \e[0m\e[40;37m                \e[0m▌ "
+  - delay: 110
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (78%)                              .      \e[0m\e[47;30m  \e[0m\e[40;37m               \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (78%)                              .      \e[0m\e[47;30m  \e[0m\e[40;37m               \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (78%)                              .      \e[0m\e[47;30m  \e[0m\e[40;37m               \e[0m▌ "
+  - delay: 159
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (80%)        .                              \e[0m\e[47;30m  \e[0m\e[40;37m             \e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (80%)        .                              \e[0m\e[47;30m  \e[0m\e[40;37m             \e[0m▌ "
+  - delay: 5
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (82%)                                        \e[0m\e[47;30m  \e[0m\e[40;37m            \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (82%)                                        \e[0m\e[47;30m  \e[0m\e[40;37m            \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (82%)                                        \e[0m\e[47;30m  \e[0m\e[40;37m            \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (82%)                                        \e[0m\e[47;30m  \e[0m\e[40;37m            \e[0m▌ "
+  - delay: 89
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (84%)                                     .    \e[0m\e[47;30m  \e[0m\e[40;37m          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (84%)                                     .    \e[0m\e[47;30m  \e[0m\e[40;37m          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (84%)                                     .    \e[0m\e[47;30m  \e[0m\e[40;37m          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (84%)                                     .    \e[0m\e[47;30m  \e[0m\e[40;37m          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (84%)                                     .    \e[0m\e[47;30m  \e[0m\e[40;37m          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (84%)                                     .    \e[0m\e[47;30m  \e[0m\e[40;37m          \e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (84%)                                     .    \e[0m\e[47;30m  \e[0m\e[40;37m          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (84%)                                     .    \e[0m\e[47;30m  \e[0m\e[40;37m          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (84%)                                     .    \e[0m\e[47;30m  \e[0m\e[40;37m          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (84%)                                     .    \e[0m\e[47;30m  \e[0m\e[40;37m          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (84%)                                     .    \e[0m\e[47;30m  \e[0m\e[40;37m          \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (84%)                                     .    \e[0m\e[47;30m  \e[0m\e[40;37m          \e[0m▌ "
+  - delay: 99
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (92%)                                             .  \e[0m\e[47;30m  \e[0m\e[40;37m    \e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (92%)                                             .  \e[0m\e[47;30m  \e[0m\e[40;37m    \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (92%)                                             .  \e[0m\e[47;30m  \e[0m\e[40;37m    \e[0m▌ "
+  - delay: 144
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (95%)                           .                      \e[0m\e[47;30m  \e[0m\e[40;37m  \e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (95%)                           .                      \e[0m\e[47;30m  \e[0m\e[40;37m  \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (95%)                           .                      \e[0m\e[47;30m  \e[0m\e[40;37m  \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (95%)                           .                      \e[0m\e[47;30m  \e[0m\e[40;37m  \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (95%)                           .                      \e[0m\e[47;30m  \e[0m\e[40;37m  \e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (95%)                           .                      \e[0m\e[47;30m  \e[0m\e[40;37m  \e[0m▌ "
+  - delay: 160
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (98%)         .                                          \e[0m\e[47;30m  \e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (98%)         .                                          \e[0m\e[47;30m  \e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (98%)         .                                          \e[0m\e[47;30m  \e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (98%)         .                                          \e[0m\e[47;30m  \e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (98%)         .                                          \e[0m\e[47;30m  \e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (98%)         .                                          \e[0m\e[47;30m  \e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (98%)         .                                          \e[0m\e[47;30m  \e[0m\e[40;37m\e[0m▌ "
+  - delay: 104
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 251
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 250
+    content: "\r☕ ▐\e[48;2;92;69;6;38;2;183;161;129m Dispensing... (100%)                                                     \e[0m\e[47;30m\e[0m\e[40;37m\e[0m▌ "
+  - delay: 9
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 251
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 251
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 249
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 251
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F514 ▐\e[48;2;92;69;6;38;2;153;141;109m Alarm (CleanKnob)                                                        \e[0m▌ "
+  - delay: 77
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;153;141;109m Cleaning... (0%)                                                         \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;153;141;109m Cleaning... (0%)                                                         \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;153;141;109m Cleaning... (0%)                                                         \e[0m▌ "
+  - delay: 160
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m C\e[0m\e[47;30mle\e[0m\e[40;37maning... (4%)                                                         \e[0m▌ "
+  - delay: 251
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m C\e[0m\e[47;30mle\e[0m\e[40;37maning... (4%)                                                         \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m C\e[0m\e[47;30mle\e[0m\e[40;37maning... (4%)                                                         \e[0m▌ "
+  - delay: 175
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Clea\e[0m\e[47;30mni\e[0m\e[40;37mng... (7%)                                                         \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Clea\e[0m\e[47;30mni\e[0m\e[40;37mng... (7%)                                                         \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Clea\e[0m\e[47;30mni\e[0m\e[40;37mng... (7%)                                                         \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Clea\e[0m\e[47;30mni\e[0m\e[40;37mng... (7%)                                                         \e[0m▌ "
+  - delay: 59
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleanin\e[0m\e[47;30mg.\e[0m\e[40;37m.. (12%)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleanin\e[0m\e[47;30mg.\e[0m\e[40;37m.. (12%)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleanin\e[0m\e[47;30mg.\e[0m\e[40;37m.. (12%)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleanin\e[0m\e[47;30mg.\e[0m\e[40;37m.. (12%)                                                        \e[0m▌ "
+  - delay: 105
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning..\e[0m\e[47;30m. \e[0m\e[40;37m(15%)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning..\e[0m\e[47;30m. \e[0m\e[40;37m(15%)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning..\e[0m\e[47;30m. \e[0m\e[40;37m(15%)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning..\e[0m\e[47;30m. \e[0m\e[40;37m(15%)                                                        \e[0m▌ "
+  - delay: 15
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (2\e[0m\e[47;30m1%\e[0m\e[40;37m)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (2\e[0m\e[47;30m1%\e[0m\e[40;37m)                                                        \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (2\e[0m\e[47;30m1%\e[0m\e[40;37m)                                                        \e[0m▌ "
+  - delay: 145
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (24%\e[0m\e[47;30m) \e[0m\e[40;37m                                                       \e[0m▌ "
+  - delay: 251
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (24%\e[0m\e[47;30m) \e[0m\e[40;37m                                                       \e[0m▌ "
+  - delay: 125
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (27%) \e[0m\e[47;30m  \e[0m\e[40;37m                                                     \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (27%) \e[0m\e[47;30m  \e[0m\e[40;37m                                                     \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (27%) \e[0m\e[47;30m  \e[0m\e[40;37m                                                     \e[0m▌ "
+  - delay: 144
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (30%)    \e[0m\e[47;30m  \e[0m\e[40;37m                                                  \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (30%)    \e[0m\e[47;30m  \e[0m\e[40;37m                                                  \e[0m▌ "
+  - delay: 216
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (33%)      \e[0m\e[47;30m  \e[0m\e[40;37m                                                \e[0m▌ "
+  - delay: 225
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (36%)        \e[0m\e[47;30m  \e[0m\e[40;37m                                              \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (36%)        \e[0m\e[47;30m  \e[0m\e[40;37m                                              \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (36%)        \e[0m\e[47;30m  \e[0m\e[40;37m                                              \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (36%)        \e[0m\e[47;30m  \e[0m\e[40;37m                                              \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (36%)        \e[0m\e[47;30m  \e[0m\e[40;37m                                              \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (36%)        \e[0m\e[47;30m  \e[0m\e[40;37m                                              \e[0m▌ "
+  - delay: 10
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (42%)        .    \e[0m\e[47;30m  \e[0m\e[40;37m                                         \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (42%)        .    \e[0m\e[47;30m  \e[0m\e[40;37m                                         \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (42%)        .    \e[0m\e[47;30m  \e[0m\e[40;37m                                         \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (42%)        .    \e[0m\e[47;30m  \e[0m\e[40;37m                                         \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (42%)        .    \e[0m\e[47;30m  \e[0m\e[40;37m                                         \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (42%)        .    \e[0m\e[47;30m  \e[0m\e[40;37m                                         \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (42%)        .    \e[0m\e[47;30m  \e[0m\e[40;37m                                         \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (42%)        .    \e[0m\e[47;30m  \e[0m\e[40;37m                                         \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (42%)        .    \e[0m\e[47;30m  \e[0m\e[40;37m                                         \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (42%)        .    \e[0m\e[47;30m  \e[0m\e[40;37m                                         \e[0m▌ "
+  - delay: 150
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (57%)                        \e[0m\e[47;30m  \e[0m\e[40;37m                              \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (57%)                        \e[0m\e[47;30m  \e[0m\e[40;37m                              \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (57%)                        \e[0m\e[47;30m  \e[0m\e[40;37m                              \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (57%)                        \e[0m\e[47;30m  \e[0m\e[40;37m                              \e[0m▌ "
+  - delay: 15
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (62%)                           \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (62%)                           \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (62%)                           \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (62%)                           \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (62%)                           \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (62%)                           \e[0m\e[47;30m  \e[0m\e[40;37m                           \e[0m▌ "
+  - delay: 129
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (68%)         .                      \e[0m\e[47;30m  \e[0m\e[40;37m                      \e[0m▌ "
+  - delay: 251
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (68%)         .                      \e[0m\e[47;30m  \e[0m\e[40;37m                      \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (68%)         .                      \e[0m\e[47;30m  \e[0m\e[40;37m                      \e[0m▌ "
+  - delay: 159
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (74%)           .                        \e[0m\e[47;30m  \e[0m\e[40;37m                  \e[0m▌ "
+  - delay: 251
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (74%)           .                        \e[0m\e[47;30m  \e[0m\e[40;37m                  \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (74%)           .                        \e[0m\e[47;30m  \e[0m\e[40;37m                  \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (74%)           .                        \e[0m\e[47;30m  \e[0m\e[40;37m                  \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (74%)           .                        \e[0m\e[47;30m  \e[0m\e[40;37m                  \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (74%)           .                        \e[0m\e[47;30m  \e[0m\e[40;37m                  \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (74%)           .                        \e[0m\e[47;30m  \e[0m\e[40;37m                  \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (74%)           .                        \e[0m\e[47;30m  \e[0m\e[40;37m                  \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (74%)           .                        \e[0m\e[47;30m  \e[0m\e[40;37m                  \e[0m▌ "
+  - delay: 114
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (86%)                             .               \e[0m\e[47;30m  \e[0m\e[40;37m         \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (86%)                             .               \e[0m\e[47;30m  \e[0m\e[40;37m         \e[0m▌ "
+  - delay: 80
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 251
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 251
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ "
+  - delay: 250
+    content: "\r\U0001F4A7 ▐\e[48;2;92;69;6;38;2;183;161;129m Cleaning... (89%)         .                                     \e[0m\e[47;30m  \e[0m\e[40;37m       \e[0m▌ \r✅ ▐\e[48;2;92;69;6;38;2;153;141;109m Ready                                                                    \e[0m▌ "
+  - delay: 250
+    content: "\r✅ ▐\e[48;2;92;69;6;38;2;153;141;109m Ready                                                                    \e[0m▌ "
+  - delay: 250
+    content: "\r✅ ▐\e[48;2;92;69;6;38;2;153;141;109m Ready                                                                    \e[0m▌ "
+  - delay: 250
+    content: "\r✅ ▐\e[48;2;92;69;6;38;2;153;141;109m Ready                                                                    \e[0m▌ "
+  - delay: 250
+    content: "\r✅ ▐\e[48;2;92;69;6;38;2;153;141;109m Ready                                                                    \e[0m▌ "
