@@ -1,7 +1,6 @@
-[![docs.rs](https://docs.rs/longshot/badge.svg)](https://docs.rs/longshot)
-[![crates.io](https://img.shields.io/crates/v/longshot.svg)](https://crates.io/crates/longshot)
 
-# longshot
+
+# longshot [![docs.rs](https://docs.rs/longshot/badge.svg)](https://docs.rs/longshot) [![crates.io](https://img.shields.io/crates/v/longshot.svg)](https://crates.io/crates/longshot)
 
 Brew coffee from the command-line!
 
@@ -30,3 +29,6 @@ Fetching recipes...
 Brewing RegularCoffee with --coffee=180 --taste strong
 ```
 
+# Demo
+
+![Demo of brewing a cappuccino](https://user-images.githubusercontent.com/512240/200137316-a09304e8-b34a-41ff-a847-af71af521ef8.gif)
