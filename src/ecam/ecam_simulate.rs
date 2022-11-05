@@ -9,6 +9,7 @@ use crate::protocol::{
 
 struct EcamSimulate {
     rx: Mutex<tokio::sync::mpsc::Receiver<EcamDriverOutput>>,
+    tx: Mutex<tokio::sync::mpsc::Sender<EcamDriverOutput>>,
 }
 
 impl EcamDriver for EcamSimulate {
@@ -21,12 +22,82 @@ impl EcamDriver for EcamSimulate {
 
     fn write(&self, data: crate::protocol::EcamDriverPacket) -> AsyncFuture<()> {
         Box::pin(async move {
-            // TODO: Implement recipe fetch
             if data.bytes[0] == EcamRequestId::RecipeQuantityRead as u8 {
-                // println!("{:?}", data.bytes);
+                // TODO: How do we get rustfmt to format this better?
+                let packet = &[
+                    166,
+                    240,
+                    1,
+                    data.bytes[3],
+                    1,
+                    0,
+                    40,
+                    2,
+                    3,
+                    8,
+                    0,
+                    27,
+                    4,
+                    25,
+                    1,
+                ];
+                self.tx
+                    .lock()
+                    .await
+                    .send(EcamDriverOutput::Packet(EcamDriverPacket::from_slice(
+                        packet,
+                    )))
+                    .await
+                    .map_err(eat_errors_with_warning)?;
+                trace_packet!("response {:?} -> {:?}", data.bytes, packet);
             }
             if data.bytes[0] == EcamRequestId::RecipeMinMaxSync as u8 {
-                // println!("{:?}", data.bytes);
+                // TODO: How do we get rustfmt to format this better?
+                let packet = &[
+                    176,
+                    240,
+                    data.bytes[2],
+                    1,
+                    0,
+                    20,
+                    0,
+                    40,
+                    0,
+                    180,
+                    2,
+                    0,
+                    3,
+                    5,
+                    8,
+                    0,
+                    0,
+                    1,
+                    24,
+                    1,
+                    1,
+                    1,
+                    25,
+                    1,
+                    1,
+                    1,
+                    27,
+                    0,
+                    4,
+                    4,
+                    28,
+                    0,
+                    0,
+                    0,
+                ];
+                self.tx
+                    .lock()
+                    .await
+                    .send(EcamDriverOutput::Packet(EcamDriverPacket::from_slice(
+                        packet,
+                    )))
+                    .await
+                    .map_err(eat_errors_with_warning)?;
+                trace_packet!("response {:?} {:?}", data.bytes, packet);
             }
             Ok(())
         })
@@ -62,14 +133,16 @@ fn make_simulated_response(state: EcamMachineState, progress: u8, percentage: u8
     v
 }
 
+fn eat_errors_with_warning<T: std::fmt::Debug>(e: T) -> EcamError {
+    warning!("{:?}", e);
+    EcamError::Unknown
+}
+
 async fn send_output(
     tx: &tokio::sync::mpsc::Sender<EcamDriverOutput>,
     packet: EcamDriverOutput,
 ) -> Result<(), EcamError> {
-    tx.send(packet).await.map_err(|e| {
-        warning!("{:?}", e);
-        EcamError::Unknown
-    })
+    tx.send(packet).await.map_err(eat_errors_with_warning)
 }
 
 async fn send(
@@ -84,6 +157,7 @@ pub async fn get_ecam_simulator() -> Result<impl EcamDriver, EcamError> {
     let (tx, rx) = tokio::sync::mpsc::channel(1);
     const DELAY: Duration = Duration::from_millis(250);
     send_output(&tx, EcamDriverOutput::Ready).await?;
+    let tx_out = tx.clone();
     tokio::spawn(async move {
         // Start in standby
         for _ in 0..5 {
@@ -140,5 +214,8 @@ pub async fn get_ecam_simulator() -> Result<impl EcamDriver, EcamError> {
         trace_shutdown!("EcamSimulate");
         Result::<(), EcamError>::Ok(())
     });
-    Ok(EcamSimulate { rx: Mutex::new(rx) })
+    Ok(EcamSimulate {
+        rx: Mutex::new(rx),
+        tx: Mutex::new(tx_out),
+    })
 }
