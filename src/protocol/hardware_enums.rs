@@ -131,6 +131,7 @@ hardware_enum! {"Identifier determining the type of request and response (also r
     AppControl = 132,
     ParameterRead = 149,
     ParameterWrite = 144,
+    /// Used for reads longer than 4, less than or equal to 10 bytes
     ParameterReadExt = 161,
     StatisticsRead = 162,
     Checksum = 163,

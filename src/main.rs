@@ -54,6 +54,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .arg(dump_packets.clone()),
         )
         .subcommand(
+            command!("read-parameter")
+                .about("Read a parameter from the device")
+                .arg(device_name.clone())
+                .arg(turn_on.clone())
+                .arg(dump_packets.clone())
+                .arg(arg!(--"parameter" <parameter>).help("The parameter ID"))
+                .arg(arg!(--"length" <length>).help("The parameter length")),
+        )
+        .subcommand(
             command!("list-recipes")
                 .about("List recipes stored in the device")
                 .arg(device_name.clone()),
@@ -147,6 +156,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .clone();
             let ecam = ecam_lookup(device_name).await?;
             list_recipes(ecam).await?;
+        }
+        Some(("read-parameter", cmd)) => {
+            let device_name = &cmd
+                .get_one::<String>("device-name")
+                .expect("Device name required")
+                .clone();
+            let ecam = ecam_lookup(device_name).await?;
+            let parameter = cmd
+                .get_one::<String>("parameter")
+                .map(|s| s.parse::<u16>().expect("Invalid number"))
+                .expect("Required");
+            let length = cmd
+                .get_one::<String>("length")
+                .map(|s| s.parse::<u8>().expect("Invalid number"))
+                .expect("Required");
+            read_parameter(ecam, parameter, length).await?;
         }
         Some(("x-internal-pipe", cmd)) => {
             let device_name = &cmd
