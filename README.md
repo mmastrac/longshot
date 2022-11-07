@@ -15,21 +15,21 @@ source form.
 
 Monitor the given device (will continue until you press Ctrl+C):
 
-```bash
+```console
 $ longshot monitor --device-name (device)
 Dispensing... [###############################===========]
 ```
 
 Get the brew information for a given beverage:
 
-```bash
+```console
 $ longshot brew  --device-name (device) --beverage regularcoffee
 ...
 ```
 
 Brew a beverage:
 
-```bash
+```console
 $ longshot brew  --device-name (device) --beverage regularcoffee --coffee 180 --taste strong
 Fetching recipe for RegularCoffee...
 Fetching recipes...
