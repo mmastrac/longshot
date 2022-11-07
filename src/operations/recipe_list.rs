@@ -226,7 +226,7 @@ impl RecipeDetails {
         }
 
         for ingredient in EcamIngredients::all() {
-            let key = &MachineEnum::Value(ingredient);
+            let key = &ingredient.into();
             if matches!(
                 ingredient,
                 EcamIngredients::Visible
@@ -353,8 +353,8 @@ pub async fn list_recipies_for(
         }
         'outer: for beverage in recipes.get_remaining_beverages() {
             'inner: for packet in vec![
-                Request::RecipeMinMaxSync(MachineEnum::Value(beverage)),
-                Request::RecipeQuantityRead(1, MachineEnum::Value(beverage)),
+                Request::RecipeMinMaxSync(beverage.into()),
+                Request::RecipeQuantityRead(1, beverage.into()),
             ] {
                 crate::display::display_status(crate::ecam::EcamStatus::Fetching(
                     (total - recipes.get_remaining_beverages().len()) * 100 / total,

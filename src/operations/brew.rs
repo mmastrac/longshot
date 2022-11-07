@@ -154,10 +154,10 @@ pub async fn brew(
                 info!("Brewing {:?}...", ingredients.beverage,);
 
                 let req = Request::BeverageDispensingMode(
-                    MachineEnum::Value(ingredients.beverage),
-                    MachineEnum::Value(EcamOperationTrigger::Start),
+                    ingredients.beverage.into(),
+                    EcamOperationTrigger::Start.into(),
                     recipe,
-                    MachineEnum::Value(EcamBeverageTasteType::Prepare),
+                    EcamBeverageTasteType::Prepare.into(),
                 );
 
                 if skip_brew {

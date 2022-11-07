@@ -4,7 +4,7 @@ use crate::ecam::{EcamDriver, EcamDriverOutput, EcamError};
 use crate::prelude::*;
 use crate::protocol::{
     hexdump, EcamAccessory, EcamDriverPacket, EcamMachineState, EcamMachineSwitch, EcamRequestId,
-    MachineEnum, MonitorV2Response, PartialEncode, SwitchSet,
+    MonitorV2Response, PartialEncode, SwitchSet,
 };
 
 struct EcamSimulate {
@@ -120,8 +120,8 @@ fn make_simulated_response(state: EcamMachineState, progress: u8, percentage: u8
     let mut v = vec![EcamRequestId::MonitorV2.into(), 0xf0];
     v.extend_from_slice(
         &MonitorV2Response {
-            state: MachineEnum::Value(state),
-            accessory: MachineEnum::Value(EcamAccessory::None),
+            state: state.into(),
+            accessory: EcamAccessory::None.into(),
             switches: SwitchSet::of(&[EcamMachineSwitch::WaterSpout]),
             alarms: SwitchSet::empty(),
             progress,
