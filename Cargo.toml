@@ -33,6 +33,7 @@ const-decoder = "0.3.0"
 
 [lib]
 name = "longshot"
+path = "src/lib.rs"
 
 [[bin]]
 name = "longshot"
