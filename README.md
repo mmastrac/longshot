@@ -13,28 +13,32 @@ source form.
 
 ## Command-Line Examples
 
-Monitor a given device:
-```
+Monitor the given device (will continue until you press Ctrl+C):
+
+```bash
 $ longshot monitor --device-name (device)
 Dispensing... [###############################===========]
 ```
+
 Get the brew information for a given beverage:
 
-```
+```bash
 $ longshot brew  --device-name (device) --beverage regularcoffee
 ...
 ```
 
 Brew a beverage:
 
-```
+```bash
 $ longshot brew  --device-name (device) --beverage regularcoffee --coffee 180 --taste strong
 Fetching recipe for RegularCoffee...
 Fetching recipes...
-Brewing RegularCoffee with --coffee=180 --taste strong
+Brewing RegularCoffee...
 ```
 
 ## API Examples
+
+Brew a long coffee with 250 impulses of water (approximately the size of an average North American coffee mug, or slightly more).
 
 ```rust
 let ecam = ecam_lookup(device_name).await?;
