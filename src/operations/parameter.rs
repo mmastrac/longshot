@@ -7,7 +7,7 @@ use crate::{
 pub async fn read_parameter(ecam: Ecam, param: u16, len: u8) -> Result<(), EcamError> {
     let mut tap = ecam.packet_tap().await?;
     let ecam = ecam.clone();
-    let handle = tokio::spawn(async move {
+    let _handle = tokio::spawn(async move {
         while let Some(packet) = tap.next().await {
             // if dump_decoded_packets {
             trace_packet!("{:?}", packet);
