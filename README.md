@@ -39,10 +39,10 @@ Brewing RegularCoffee with --coffee=180 --taste strong
 ```rust
 let ecam = ecam_lookup(device_name).await?;
 let req = Request::BeverageDispensingMode(
-    MachineEnum::Value(EcamBeverageId::LongCoffee),
-    MachineEnum::Value(EcamOperationTrigger::Start),
+    EcamBeverageId::LongCoffee.into(),
+    EcamOperationTrigger::Start.into(),
     vec![RecipeInfo::new(EcamIngredients::Coffee, 250)],
-    MachineEnum::Value(EcamBeverageTasteType::Prepare),
+    EcamBeverageTasteType::Prepare.into(),
 );
 ecam.write_request(req).await?;
 ```
