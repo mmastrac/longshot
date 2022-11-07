@@ -129,10 +129,10 @@ pub async fn pipe_stdin<T: EcamDriver + 'static>(
         }
     });
 
-    trace_shutdown!("pipe_stdin()");
-
     let x: Result<_, EcamError> = join!(a, b, c).map(|x| x).transpose();
     x?;
+
+    trace_shutdown!("pipe_stdin()");
 
     Result::Ok(())
 }
