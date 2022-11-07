@@ -102,6 +102,7 @@ impl EcamIngredients {
 hardware_enum! {"Beverage preparation mode.", EcamBeverageTasteType {
     Delete = 0,
     Save = 1,
+    /// Prepare a beverage. This is the most likely enumeration value you'll want to use.
     Prepare = 2,
     PrepareAndSave = 3,
     SaveInversion = 5,
@@ -111,6 +112,7 @@ hardware_enum! {"Beverage preparation mode.", EcamBeverageTasteType {
 
 hardware_enum! {"Operation mode/trigger.", EcamOperationTrigger {
     DontCare = 0,
+    /// Start preparing a beverage. This is the most likely enumeration value you'll want to use.
     Start = 1,
     /// This is STARTPROGRAM and STOPV2, but only STOPV2 appears to be used.
     StartProgramOrStopV2 = 2,
@@ -125,25 +127,30 @@ hardware_enum! {"Identifier determining the type of request and response (also r
     SetBtMode = 17,
     MonitorV0 = 96,
     MonitorV1 = 112,
+    /// Send a monitor V2 packet to the machine. This is the only tested and working monitor functionality.
     MonitorV2 = 117,
+    /// Brew a beverage, or interact with the profile saving functionality.
     BeverageDispensingMode = 131,
     /// (2, 1) for turn on, (3, 2) for refresh app ID.
     AppControl = 132,
+    /// Read a parameter from the device. Used for reads less than or equal to 4 blocks, less than or equal to 10 blocks (each block is 2 bytes).
     ParameterRead = 149,
     ParameterWrite = 144,
-    /// Used for reads longer than 4, less than or equal to 10 bytes
+    /// Read a parameter from the device. Used for reads longer than 4 blocks, less than or equal to 10 blocks (each block is 2 bytes).
     ParameterReadExt = 161,
     StatisticsRead = 162,
     Checksum = 163,
     ProfileNameRead = 164,
     ProfileNameWrite = 165,
+    /// Read the default recipe for a beverage from the machine.
     RecipeQuantityRead = 166,
+    /// Read the priority order of beverages from the machine.
     RecipePriorityRead = 168,
     ProfileSelection = 169,
     RecipeNameRead = 170,
     RecipeNameWrite = 171,
     SetFavoriteBeverages = 173,
-    /// This may be a PIN operation in some other versions of the protocol.
+    /// Request the min/max values for a given beverage. This may be a PIN operation in some other versions of the protocol.
     RecipeMinMaxSync = 176,
     PinSet = 177,
     BeanSystemSelect = 185,
