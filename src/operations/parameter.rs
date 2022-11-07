@@ -20,7 +20,7 @@ pub async fn read_parameter(ecam: Ecam, param: u16, len: u8) -> Result<(), EcamE
 
     if len > 4 {
         ecam.write_request(Request::ParameterReadExt(param, len))
-        .await?;
+            .await?;
     } else {
         ecam.write_request(Request::ParameterRead(param, len))
             .await?;
