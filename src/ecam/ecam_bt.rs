@@ -154,7 +154,7 @@ impl EcamPeripheral {
     pub fn id(&self) -> Uuid {
         // Icky, but we don't have a PeripheralId to UUID function
         let uuid = format!("{:?}", self.peripheral.id())[13..49].to_owned();
-        return Uuid::parse_str(&uuid).expect("failed to parse UUID from debug string");
+        Uuid::parse_str(&uuid).expect("failed to parse UUID from debug string")
     }
 
     pub async fn notifications(&self) -> Result<impl Stream<Item = EcamDriverOutput>, EcamError> {
@@ -209,9 +209,9 @@ impl EcamPeripheral {
                 for characteristic in service.characteristics {
                     if characteristic.uuid == CHARACTERISTIC_UUID {
                         return Ok(Some(EcamPeripheral {
-                            local_name: local_name,
-                            peripheral: peripheral,
-                            characteristic: characteristic,
+                            local_name,
+                            peripheral,
+                            characteristic,
                         }));
                     }
                 }

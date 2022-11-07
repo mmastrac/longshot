@@ -74,7 +74,7 @@ macro_rules! spawn_loop {
                 $async
             }
             trace_shutdown!($name);
-            drop(tx.send(false));
+            let _ = tx.send(false);
             Result::<(), EcamError>::Ok(())
         }
     }};
@@ -108,7 +108,7 @@ pub async fn pipe_stdin<T: EcamDriver + 'static>(
 
     let ecam2 = ecam.clone();
     let a = spawn_loop!("alive", tx, {
-        if ecam2.alive().await? == false {
+        if !(ecam2.alive().await?) {
             break;
         }
         tokio::time::sleep(Duration::from_millis(10)).await;

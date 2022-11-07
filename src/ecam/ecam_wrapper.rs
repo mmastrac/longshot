@@ -87,7 +87,7 @@ impl EcamStatus {
         if state.state == EcamMachineState::StandBy {
             return EcamStatus::StandBy;
         }
-        return EcamStatus::Ready;
+        EcamStatus::Ready
     }
 
     fn matches(&self, state: &MonitorV2Response) -> bool {

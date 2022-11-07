@@ -250,7 +250,7 @@ impl StatusDisplay for ColouredStatusDisplay {
                     let (a, b) = left.split_at(pos);
                     if b[0] == ' ' {
                         let mut temp = a.to_owned();
-                        temp.extend(self.tty.pick_str(&BUBBLE_CHARS, i).chars());
+                        temp.extend(self.tty.pick_str(BUBBLE_CHARS, i).chars());
                         temp.extend_from_slice(&b[1..]);
                         left = temp;
                     }
