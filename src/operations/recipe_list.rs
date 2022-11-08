@@ -8,7 +8,7 @@ use crate::{
 
 /// Accumulates recipe responses, allowing us to fetch them one-at-a-time and account for which ones went missing in transit.
 pub struct RecipeAccumulator {
-    recipe: HashMap<EcamBeverageId, Vec<RecipeInfo>>,
+    recipe: HashMap<EcamBeverageId, Vec<RecipeInfo<u16>>>,
     recipe_min_max: HashMap<EcamBeverageId, Vec<RecipeMinMaxInfo>>,
     list: Vec<EcamBeverageId>,
 }
@@ -197,7 +197,7 @@ impl IngredientInfo {
 #[derive(Clone, Debug)]
 pub struct RecipeDetails {
     pub beverage: EcamBeverageId,
-    recipe: Vec<RecipeInfo>,
+    recipe: Vec<RecipeInfo<u16>>,
     recipe_min_max: Vec<RecipeMinMaxInfo>,
 }
 

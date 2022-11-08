@@ -194,7 +194,7 @@ packet_definition!(
     BeverageDispensingMode(
         recipe MachineEnum<EcamBeverageId>,
         trigger MachineEnum<EcamOperationTrigger>,
-        ingredients Vec<RecipeInfo>,
+        ingredients Vec<RecipeInfo<u16>>,
         mode MachineEnum<EcamBeverageTasteType>) => (unknown0 u8, unknown1 u8),
     AppControl(request AppControl) => (),
     ParameterRead(parameter u16, len u8) => (),
@@ -205,7 +205,7 @@ packet_definition!(
     ProfileNameRead(start u8, end u8) => (names Vec<WideStringWithIcon>),
     ProfileNameWrite() => (),
     RecipeQuantityRead(profile u8, recipe MachineEnum<EcamBeverageId>)
-        => (profile u8, recipe MachineEnum<EcamBeverageId>, ingredients Vec<RecipeInfo>),
+        => (profile u8, recipe MachineEnum<EcamBeverageId>, ingredients Vec<RecipeInfo<u16>>),
     RecipePriorityRead() => (priorities Vec<u8>),
     ProfileSelection() => (),
     RecipeNameRead(start u8, end u8) => (names Vec<WideStringWithIcon>),

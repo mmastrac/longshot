@@ -56,7 +56,7 @@ fn get_enum_arg<T>(
 fn check_ingredients(
     ingredients: &BrewIngredients,
     details: &RecipeDetails,
-) -> Result<Vec<RecipeInfo>, String> {
+) -> Result<Vec<RecipeInfo<u16>>, String> {
     let mut v = vec![];
     for ingredient in details.fetch_ingredients() {
         match ingredient {
