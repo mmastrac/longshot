@@ -1,13 +1,13 @@
 use crate::protocol::*;
 
 /// Recipe information returned from [`Request::RecipeQuantityRead`].
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RecipeInfo<T> {
     pub ingredient: MachineEnum<EcamIngredients>,
     pub value: T,
 }
 
-impl <T: Copy + Clone + Eq + PartialEq> RecipeInfo<T> {
+impl<T: Copy + Clone + Eq + PartialEq> RecipeInfo<T> {
     pub fn new(ingredient: EcamIngredients, value: T) -> Self {
         RecipeInfo {
             ingredient: ingredient.into(),
@@ -51,7 +51,7 @@ impl PartialEncode for RecipeInfo<u16> {
 }
 
 /// Recipe information returned from [`Request::RecipeQuantityRead`].
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RecipeMinMaxInfo {
     pub ingredient: MachineEnum<EcamIngredients>,
     pub min: u16,

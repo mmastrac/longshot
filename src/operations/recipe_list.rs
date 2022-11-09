@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 use crate::{
     ecam::{Ecam, EcamError},
+    operations::IngredientRangeInfo,
     protocol::*,
 };
 
@@ -135,7 +136,7 @@ impl RecipeAccumulator {
     }
 }
 
-/// A completed list of [`RecipeDetails`].
+/// A completed list of [`RecipeDetails`], containing one [`RecipeDetails`] object for each valid [`EcamBeverageId`].
 #[derive(Clone, Debug)]
 pub struct RecipeList {
     pub recipes: Vec<RecipeDetails>,
@@ -145,51 +146,6 @@ impl RecipeList {
     /// Find the recipe for the given [`EcamBeverageId`], returning it as a [`RecipeDetails`].
     pub fn find(&self, beverage: EcamBeverageId) -> Option<&RecipeDetails> {
         self.recipes.iter().find(|&r| r.beverage == beverage)
-    }
-}
-
-/// The processed ingredients from the raw ECAM responses. Some ingredients are omitted as they are not useful for brewing.
-#[derive(Clone, Debug)]
-pub enum IngredientInfo {
-    Coffee(u16, u16, u16),
-    Milk(u16, u16, u16),
-    HotWater(u16, u16, u16),
-    Taste(EcamBeverageTaste),
-    Temperature(EcamTemperature),
-    Accessory(EcamAccessory),
-    Inversion(bool, bool),
-    Brew2(bool, bool),
-}
-
-impl IngredientInfo {
-    pub fn to_arg_string(&self) -> Option<String> {
-        let number_arg = |name: &str, min, value, max| {
-            format!("--{} <{}-{}, default {}>", name, min, max, value)
-        };
-
-        match self {
-            Self::Coffee(min, value, max) => Some(number_arg("coffee", min, value, max)),
-            Self::Milk(min, value, max) => Some(number_arg("milk", min, value, max)),
-            Self::HotWater(min, value, max) => Some(number_arg("hotwater", min, value, max)),
-            Self::Taste(value) => Some(format!(
-                "--taste <{}, default={}>",
-                EcamBeverageTaste::all()
-                    .map(|e| e.to_arg_string())
-                    .collect::<Vec<_>>()
-                    .join("|"),
-                value.to_arg_string(),
-            )),
-            Self::Temperature(value) => Some(format!(
-                "--temp <{}, default={}>",
-                EcamTemperature::all()
-                    .map(|e| e.to_arg_string())
-                    .collect::<Vec<_>>()
-                    .join("|"),
-                value.to_arg_string(),
-            )),
-            // We don't support these for now
-            Self::Accessory(..) | Self::Inversion(..) | Self::Brew2(..) => None,
-        }
     }
 }
 
@@ -214,7 +170,7 @@ impl RecipeDetails {
     }
 
     /// Processes this [`RecipeDetails`] into a [`Vec<IngredientInfo>`], suitable for dispensing.
-    pub fn fetch_ingredients(&self) -> Vec<IngredientInfo> {
+    pub fn fetch_ingredients(&self) -> Vec<IngredientRangeInfo> {
         let mut v = vec![];
         let mut m1 = HashMap::new();
         let mut m2 = HashMap::new();
@@ -227,102 +183,14 @@ impl RecipeDetails {
 
         for ingredient in EcamIngredients::all() {
             let key = &ingredient.into();
-            if matches!(
+            match IngredientRangeInfo::new(
                 ingredient,
-                EcamIngredients::Visible
-                    | EcamIngredients::IndexLength
-                    | EcamIngredients::Programmable
+                m1.get(key).map(|x| **x),
+                m2.get(key).map(|x| **x),
             ) {
-                continue;
-            }
-
-            let r1 = m1.get(key);
-            let r2 = m2.get(key);
-
-            // Handle accessory separately, as it appears to differ between recipe and min/max
-            if ingredient == EcamIngredients::Accessorio {
-                if let Some(r1) = r1 {
-                    match r1.value {
-                        0 => {
-                            continue;
-                        }
-                        1 => v.push(IngredientInfo::Accessory(EcamAccessory::Water)),
-                        2 => v.push(IngredientInfo::Accessory(EcamAccessory::Milk)),
-                        _ => {
-                            warning!("Unknown accessory value {}", r1.value)
-                        }
-                    }
-                }
-                continue;
-            }
-
-            if let (Some(r1), Some(r2)) = (r1, r2) {
-                if matches!(
-                    ingredient,
-                    EcamIngredients::Coffee | EcamIngredients::Milk | EcamIngredients::HotWater
-                ) {
-                    // This appears to be the case for invalid ingredients in custom recipes
-                    if r1.value == 0 && r2.min > 0 {
-                        warning!(
-                            "Specified ingredient {:?} with invalid ranges ({}<={}<={}, value={})",
-                            self.beverage,
-                            r2.min,
-                            r2.value,
-                            r2.max,
-                            r1.value
-                        );
-                        continue;
-                    }
-                    // This shows up on the Cortado recipe on the Dinamica Plus
-                    if r2.min == r2.value && r2.value == r2.max && r2.value == 0 {
-                        warning!(
-                            "Specified ingredient {:?} with zero ranges ({}<={}<={}, value={})",
-                            self.beverage,
-                            r2.min,
-                            r2.value,
-                            r2.max,
-                            r1.value
-                        );
-                        continue;
-                    }
-                }
-                match ingredient {
-                    EcamIngredients::Coffee => {
-                        v.push(IngredientInfo::Coffee(r2.min, r1.value, r2.max))
-                    }
-                    EcamIngredients::Milk => v.push(IngredientInfo::Milk(r2.min, r1.value, r2.max)),
-                    EcamIngredients::HotWater => {
-                        v.push(IngredientInfo::HotWater(r2.min, r1.value, r2.max))
-                    }
-                    EcamIngredients::Taste => {
-                        if r2.min == 0 && r2.max == 5 {
-                            if let Ok(taste) = EcamBeverageTaste::try_from(r1.value as u8) {
-                                v.push(IngredientInfo::Taste(taste));
-                            } else {
-                                warning!("Unknown beverage taste {}", r1.value);
-                            }
-                        }
-                    }
-                    EcamIngredients::Temp => {
-                        v.push(IngredientInfo::Temperature(EcamTemperature::Low))
-                    }
-                    EcamIngredients::Inversion => {
-                        v.push(IngredientInfo::Inversion(r2.value == 1, r2.min == r2.max))
-                    }
-                    EcamIngredients::DueXPer => {
-                        v.push(IngredientInfo::Brew2(r2.value == 1, r2.min == r2.max))
-                    }
-                    _ => {
-                        warning!("Unknown ingredient {:?}", ingredient)
-                    }
-                }
-            } else if m1.contains_key(key) ^ m2.contains_key(key) {
-                warning!(
-                    "Mismatch for ingredient {:?} (recipe={:?} min_max={:?})",
-                    ingredient,
-                    r1,
-                    r2
-                );
+                Err(s) => warning!("{}", s),
+                Ok(Some(x)) => v.push(x),
+                Ok(None) => {}
             }
         }
         v

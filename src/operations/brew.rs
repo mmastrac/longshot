@@ -1,111 +1,54 @@
-use super::{IngredientInfo, RecipeDetails};
+use std::fmt::format;
+
 use crate::prelude::*;
 use crate::{
     display,
     ecam::{Ecam, EcamError, EcamStatus},
-    operations::{list_recipies_for, monitor},
+    operations::{
+        check_ingredients, list_recipies_for, monitor, BrewIngredientInfo, IngredientCheckMode,
+        IngredientCheckResult,
+    },
     protocol::*,
 };
 
-/// The complete set of brewing ingredients that can be specified to dispense a beverage.
-pub struct BrewIngredients {
-    pub beverage: EcamBeverageId,
-    pub coffee: Option<u16>,
-    pub milk: Option<u16>,
-    pub hotwater: Option<u16>,
-    pub taste: Option<EcamBeverageTaste>,
-    pub temp: Option<EcamTemperature>,
-    pub allow_defaults: bool,
-}
-
-fn get_u16_arg(
-    ingredient: &str,
-    allow_defaults: bool,
-    arg: Option<u16>,
-    min: u16,
-    value: u16,
-    max: u16,
-) -> Result<u16, String> {
-    if let Some(arg) = arg {
-        if arg.clamp(min, max) != arg {
-            return Err(format!("{} out of valid range", ingredient));
+/// Checks the arguments for the given beverage against the machine's recipes and returns a computed recipe.
+pub async fn validate_brew(
+    ecam: Ecam,
+    beverage: EcamBeverageId,
+    ingredients: Vec<BrewIngredientInfo>,
+    mode: IngredientCheckMode,
+) -> Result<Vec<RecipeInfo<u16>>, EcamError> {
+    info!("Fetching recipe for {:?}...", beverage);
+    let recipe_list = list_recipies_for(ecam.clone(), Some(vec![beverage])).await?;
+    let recipe = recipe_list.find(beverage);
+    if let Some(recipe) = recipe {
+        let ranges = recipe.fetch_ingredients();
+        match check_ingredients(mode, &ingredients, &ranges) {
+            IngredientCheckResult::Error {
+                missing,
+                extra,
+                range_errors,
+            } => {
+                for m in missing {
+                    info!("{}", m.to_arg_string().unwrap_or(format!("{:?}", m)));
+                }
+                for e in extra {
+                    info!("{}", e.to_arg_string());
+                }
+                for r in range_errors {
+                    info!("{}", r.1);
+                }
+                Err(EcamError::Unknown)
+            }
+            IngredientCheckResult::Ok(result) => Ok(result),
         }
-        Ok(arg)
-    } else if allow_defaults {
-        Ok(value)
     } else {
-        Err(format!("{} required for this beverage", ingredient))
+        info!(
+            "I wasn't able to fetch the recipe for {:?}. Perhaps this machine can't make it?",
+            beverage
+        );
+        Err(EcamError::NotFound)
     }
-}
-
-fn get_enum_arg<T>(
-    ingredient: &str,
-    allow_defaults: bool,
-    arg: Option<T>,
-    default: T,
-) -> Result<T, String> {
-    if let Some(arg) = arg {
-        Ok(arg)
-    } else if allow_defaults {
-        Ok(default)
-    } else {
-        Err(format!("{} required for this beverage", ingredient))
-    }
-}
-
-fn check_ingredients(
-    ingredients: &BrewIngredients,
-    details: &RecipeDetails,
-) -> Result<Vec<RecipeInfo<u16>>, String> {
-    let mut v = vec![];
-    for ingredient in details.fetch_ingredients() {
-        match ingredient {
-            IngredientInfo::Coffee(min, value, max) => {
-                let coffee = get_u16_arg(
-                    "Coffee",
-                    ingredients.allow_defaults,
-                    ingredients.coffee,
-                    min,
-                    value,
-                    max,
-                )?;
-                v.push(RecipeInfo::new(EcamIngredients::Coffee, coffee))
-            }
-            IngredientInfo::Milk(min, value, max) => {
-                let milk = get_u16_arg(
-                    "Milk",
-                    ingredients.allow_defaults,
-                    ingredients.milk,
-                    min,
-                    value,
-                    max,
-                )?;
-                v.push(RecipeInfo::new(EcamIngredients::Milk, milk))
-            }
-            IngredientInfo::HotWater(min, value, max) => {
-                let hotwater = get_u16_arg(
-                    "Hot water",
-                    ingredients.allow_defaults,
-                    ingredients.hotwater,
-                    min,
-                    value,
-                    max,
-                )?;
-                v.push(RecipeInfo::new(EcamIngredients::HotWater, hotwater))
-            }
-            IngredientInfo::Taste(default) => {
-                let taste = get_enum_arg(
-                    "Taste",
-                    ingredients.allow_defaults,
-                    ingredients.taste,
-                    default,
-                )?;
-                v.push(RecipeInfo::new(EcamIngredients::Taste, taste as u8 as u16));
-            }
-            _ => {}
-        }
-    }
-    Ok(v)
 }
 
 pub async fn brew(
@@ -114,7 +57,8 @@ pub async fn brew(
     allow_off: bool,
     skip_brew: bool,
     dump_decoded_packets: bool,
-    ingredients: BrewIngredients,
+    beverage: EcamBeverageId,
+    recipe: Vec<RecipeInfo<u16>>,
 ) -> Result<(), EcamError> {
     match ecam.current_state().await? {
         EcamStatus::Ready => {}
@@ -142,38 +86,20 @@ pub async fn brew(
         }
     }
 
-    info!("Fetching recipe for {:?}...", ingredients.beverage);
-    let recipe_list = list_recipies_for(ecam.clone(), Some(vec![ingredients.beverage])).await?;
-    let recipe = recipe_list.find(ingredients.beverage);
-    if let Some(details) = recipe {
-        match check_ingredients(&ingredients, details) {
-            Err(s) => {
-                warning!("{}", s)
-            }
-            Ok(recipe) => {
-                info!("Brewing {:?}...", ingredients.beverage,);
+    info!("Brewing {:?}...", beverage);
+    let req = Request::BeverageDispensingMode(
+        beverage.into(),
+        EcamOperationTrigger::Start.into(),
+        recipe,
+        EcamBeverageTasteType::Prepare.into(),
+    );
 
-                let req = Request::BeverageDispensingMode(
-                    ingredients.beverage.into(),
-                    EcamOperationTrigger::Start.into(),
-                    recipe,
-                    EcamBeverageTasteType::Prepare.into(),
-                );
-
-                if skip_brew {
-                    info!("--skip-brew was passed, so we aren't going to brew anything");
-                } else {
-                    ecam.write_request(req).await?;
-                }
-                monitor(ecam, false, dump_decoded_packets).await?;
-            }
-        }
+    if skip_brew {
+        info!("--skip-brew was passed, so we aren't going to brew anything");
     } else {
-        info!(
-            "I wasn't able to fetch the recipe for {:?}. Perhaps this machine can't make it?",
-            ingredients.beverage
-        );
+        ecam.write_request(req).await?;
     }
+    monitor(ecam, false, dump_decoded_packets).await?;
 
     Ok(())
 }

@@ -97,41 +97,50 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 cmd.get_one::<String>("beverage").unwrap_or(&"".to_owned()),
             )
             .expect("Beverage required");
-            let coffee = cmd
-                .get_one::<String>("coffee")
-                .map(|s| s.parse::<u16>().expect("Invalid number"));
-            let milk = cmd
-                .get_one::<String>("milk")
-                .map(|s| s.parse::<u16>().expect("Invalid number"));
-            let hotwater = cmd
-                .get_one::<String>("hotwater")
-                .map(|s| s.parse::<u16>().expect("Invalid number"));
-            let taste: Option<EcamBeverageTaste> =
-                EcamBeverageTaste::lookup_by_name_case_insensitive(
-                    cmd.get_one::<String>("taste").unwrap_or(&"".to_owned()),
-                );
-            let temp: Option<EcamTemperature> = EcamTemperature::lookup_by_name_case_insensitive(
-                cmd.get_one::<String>("temperature")
-                    .unwrap_or(&"".to_owned()),
-            );
 
+            let parse_u16 = |s: &String| s.parse::<u16>().expect("Invalid number");
+            let ingredients = vec![
+                cmd.get_one("coffee")
+                    .map(parse_u16)
+                    .map(BrewIngredientInfo::Coffee),
+                cmd.get_one("milk")
+                    .map(parse_u16)
+                    .map(BrewIngredientInfo::Milk),
+                cmd.get_one("hotwater")
+                    .map(parse_u16)
+                    .map(BrewIngredientInfo::HotWater),
+                cmd.get_one("taste")
+                    .map(|s: &String| {
+                        EcamBeverageTaste::lookup_by_name_case_insensitive(s)
+                            .expect("Invalid taste")
+                    })
+                    .map(BrewIngredientInfo::Taste),
+                cmd.get_one("temperature")
+                    .map(|s: &String| {
+                        EcamTemperature::lookup_by_name_case_insensitive(s)
+                            .expect("Invalid temperature")
+                    })
+                    .map(BrewIngredientInfo::Temperature),
+            ]
+            .into_iter()
+            .filter_map(std::convert::identity)
+            .collect();
             let ecam = ecam_lookup(device_name).await?;
-            let ingredients = BrewIngredients {
+            let recipe = validate_brew(
+                ecam.clone(),
                 beverage,
-                coffee,
-                milk,
-                hotwater,
-                taste,
-                temp,
-                allow_defaults,
-            };
+                ingredients,
+                IngredientCheckMode::Strict,
+            )
+            .await?;
             brew(
                 ecam,
                 turn_on,
                 allow_off,
                 skip_brew,
                 dump_packets,
-                ingredients,
+                beverage,
+                recipe,
             )
             .await?;
         }

@@ -12,12 +12,12 @@
 //! # Command-Line Examples
 //!
 //! Monitor the given device (will continue until you press Ctrl+C):
-//! 
+//!
 //! ```console
 //! $ longshot monitor --device-name (device)
 //! Dispensing... [###############################===========]
 //! ```
-//! 
+//!
 //! Get the brew information for a given beverage:
 //!
 //! ```console
@@ -37,7 +37,7 @@
 //! # API Examples
 //!
 //! Brew a long coffee with 250 impulses of water (approximately the size of an average North American coffee mug, or slightly more).
-//! 
+//!
 //! ```no_run
 //! # use longshot::{ecam::*, protocol::*};
 //! # let _ = async {
