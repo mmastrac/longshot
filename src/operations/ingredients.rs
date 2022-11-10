@@ -1,12 +1,18 @@
 //! Translation of recipe ingredients provided by the device, as well as validation of provided ingredients
 //! for a brew request against the ingredients specified by the recipe.
+//! 
+//! There's a lot of code here for some apparently simple things, but it allows us to keep the messy protocol stuff
+//! separated from the semi-clean CLI interface. We also validate ingredients as much as we can to avoid sending anything
+//! bad to the machine that might have unintended consequences (spilled milk, too little coffee, spectacular fire, etc).
 use std::collections::HashMap;
 use std::vec;
 
 use crate::prelude::*;
 use crate::protocol::*;
 
-/// The requested ingredients to brew.
+/// The requested ingredients to brew, generally provided by an API user or CLI input. A [`Vec<BrewIngredientInfo>`] will
+/// be combined with the [`IngredientCheckMode`] and a [`Vec<IngredientRangeInfo`] to create the final brew recipe to send
+/// to the machine.
 #[derive(Clone, Copy, Debug)]
 pub enum BrewIngredientInfo {
     Coffee(u16),
@@ -46,6 +52,9 @@ impl BrewIngredientInfo {
 }
 
 /// The processed ingredients from the raw ECAM responses. Some ingredients are omitted as they are not useful for brewing.
+/// 
+/// This could be done with the raw [`RecipeMinMaxInfo`], but an older attempt at this code tried that and it became a
+/// fairly decent mess.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum IngredientRangeInfo {
     Coffee(u16, u16, u16),
@@ -305,15 +314,19 @@ pub fn check_ingredient(
 mod test {
     use super::*;
 
+    /// Basic espresso, just coffee.
+    const ESPRESSO_RECIPE: [IngredientRangeInfo; 1] = [IngredientRangeInfo::Coffee(0, 100, 250)];
+    /// Cappucino with coffee and milk.
+    const CAPPUCINO_RECIPE: [IngredientRangeInfo; 2] = [IngredientRangeInfo::Coffee(0, 100, 250), IngredientRangeInfo::Milk(0, 50, 750)];
+
     #[test]
     fn test_strict() {
-        let ranges = vec![IngredientRangeInfo::Coffee(0, 100, 250)];
         assert_eq!(
             IngredientCheckResult::Ok(vec![RecipeInfo::new(EcamIngredients::Coffee, 100)]),
             check_ingredients(
                 IngredientCheckMode::Strict,
                 &vec![BrewIngredientInfo::Coffee(100)],
-                &ranges
+                &ESPRESSO_RECIPE.to_vec()
             )
         );
         assert_eq!(
@@ -328,7 +341,7 @@ mod test {
             check_ingredients(
                 IngredientCheckMode::Strict,
                 &vec![BrewIngredientInfo::Coffee(1000)],
-                &ranges
+                &ESPRESSO_RECIPE.to_vec()
             )
         );
         assert_eq!(
@@ -337,7 +350,7 @@ mod test {
                 extra: vec![],
                 range_errors: vec![]
             },
-            check_ingredients(IngredientCheckMode::Strict, &vec![], &ranges)
+            check_ingredients(IngredientCheckMode::Strict, &vec![], &ESPRESSO_RECIPE.to_vec())
         );
         assert_eq!(
             IngredientCheckResult::Error {
@@ -348,7 +361,7 @@ mod test {
             check_ingredients(
                 IngredientCheckMode::Strict,
                 &vec![BrewIngredientInfo::Milk(100)],
-                &ranges
+                &ESPRESSO_RECIPE.to_vec()
             )
         );
     }
