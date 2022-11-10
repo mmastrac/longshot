@@ -40,7 +40,10 @@ pub async fn validate_brew(
                 }
                 Err(EcamError::Unknown)
             }
-            IngredientCheckResult::Ok(result) => Ok(result),
+            IngredientCheckResult::Ok(result) => Ok(result
+                .iter()
+                .map(BrewIngredientInfo::to_recipe_info)
+                .collect()),
         }
     } else {
         info!(

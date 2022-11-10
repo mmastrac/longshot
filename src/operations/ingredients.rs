@@ -1,6 +1,6 @@
 //! Translation of recipe ingredients provided by the device, as well as validation of provided ingredients
 //! for a brew request against the ingredients specified by the recipe.
-//! 
+//!
 //! There's a lot of code here for some apparently simple things, but it allows us to keep the messy protocol stuff
 //! separated from the semi-clean CLI interface. We also validate ingredients as much as we can to avoid sending anything
 //! bad to the machine that might have unintended consequences (spilled milk, too little coffee, spectacular fire, etc).
@@ -13,7 +13,7 @@ use crate::protocol::*;
 /// The requested ingredients to brew, generally provided by an API user or CLI input. A [`Vec<BrewIngredientInfo>`] will
 /// be combined with the [`IngredientCheckMode`] and a [`Vec<IngredientRangeInfo`] to create the final brew recipe to send
 /// to the machine.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub enum BrewIngredientInfo {
     Coffee(u16),
     Milk(u16),
@@ -49,13 +49,29 @@ impl BrewIngredientInfo {
             Self::Brew2(..) => EcamIngredients::DueXPer,
         }
     }
+
+    pub fn value_u16(&self) -> u16 {
+        match self {
+            Self::Coffee(x) => *x,
+            Self::Milk(x) => *x,
+            Self::HotWater(x) => *x,
+            Self::Taste(x) => <u8>::from(*x) as u16,
+            Self::Temperature(x) => <u8>::from(*x) as u16,
+            Self::Inversion(x) => <u16>::from(*x),
+            Self::Brew2(x) => <u16>::from(*x),
+        }
+    }
+
+    pub fn to_recipe_info(&self) -> RecipeInfo<u16> {
+        RecipeInfo::<u16>::new(self.ingredient(), self.value_u16())
+    }
 }
 
 /// The processed ingredients from the raw ECAM responses. Some ingredients are omitted as they are not useful for brewing.
-/// 
+///
 /// This could be done with the raw [`RecipeMinMaxInfo`], but an older attempt at this code tried that and it became a
 /// fairly decent mess.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub enum IngredientRangeInfo {
     Coffee(u16, u16, u16),
     Milk(u16, u16, u16),
@@ -228,7 +244,7 @@ pub enum IngredientCheckMode {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum IngredientCheckResult {
     /// The ingredients are valid.
-    Ok(Vec<RecipeInfo<u16>>),
+    Ok(Vec<BrewIngredientInfo>),
     /// One or more ingredients failed to validate.
     Error {
         missing: Vec<IngredientRangeInfo>,
@@ -248,7 +264,12 @@ pub fn check_ingredients(
     let mut range_errors = vec![];
     let mut ranges_map = HashMap::new();
     for ingredient in ranges.iter() {
-        if matches!(ingredient, IngredientRangeInfo::Accessory(..) | IngredientRangeInfo::Brew2(..) | IngredientRangeInfo::Inversion(..)) {
+        if matches!(
+            ingredient,
+            IngredientRangeInfo::Accessory(..)
+                | IngredientRangeInfo::Brew2(..)
+                | IngredientRangeInfo::Inversion(..)
+        ) {
             continue;
         }
         ranges_map.insert(ingredient.ingredient(), ingredient);
@@ -279,10 +300,10 @@ pub fn check_ingredients(
 pub fn check_ingredient(
     brew: &BrewIngredientInfo,
     range: &IngredientRangeInfo,
-) -> Result<RecipeInfo<u16>, String> {
-    let validate_u16 = |ingredient, min, value: u16, max| {
+) -> Result<BrewIngredientInfo, String> {
+    let validate_u16 = |ingredient: fn(u16) -> BrewIngredientInfo, min, value: u16, max| {
         if value.clamp(min, max) == value {
-            Ok(RecipeInfo::new(ingredient, value))
+            Ok(ingredient(value))
         } else {
             Err(format!(
                 "{:?} value out of range ({}<={}<={})",
@@ -293,13 +314,13 @@ pub fn check_ingredient(
 
     match (*brew, *range) {
         (BrewIngredientInfo::Coffee(value), IngredientRangeInfo::Coffee(min, _, max)) => {
-            validate_u16(EcamIngredients::Coffee, min, value, max)
+            validate_u16(BrewIngredientInfo::Coffee, min, value, max)
         }
         (BrewIngredientInfo::Milk(value), IngredientRangeInfo::Milk(min, _, max)) => {
-            validate_u16(EcamIngredients::Milk, min, value, max)
+            validate_u16(BrewIngredientInfo::Milk, min, value, max)
         }
         (BrewIngredientInfo::HotWater(value), IngredientRangeInfo::HotWater(min, _, max)) => {
-            validate_u16(EcamIngredients::HotWater, min, value, max)
+            validate_u16(BrewIngredientInfo::HotWater, min, value, max)
         }
         (brew, range) => {
             panic!(
@@ -317,12 +338,15 @@ mod test {
     /// Basic espresso, just coffee.
     const ESPRESSO_RECIPE: [IngredientRangeInfo; 1] = [IngredientRangeInfo::Coffee(0, 100, 250)];
     /// Cappucino with coffee and milk.
-    const CAPPUCINO_RECIPE: [IngredientRangeInfo; 2] = [IngredientRangeInfo::Coffee(0, 100, 250), IngredientRangeInfo::Milk(0, 50, 750)];
+    const CAPPUCINO_RECIPE: [IngredientRangeInfo; 2] = [
+        IngredientRangeInfo::Coffee(0, 100, 250),
+        IngredientRangeInfo::Milk(0, 50, 750),
+    ];
 
     #[test]
     fn test_strict() {
         assert_eq!(
-            IngredientCheckResult::Ok(vec![RecipeInfo::new(EcamIngredients::Coffee, 100)]),
+            IngredientCheckResult::Ok(vec![BrewIngredientInfo::Coffee(100)]),
             check_ingredients(
                 IngredientCheckMode::Strict,
                 &vec![BrewIngredientInfo::Coffee(100)],
@@ -350,7 +374,11 @@ mod test {
                 extra: vec![],
                 range_errors: vec![]
             },
-            check_ingredients(IngredientCheckMode::Strict, &vec![], &ESPRESSO_RECIPE.to_vec())
+            check_ingredients(
+                IngredientCheckMode::Strict,
+                &vec![],
+                &ESPRESSO_RECIPE.to_vec()
+            )
         );
         assert_eq!(
             IngredientCheckResult::Error {
