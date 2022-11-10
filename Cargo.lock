@@ -582,6 +582,7 @@ dependencies = [
  "enum-iterator",
  "futures",
  "hex",
+ "itertools",
  "lazy_static",
  "num_enum",
  "pretty_env_logger",

@@ -38,6 +38,27 @@ impl BrewIngredientInfo {
         }
     }
 
+    pub fn from_arg(key: &str, value: &str) -> Option<Self> {
+        if key == "coffee" {
+            return value.parse::<u16>().ok().map(BrewIngredientInfo::Coffee);
+        }
+        if key == "milk" {
+            return value.parse::<u16>().ok().map(BrewIngredientInfo::Milk);
+        }
+        if key == "hotwater" {
+            return value.parse::<u16>().ok().map(BrewIngredientInfo::HotWater);
+        }
+        if key == "taste" {
+            return EcamBeverageTaste::lookup_by_name_case_insensitive(value)
+                .map(BrewIngredientInfo::Taste);
+        }
+        if key == "temperature" {
+            return EcamTemperature::lookup_by_name_case_insensitive(value)
+                .map(BrewIngredientInfo::Temperature);
+        }
+        panic!("Unexpected argument {}", key);
+    }
+
     pub fn ingredient(&self) -> EcamIngredients {
         match self {
             Self::Coffee(..) => EcamIngredients::Coffee,
@@ -184,6 +205,19 @@ impl IngredientRangeInfo {
         };
     }
 
+    pub fn to_default(&self) -> BrewIngredientInfo {
+        match self {
+            Self::Coffee(_, x, _) => BrewIngredientInfo::Coffee(*x),
+            Self::Milk(_, x, _) => BrewIngredientInfo::Milk(*x),
+            Self::HotWater(_, x, _) => BrewIngredientInfo::HotWater(*x),
+            Self::Taste(x) => BrewIngredientInfo::Taste(*x),
+            Self::Temperature(x) => BrewIngredientInfo::Temperature(*x),
+            Self::Inversion(x, _) => BrewIngredientInfo::Inversion(*x),
+            Self::Brew2(x, _) => BrewIngredientInfo::Brew2(*x),
+            Self::Accessory(..) => panic!("Invalid conversion"),
+        }
+    }
+
     pub fn to_arg_string(&self) -> Option<String> {
         let number_arg = |name: &str, min, value, max| {
             format!("--{} <{}-{}, default {}>", name, min, max, value)
@@ -264,15 +298,14 @@ pub fn check_ingredients(
     let mut range_errors = vec![];
     let mut ranges_map = HashMap::new();
     for ingredient in ranges.iter() {
-        if matches!(
+        if !matches!(
             ingredient,
             IngredientRangeInfo::Accessory(..)
                 | IngredientRangeInfo::Brew2(..)
                 | IngredientRangeInfo::Inversion(..)
         ) {
-            continue;
+            ranges_map.insert(ingredient.ingredient(), ingredient);
         }
-        ranges_map.insert(ingredient.ingredient(), ingredient);
     }
     for ingredient in brew.iter() {
         let key = ingredient.ingredient();
@@ -285,7 +318,12 @@ pub fn check_ingredients(
             extra.push(ingredient.ingredient());
         }
     }
-    let missing: Vec<_> = ranges_map.values().map(|y| **y).collect();
+    let mut missing: Vec<_> = ranges_map.values().map(|y| **y).collect();
+    if mode == IngredientCheckMode::AllowDefaults {
+        for ingredient in missing.drain(..) {
+            v.push(ingredient.to_default())
+        }
+    }
     if extra.len() == 0 && missing.len() == 0 && range_errors.len() == 0 {
         IngredientCheckResult::Ok(v)
     } else {
@@ -301,9 +339,10 @@ pub fn check_ingredient(
     brew: &BrewIngredientInfo,
     range: &IngredientRangeInfo,
 ) -> Result<BrewIngredientInfo, String> {
-    let validate_u16 = |ingredient: fn(u16) -> BrewIngredientInfo, min, value: u16, max| {
+    let ingredient = brew.ingredient();
+    let validate_u16 = |out: fn(u16) -> BrewIngredientInfo, min, value: u16, max| {
         if value.clamp(min, max) == value {
-            Ok(ingredient(value))
+            Ok(out(value))
         } else {
             Err(format!(
                 "{:?} value out of range ({}<={}<={})",
@@ -334,6 +373,8 @@ pub fn check_ingredient(
 #[cfg(test)]
 mod test {
     use super::*;
+    use itertools::*;
+    use rstest::*;
 
     /// Basic espresso, just coffee.
     const ESPRESSO_RECIPE: [IngredientRangeInfo; 1] = [IngredientRangeInfo::Coffee(0, 100, 250)];
@@ -342,6 +383,84 @@ mod test {
         IngredientRangeInfo::Coffee(0, 100, 250),
         IngredientRangeInfo::Milk(0, 50, 750),
     ];
+
+    fn quick_arg_parse(s: &str) -> Vec<BrewIngredientInfo> {
+        let mut v = vec![];
+        let mut iter = s.split_ascii_whitespace();
+        while let Some((name, value)) = iter.next_tuple() {
+            v.push(BrewIngredientInfo::from_arg(name, value).expect("Failed to parse option"))
+        }
+        v
+    }
+
+    fn collect_map<X, T: Iterator<Item = X>>(iter: T, f: fn(X) -> String) -> String {
+        iter.map(f).collect::<Vec<String>>().join(" ")
+    }
+
+    fn test_mode(
+        mode: IngredientCheckMode,
+        ranges: &[IngredientRangeInfo],
+        input: &str,
+        expected: Result<&str, (&str, &str, &str)>,
+    ) {
+        let ingredients = quick_arg_parse(input);
+        let actual = check_ingredients(mode, &ingredients.to_vec(), &ranges.to_vec());
+        if let (Ok(out1), IngredientCheckResult::Ok(out2)) = (expected, &actual) {
+            let actual = collect_map(out2.iter(), |x| {
+                BrewIngredientInfo::to_arg_string(x)
+                    .unwrap()
+                    .strip_prefix("--")
+                    .unwrap()
+                    .to_owned()
+            });
+            assert_eq!(out1, actual);
+        } else if let (
+            Err((out1, out2, out3)),
+            IngredientCheckResult::Error {
+                missing,
+                extra,
+                range_errors,
+            },
+        ) = (expected, &actual)
+        {
+            let missing_actual = collect_map(missing.iter(), |x| x.ingredient().to_arg_string());
+            let extra_actual = collect_map(extra.iter(), |x| x.to_arg_string());
+            let range_errors = collect_map(range_errors.iter(), |x| x.0.to_arg_string());
+            assert_eq!(out1, missing_actual, "missing mismatch");
+            assert_eq!(out2, extra_actual, "extra mismatch");
+            assert_eq!(out3, range_errors, "range mismatch");
+        } else {
+            panic!("Output didn't match: {:?} {:?}", expected, actual);
+        }
+    }
+
+    #[rstest]
+    #[case(&ESPRESSO_RECIPE, "", Err(("coffee", "", "")))]
+    #[case(&ESPRESSO_RECIPE, "coffee 100", Ok("coffee 100"))]
+    #[case(&ESPRESSO_RECIPE, "milk 100", Err(("coffee", "milk", "")))]
+    #[case(&ESPRESSO_RECIPE, "coffee 100 milk 100", Err(("", "milk", "")))]
+    #[case(&ESPRESSO_RECIPE, "coffee 1000 milk 100", Err(("", "milk", "coffee")))]
+    fn strict(
+        #[case] ranges: &[IngredientRangeInfo],
+        #[case] input: &str,
+        #[case] expected: Result<&str, (&str, &str, &str)>,
+    ) {
+        test_mode(IngredientCheckMode::Strict, ranges, input, expected);
+    }
+
+    #[rstest]
+    #[case(&ESPRESSO_RECIPE, "", Ok("coffee 100"))]
+    #[case(&ESPRESSO_RECIPE, "coffee 100", Ok("coffee 100"))]
+    #[case(&ESPRESSO_RECIPE, "milk 100", Err(("", "milk", "")))]
+    #[case(&ESPRESSO_RECIPE, "coffee 100 milk 100", Err(("", "milk", "")))]
+    #[case(&ESPRESSO_RECIPE, "coffee 1000 milk 100", Err(("", "milk", "coffee")))]
+    fn allow_defaults(
+        #[case] ranges: &[IngredientRangeInfo],
+        #[case] input: &str,
+        #[case] expected: Result<&str, (&str, &str, &str)>,
+    ) {
+        test_mode(IngredientCheckMode::AllowDefaults, ranges, input, expected);
+    }
 
     #[test]
     fn test_strict() {
