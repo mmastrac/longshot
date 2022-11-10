@@ -11,7 +11,7 @@ use crate::prelude::*;
 use crate::protocol::*;
 
 /// The requested ingredients to brew, generally provided by an API user or CLI input. A [`Vec<BrewIngredientInfo>`] will
-/// be combined with the [`IngredientCheckMode`] and a [`Vec<IngredientRangeInfo`] to create the final brew recipe to send
+/// be combined with the [`IngredientCheckMode`] and a [`Vec<IngredientRangeInfo>`] to create the final brew recipe to send
 /// to the machine.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub enum BrewIngredientInfo {
