@@ -67,39 +67,11 @@ pub async fn validate_brew(
 
 pub async fn brew(
     ecam: Ecam,
-    turn_on: bool,
-    allow_off: bool,
     skip_brew: bool,
     dump_decoded_packets: bool,
     beverage: EcamBeverageId,
     recipe: Vec<RecipeInfo<u16>>,
 ) -> Result<(), EcamError> {
-    match ecam.current_state().await? {
-        EcamStatus::Ready => {}
-        EcamStatus::StandBy => {
-            if allow_off {
-                info!("Machine is off, but --allow-off will allow us to proceed")
-            } else {
-                if !turn_on {
-                    info!("Machine is not on, pass --turn-on to turn it on before operation");
-                    return Ok(());
-                }
-                info!("Waiting for the machine to turn on...");
-                ecam.write_request(Request::AppControl(AppControl::TurnOn))
-                    .await?;
-                ecam.wait_for_state(EcamStatus::Ready, display::display_status)
-                    .await?;
-            }
-        }
-        s => {
-            info!(
-                "Machine is in state {:?}, so we will cowardly refuse to brew coffee",
-                s
-            );
-            return Ok(());
-        }
-    }
-
     let req = Request::BeverageDispensingMode(
         beverage.into(),
         EcamOperationTrigger::Start.into(),
