@@ -1,9 +1,6 @@
-use std::fmt::format;
-
 use crate::prelude::*;
 use crate::{
-    display,
-    ecam::{Ecam, EcamError, EcamStatus},
+    ecam::{Ecam, EcamError},
     operations::{
         check_ingredients, list_recipies_for, monitor, BrewIngredientInfo, IngredientCheckMode,
         IngredientCheckResult,

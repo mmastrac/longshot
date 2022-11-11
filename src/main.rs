@@ -120,7 +120,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let ecam = ecam_lookup(device_name).await?;
             let recipe = validate_brew(ecam.clone(), beverage, ingredients, mode).await?;
             power_on(ecam.clone(), allow_off, turn_on).await?;
-            brew(ecam.clone(), turn_on, dump_packets, beverage, recipe).await?;
+            brew(ecam.clone(), skip_brew, dump_packets, beverage, recipe).await?;
         }
         Some(("monitor", cmd)) => {
             let turn_on = cmd.get_flag("turn-on");
