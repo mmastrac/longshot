@@ -34,6 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     arg!(--"allow-defaults")
                         .help("Allow brewing if some parameters are not specified"),
                 )
+                .arg(arg!(--"force").help("Allow brewing with parameters that do not validate"))
                 .arg(
                     arg!(--"allow-off")
                         .hide(true)
@@ -88,6 +89,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let allow_off = cmd.get_flag("allow-off");
             let dump_packets = cmd.get_flag("dump-packets");
             let allow_defaults = cmd.get_flag("allow-defaults");
+            let force = cmd.get_flag("force");
             let device_name = &cmd
                 .get_one::<String>("device-name")
                 .expect("Device name required")
@@ -98,41 +100,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )
             .expect("Beverage required");
 
-            let parse_u16 = |s: &String| s.parse::<u16>().expect("Invalid number");
-            let ingredients = vec![
-                cmd.get_one("coffee")
-                    .map(parse_u16)
-                    .map(BrewIngredientInfo::Coffee),
-                cmd.get_one("milk")
-                    .map(parse_u16)
-                    .map(BrewIngredientInfo::Milk),
-                cmd.get_one("hotwater")
-                    .map(parse_u16)
-                    .map(BrewIngredientInfo::HotWater),
-                cmd.get_one("taste")
-                    .map(|s: &String| {
-                        EcamBeverageTaste::lookup_by_name_case_insensitive(s)
-                            .expect("Invalid taste")
-                    })
-                    .map(BrewIngredientInfo::Taste),
-                cmd.get_one("temperature")
-                    .map(|s: &String| {
-                        EcamTemperature::lookup_by_name_case_insensitive(s)
-                            .expect("Invalid temperature")
-                    })
-                    .map(BrewIngredientInfo::Temperature),
-            ]
-            .into_iter()
-            .filter_map(std::convert::identity)
-            .collect();
+            let mut ingredients = vec![];
+            for arg in ["coffee", "milk", "hotwater", "taste", "temperature"] {
+                if let Some(value) = cmd.get_one::<String>(arg) {
+                    if let Some(ingredient) = BrewIngredientInfo::from_arg(arg, value) {
+                        ingredients.push(ingredient);
+                    } else {
+                        eprintln!("Invalid value '{}' for argument '{}'", value, arg);
+                        return Ok(());
+                    }
+                }
+            }
+
+            let mode = match (allow_defaults, force) {
+                (_, true) => IngredientCheckMode::Force,
+                (true, false) => IngredientCheckMode::AllowDefaults,
+                (false, false) => IngredientCheckMode::Strict,
+            };
             let ecam = ecam_lookup(device_name).await?;
-            let recipe = validate_brew(
-                ecam.clone(),
-                beverage,
-                ingredients,
-                IngredientCheckMode::Strict,
-            )
-            .await?;
+            let recipe = validate_brew(ecam.clone(), beverage, ingredients, mode).await?;
             brew(
                 ecam,
                 turn_on,

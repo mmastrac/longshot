@@ -40,10 +40,21 @@ pub async fn validate_brew(
                 }
                 Err(EcamError::Unknown)
             }
-            IngredientCheckResult::Ok(result) => Ok(result
-                .iter()
-                .map(BrewIngredientInfo::to_recipe_info)
-                .collect()),
+            IngredientCheckResult::Ok(result) => {
+                info!(
+                    "Brewing {:?} with {}...",
+                    beverage,
+                    result
+                        .iter()
+                        .filter_map(BrewIngredientInfo::to_arg_string)
+                        .collect::<Vec<_>>()
+                        .join(" ")
+                );
+                Ok(result
+                    .iter()
+                    .map(BrewIngredientInfo::to_recipe_info)
+                    .collect())
+            }
         }
     } else {
         info!(
@@ -89,7 +100,6 @@ pub async fn brew(
         }
     }
 
-    info!("Brewing {:?}...", beverage);
     let req = Request::BeverageDispensingMode(
         beverage.into(),
         EcamOperationTrigger::Start.into(),
