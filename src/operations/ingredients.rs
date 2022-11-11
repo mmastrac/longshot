@@ -408,7 +408,7 @@ mod test {
         expected: Result<&str, (&str, &str, &str)>,
     ) {
         let ingredients = quick_arg_parse(input);
-        let actual = check_ingredients(mode, &ingredients.to_vec(), &ranges.to_vec());
+        let actual = check_ingredients(mode, &ingredients, ranges);
         if let (Ok(out1), IngredientCheckResult::Ok(out2)) = (expected, &actual) {
             let actual = collect_map(out2.iter(), |x| {
                 BrewIngredientInfo::to_arg_string(x)
