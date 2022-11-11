@@ -7,7 +7,6 @@
 use std::collections::HashMap;
 use std::vec;
 
-use crate::prelude::*;
 use crate::protocol::*;
 
 /// The requested ingredients to brew, generally provided by an API user or CLI input. A [`Vec<BrewIngredientInfo>`] will
@@ -143,7 +142,7 @@ impl IngredientRangeInfo {
             };
         }
 
-        return if let (Some(r1), Some(r2)) = (&r1, &r2) {
+        if let (Some(r1), Some(r2)) = (&r1, &r2) {
             if matches!(
                 ingredient,
                 EcamIngredients::Coffee | EcamIngredients::Milk | EcamIngredients::HotWater
@@ -191,18 +190,16 @@ impl IngredientRangeInfo {
                 ))),
                 _ => error!("is unknown", ingredient, r1, r2),
             }
+        } else if r1.is_some() ^ r2.is_some() {
+            // If only one of min/max or recipe quantity comes back, that's bad
+            Err(format!(
+                "Mismatch for ingredient {:?} (recipe={:?} min_max={:?})",
+                ingredient, r1, r2
+            ))
         } else {
-            if r1.is_some() ^ r2.is_some() {
-                // If only one of min/max or recipe quantity comes back, that's bad
-                Err(format!(
-                    "Mismatch for ingredient {:?} (recipe={:?} min_max={:?})",
-                    ingredient, r1, r2
-                ))
-            } else {
-                // Otherwise it's just missing
-                Ok(None)
-            }
-        };
+            // Otherwise it's just missing
+            Ok(None)
+        }
     }
 
     pub fn to_default(&self) -> BrewIngredientInfo {
@@ -290,8 +287,8 @@ pub enum IngredientCheckResult {
 /// Checks this [`BrewIngredientInfo`] against an [`IngredientRangeInfo`] and returns [`Ok(RecipeInfo)`] if valid.
 pub fn check_ingredients(
     mode: IngredientCheckMode,
-    brew: &Vec<BrewIngredientInfo>,
-    ranges: &Vec<IngredientRangeInfo>,
+    brew: &[BrewIngredientInfo],
+    ranges: &[IngredientRangeInfo],
 ) -> IngredientCheckResult {
     let mut v = vec![];
     let mut extra = vec![];
@@ -324,7 +321,7 @@ pub fn check_ingredients(
             v.push(ingredient.to_default())
         }
     }
-    if extra.len() == 0 && missing.len() == 0 && range_errors.len() == 0 {
+    if extra.is_empty() && missing.is_empty() && range_errors.is_empty() {
         v.sort();
         IngredientCheckResult::Ok(v)
     } else {

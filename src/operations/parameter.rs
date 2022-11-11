@@ -26,7 +26,7 @@ pub async fn read_parameter(ecam: Ecam, param: u16, len: u8) -> Result<(), EcamE
             .await?;
     }
 
-    loop {
+    while ecam.is_alive() {
         tokio::time::sleep(Duration::from_millis(100)).await;
     }
 
