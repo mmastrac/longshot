@@ -266,17 +266,12 @@ pub enum IngredientCheckMode {
     Force,
 }
 
-/// Result of the [`check_ingredients`] call.
+/// Error result of the [`check_ingredients`] call.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum IngredientCheckResult {
-    /// The ingredients are valid.
-    Ok(Vec<BrewIngredientInfo>),
-    /// One or more ingredients failed to validate.
-    Error {
-        missing: Vec<IngredientRangeInfo>,
-        extra: Vec<EcamIngredients>,
-        range_errors: Vec<(EcamIngredients, String)>,
-    },
+pub struct IngredientCheckError {
+    pub missing: Vec<IngredientRangeInfo>,
+    pub extra: Vec<EcamIngredients>,
+    pub range_errors: Vec<(EcamIngredients, String)>,
 }
 
 /// Checks this [`BrewIngredientInfo`] against an [`IngredientRangeInfo`] and returns [`Ok(RecipeInfo)`] if valid.
@@ -284,7 +279,7 @@ pub fn check_ingredients(
     mode: IngredientCheckMode,
     brew: &[BrewIngredientInfo],
     ranges: &[IngredientRangeInfo],
-) -> IngredientCheckResult {
+) -> Result<Vec<BrewIngredientInfo>, IngredientCheckError> {
     let mut v = vec![];
     let mut extra = vec![];
     let mut range_errors = vec![];
@@ -318,16 +313,16 @@ pub fn check_ingredients(
     }
     if extra.is_empty() && missing.is_empty() && range_errors.is_empty() {
         v.sort();
-        IngredientCheckResult::Ok(v)
+        Ok(v)
     } else {
         extra.sort();
         missing.sort();
         range_errors.sort();
-        IngredientCheckResult::Error {
+        Err(IngredientCheckError {
             extra,
             missing,
             range_errors,
-        }
+        })
     }
 }
 
@@ -392,6 +387,35 @@ mod test {
         v
     }
 
+    fn ingredients_to_string(v: &Vec<BrewIngredientInfo>) -> String {
+        v.iter().collect_map_join(" ", |x| {
+            BrewIngredientInfo::to_arg_string(x)
+                .unwrap()
+                .strip_prefix("--")
+                .unwrap()
+                .to_owned()
+        })
+    }
+
+    fn error_to_string(
+        IngredientCheckError {
+            missing,
+            extra,
+            range_errors,
+        }: &IngredientCheckError,
+    ) -> String {
+        format!(
+            "missing={} extra={} range={}",
+            missing
+                .iter()
+                .collect_map_join(" ", |x| x.ingredient().to_arg_string()),
+            extra.iter().collect_map_join(" ", |x| x.to_arg_string()),
+            range_errors
+                .iter()
+                .collect_map_join(" ", |x| x.0.to_arg_string()),
+        )
+    }
+
     fn test_mode(
         mode: IngredientCheckMode,
         ranges: &[IngredientRangeInfo],
@@ -400,36 +424,21 @@ mod test {
     ) {
         let ingredients = quick_arg_parse(input);
         let actual = check_ingredients(mode, &ingredients, ranges);
-        if let (Ok(out1), IngredientCheckResult::Ok(out2)) = (expected, &actual) {
-            let actual = out2.iter().collect_map_join(" ", |x| {
-                BrewIngredientInfo::to_arg_string(x)
-                    .unwrap()
-                    .strip_prefix("--")
-                    .unwrap()
-                    .to_owned()
-            });
-            assert_eq!(out1, actual);
-        } else if let (
-            Err((out1, out2, out3)),
-            IngredientCheckResult::Error {
-                missing,
-                extra,
-                range_errors,
-            },
-        ) = (expected, &actual)
-        {
-            let missing_actual = missing
-                .iter()
-                .collect_map_join(" ", |x| x.ingredient().to_arg_string());
-            let extra_actual = extra.iter().collect_map_join(" ", |x| x.to_arg_string());
-            let range_errors = range_errors
-                .iter()
-                .collect_map_join(" ", |x| x.0.to_arg_string());
-            assert_eq!(out1, missing_actual, "missing mismatch");
-            assert_eq!(out2, extra_actual, "extra mismatch");
-            assert_eq!(out3, range_errors, "range mismatch");
-        } else {
-            panic!("Output didn't match: {:?} {:?}", expected, actual);
+        match (expected, &actual) {
+            (Ok(out1), Ok(out2)) => {
+                assert_eq!(out1, ingredients_to_string(out2));
+            }
+
+            (Err(out), Err(error)) => {
+                assert_eq!(
+                    format!("missing={} extra={} range={}", out.0, out.1, out.2),
+                    error_to_string(error)
+                );
+            }
+
+            _ => {
+                panic!("Output didn't match: {:?} {:?}", expected, actual);
+            }
         }
     }
 

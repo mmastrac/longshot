@@ -2,8 +2,8 @@ use crate::prelude::*;
 use crate::{
     ecam::{Ecam, EcamError},
     operations::{
-        check_ingredients, list_recipies_for, monitor, BrewIngredientInfo, IngredientCheckMode,
-        IngredientCheckResult,
+        check_ingredients, list_recipies_for, monitor, BrewIngredientInfo, IngredientCheckError,
+        IngredientCheckMode,
     },
     protocol::*,
 };
@@ -21,11 +21,11 @@ pub async fn validate_brew(
     if let Some(recipe) = recipe {
         let ranges = recipe.fetch_ingredients();
         match check_ingredients(mode, &ingredients, &ranges) {
-            IngredientCheckResult::Error {
+            Err(IngredientCheckError {
                 missing,
                 extra,
                 range_errors,
-            } => {
+            }) => {
                 for m in missing {
                     info!("{}", m.to_arg_string().unwrap_or(format!("{:?}", m)));
                 }
@@ -37,7 +37,7 @@ pub async fn validate_brew(
                 }
                 Err(EcamError::Unknown)
             }
-            IngredientCheckResult::Ok(result) => {
+            Ok(result) => {
                 info!(
                     "Brewing {:?} with {}...",
                     beverage,
