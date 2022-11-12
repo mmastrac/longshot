@@ -7,6 +7,7 @@
 use std::collections::HashMap;
 use std::vec;
 
+use crate::prelude::*;
 use crate::protocol::*;
 
 /// The requested ingredients to brew, generally provided by an API user or CLI input. A [`Vec<BrewIngredientInfo>`] will
@@ -226,18 +227,12 @@ impl IngredientRangeInfo {
             Self::HotWater(min, value, max) => Some(number_arg("hotwater", min, value, max)),
             Self::Taste(value) => Some(format!(
                 "--taste <{}, default={}>",
-                EcamBeverageTaste::all()
-                    .map(|e| e.to_arg_string())
-                    .collect::<Vec<_>>()
-                    .join("|"),
+                EcamBeverageTaste::all().collect_map_join("|", |x| x.to_arg_string()),
                 value.to_arg_string(),
             )),
             Self::Temperature(value) => Some(format!(
                 "--temp <{}, default={}>",
-                EcamTemperature::all()
-                    .map(|e| e.to_arg_string())
-                    .collect::<Vec<_>>()
-                    .join("|"),
+                EcamTemperature::all().collect_map_join("|", |x| x.to_arg_string()),
                 value.to_arg_string(),
             )),
             // We don't support these for now
@@ -397,10 +392,6 @@ mod test {
         v
     }
 
-    fn collect_map<X, T: Iterator<Item = X>>(iter: T, f: fn(X) -> String) -> String {
-        iter.map(f).collect::<Vec<String>>().join(" ")
-    }
-
     fn test_mode(
         mode: IngredientCheckMode,
         ranges: &[IngredientRangeInfo],
@@ -410,7 +401,7 @@ mod test {
         let ingredients = quick_arg_parse(input);
         let actual = check_ingredients(mode, &ingredients, ranges);
         if let (Ok(out1), IngredientCheckResult::Ok(out2)) = (expected, &actual) {
-            let actual = collect_map(out2.iter(), |x| {
+            let actual = out2.iter().collect_map_join(" ", |x| {
                 BrewIngredientInfo::to_arg_string(x)
                     .unwrap()
                     .strip_prefix("--")
@@ -427,9 +418,13 @@ mod test {
             },
         ) = (expected, &actual)
         {
-            let missing_actual = collect_map(missing.iter(), |x| x.ingredient().to_arg_string());
-            let extra_actual = collect_map(extra.iter(), |x| x.to_arg_string());
-            let range_errors = collect_map(range_errors.iter(), |x| x.0.to_arg_string());
+            let missing_actual = missing
+                .iter()
+                .collect_map_join(" ", |x| x.ingredient().to_arg_string());
+            let extra_actual = extra.iter().collect_map_join(" ", |x| x.to_arg_string());
+            let range_errors = range_errors
+                .iter()
+                .collect_map_join(" ", |x| x.0.to_arg_string());
             assert_eq!(out1, missing_actual, "missing mismatch");
             assert_eq!(out2, extra_actual, "extra mismatch");
             assert_eq!(out3, range_errors, "range mismatch");

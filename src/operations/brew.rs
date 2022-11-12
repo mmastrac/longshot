@@ -43,9 +43,7 @@ pub async fn validate_brew(
                     beverage,
                     result
                         .iter()
-                        .filter_map(BrewIngredientInfo::to_arg_string)
-                        .collect::<Vec<_>>()
-                        .join(" ")
+                        .collect_filter_map_join(" ", BrewIngredientInfo::to_arg_string)
                 );
                 Ok(result
                     .iter()

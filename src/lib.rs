@@ -57,6 +57,7 @@
 //! # Demo
 //!
 //! ![Demo of brewing a cappuccino](https://user-images.githubusercontent.com/512240/200137316-a09304e8-b34a-41ff-a847-af71af521ef8.gif)
+#![warn(clippy::all)]
 
 pub mod display;
 pub mod ecam;
@@ -64,3 +65,4 @@ pub mod logging;
 pub mod operations;
 mod prelude;
 pub mod protocol;
+pub mod util;

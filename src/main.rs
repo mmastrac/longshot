@@ -1,3 +1,4 @@
+#![warn(clippy::all)]
 use clap::{arg, command};
 
 use longshot::ecam::{ecam_lookup, ecam_scan, get_ecam_simulator, pipe_stdin, EcamBT};

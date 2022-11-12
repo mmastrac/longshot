@@ -163,9 +163,7 @@ impl RecipeDetails {
         let args = self
             .fetch_ingredients()
             .iter()
-            .filter_map(|i| i.to_arg_string())
-            .collect::<Vec<String>>()
-            .join(" ");
+            .collect_filter_map_join(" ", IngredientRangeInfo::to_arg_string);
         format!("--beverage {} {}", self.beverage.to_arg_string(), args)
     }
 
