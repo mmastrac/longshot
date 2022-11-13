@@ -6,6 +6,8 @@ pub trait MachineEnumerable<T>:
 {
     fn all() -> &'static [T];
     fn to_arg_string(&self) -> String;
+    fn lookup_by_name_case_insensitive(s: &str) -> Option<T>;
+    fn lookup_by_name(s: &str) -> Option<T>;
 }
 
 /// Wraps a machine enumeration that may have unknown values.

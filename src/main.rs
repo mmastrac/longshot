@@ -19,19 +19,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     pretty_env_logger::init();
     longshot::display::initialize_display();
 
-    let device_name = arg!(--"device-name" <name>)
-        .help("Provides the name of the device")
-        .required(true);
-    let turn_on = arg!(--"turn-on").help("Turn on the machine before running this operation");
-    let dump_packets =
-        arg!(--"dump-packets").help("Dumps decoded packets to the terminal for debugging");
+    let device_common = [
+        arg!(--"device-name" <name>)
+            .help("Provides the name of the device")
+            .required(true),
+        arg!(--"dump-packets").help("Dumps decoded packets to the terminal for debugging"),
+        arg!(--"turn-on").help("Turn on the machine before running this operation").conflicts_with("allow-off"),
+        arg!(--"allow-off")
+            .hide(true)
+            .help("Allow brewing while machine is off").conflicts_with("turn-on"),
+    ];
+
     let matches = command!()
         .arg(arg!(--"trace").help("Trace packets to/from device"))
         .subcommand(
             command!("brew")
                 .about("Brew a coffee")
-                .arg(device_name.clone())
-                .arg(turn_on.clone())
+                .args(&device_common)
                 .arg(
                     arg!(--"beverage" <name>)
                         .required(true)
@@ -69,44 +73,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
                 .arg(arg!(--"force").help("Allow brewing with parameters that do not validate"))
                 .arg(
-                    arg!(--"allow-off")
-                        .hide(true)
-                        .help("Allow brewing while machine is off"),
-                )
-                .arg(
                     arg!(--"skip-brew")
                         .hide(true)
                         .help("Does everything except actually brew the beverage"),
                 )
-                .arg(dump_packets.clone()),
-        )
+            )
         .subcommand(
             command!("monitor")
                 .about("Monitor the status of the device")
-                .arg(device_name.clone())
-                .arg(turn_on.clone())
-                .arg(dump_packets.clone()),
+                .args(&device_common),
         )
         .subcommand(
             command!("read-parameter")
                 .about("Read a parameter from the device")
-                .arg(device_name.clone())
-                .arg(turn_on.clone())
-                .arg(dump_packets.clone())
+                .args(&device_common)
                 .arg(arg!(--"parameter" <parameter>).help("The parameter ID"))
                 .arg(arg!(--"length" <length>).help("The parameter length")),
         )
         .subcommand(
             command!("list-recipes")
                 .about("List recipes stored in the device")
-                .arg(device_name.clone()),
+                .args(&device_common),
         )
         .subcommand(command!("list").about("List all supported devices"))
         .subcommand(
             command!("x-internal-pipe")
                 .about("Used to communicate with the device")
                 .hide(true)
-                .arg(device_name.clone()),
+                .args(&device_common),
         )
         .get_matches();
 
