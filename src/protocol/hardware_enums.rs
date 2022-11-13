@@ -29,10 +29,6 @@ macro_rules! hardware_enum {
                 enum_iterator::all()
             }
 
-            pub fn to_arg_string(&self) -> String {
-                format!("{:?}", self).to_ascii_lowercase()
-            }
-
             pub fn lookup_by_name_case_insensitive(s: &str) -> Option<$name> {
                 // TODO: Can use one of the static ToString crates to improve this
                 enum_iterator::all().find(|e| format!("{:?}", e).to_ascii_lowercase() == s.to_ascii_lowercase())
