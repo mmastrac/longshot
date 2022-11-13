@@ -3,11 +3,18 @@ use std::{fmt::Debug, hash::Hash, marker::PhantomData};
 /// Helper trait that collects the requirements for a MachineEnum.
 pub trait MachineEnumerable<T>:
     TryFrom<u8> + Into<u8> + Copy + Debug + Eq + PartialEq + Ord + PartialOrd + Hash + Sized
+where
+    T: MachineEnumerable<T>,
 {
-    fn all() -> &'static [T];
+    fn all_values() -> &'static [T];
     fn to_arg_string(&self) -> String;
     fn lookup_by_name_case_insensitive(s: &str) -> Option<T>;
     fn lookup_by_name(s: &str) -> Option<T>;
+
+    /// Iterates over all the values of the enumeration.
+    fn all() -> core::iter::Copied<std::slice::Iter<'static, T>> {
+        Self::all_values().iter().copied()
+    }
 }
 
 /// Wraps a machine enumeration that may have unknown values.

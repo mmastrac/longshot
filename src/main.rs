@@ -7,11 +7,7 @@ use longshot::{operations::*, protocol::*};
 use uuid::Uuid;
 
 fn enum_value_parser<T: MachineEnumerable<T> + 'static>() -> PossibleValuesParser {
-    PossibleValuesParser::new(
-        T::all()
-            .iter()
-            .map(|x| PossibleValue::new(x.to_arg_string())),
-    )
+    PossibleValuesParser::new(T::all().map(|x| PossibleValue::new(x.to_arg_string())))
 }
 
 #[tokio::main]

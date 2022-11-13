@@ -227,16 +227,12 @@ impl IngredientRangeInfo {
             Self::HotWater(min, value, max) => Some(number_arg("hotwater", min, value, max)),
             Self::Taste(value) => Some(format!(
                 "--taste <{}, default={}>",
-                EcamBeverageTaste::all()
-                    .iter()
-                    .collect_map_join("|", |x| x.to_arg_string()),
+                EcamBeverageTaste::all().collect_map_join("|", |x| x.to_arg_string()),
                 value.to_arg_string(),
             )),
             Self::Temperature(value) => Some(format!(
                 "--temp <{}, default={}>",
-                EcamTemperature::all()
-                    .iter()
-                    .collect_map_join("|", |x| x.to_arg_string()),
+                EcamTemperature::all().collect_map_join("|", |x| x.to_arg_string()),
                 value.to_arg_string(),
             )),
             // We don't support these for now

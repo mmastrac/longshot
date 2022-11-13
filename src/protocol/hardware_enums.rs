@@ -27,18 +27,18 @@ macro_rules! hardware_enum {
 
         impl MachineEnumerable<$name> for $name {
             /// Return a static slice of all possible enumeration values, useful for iteration.
-            fn all() -> &'static[$name] {
+            fn all_values() -> &'static[$name] {
                 &[$(Self::$x),*]
             }
 
             fn lookup_by_name_case_insensitive(s: &str) -> Option<$name> {
                 // TODO: Can use one of the static ToString crates to improve this
-                Self::all().iter().copied().find(|e| format!("{:?}", e).to_ascii_lowercase() == s.to_ascii_lowercase())
+                Self::all().find(|e| format!("{:?}", e).to_ascii_lowercase() == s.to_ascii_lowercase())
             }
 
             fn lookup_by_name(s: &str) -> Option<$name> {
                 // TODO: Can use one of the static ToString crates to improve this
-                Self::all().iter().copied().find(|e| format!("{:?}", e) == s)
+                Self::all().find(|e| format!("{:?}", e) == s)
             }
 
             /// Generate the argument-style string for this enum. Ideally we'd use a [`&str`], but the appropriate methods
