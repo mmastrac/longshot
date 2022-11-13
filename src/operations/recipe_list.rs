@@ -179,7 +179,7 @@ impl RecipeDetails {
             m2.insert(r.ingredient, r);
         }
 
-        for ingredient in EcamIngredients::all().into_iter() {
+        for ingredient in EcamIngredients::all().iter() {
             let key = &(*ingredient).into();
             match IngredientRangeInfo::new(
                 *ingredient,
