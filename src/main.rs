@@ -24,10 +24,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .help("Provides the name of the device")
             .required(true),
         arg!(--"dump-packets").help("Dumps decoded packets to the terminal for debugging"),
-        arg!(--"turn-on").help("Turn on the machine before running this operation").conflicts_with("allow-off"),
+        arg!(--"turn-on")
+            .help("Turn on the machine before running this operation")
+            .conflicts_with("allow-off"),
         arg!(--"allow-off")
             .hide(true)
-            .help("Allow brewing while machine is off").conflicts_with("turn-on"),
+            .help("Allow brewing while machine is off")
+            .conflicts_with("turn-on"),
     ];
 
     let matches = command!()
@@ -76,8 +79,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     arg!(--"skip-brew")
                         .hide(true)
                         .help("Does everything except actually brew the beverage"),
-                )
-            )
+                ),
+        )
         .subcommand(
             command!("monitor")
                 .about("Monitor the status of the device")
