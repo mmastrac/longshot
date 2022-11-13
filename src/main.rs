@@ -1,16 +1,23 @@
 #![warn(clippy::all)]
+use clap::builder::{PossibleValue, PossibleValuesParser};
 use clap::{arg, command};
 
 use longshot::ecam::{ecam_lookup, ecam_scan, get_ecam_simulator, pipe_stdin, EcamBT};
 use longshot::{operations::*, protocol::*};
 use uuid::Uuid;
 
+fn enum_value_parser<X: MachineEnumerable, T: Iterator<Item = X>>(t: T) -> PossibleValuesParser {
+    PossibleValuesParser::new(t.map(|x| PossibleValue::new(x.to_arg_string())))
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     pretty_env_logger::init();
     longshot::display::initialize_display();
 
-    let device_name = arg!(--"device-name" <name>).help("Provides the name of the device");
+    let device_name = arg!(--"device-name" <name>)
+        .help("Provides the name of the device")
+        .required(true);
     let turn_on = arg!(--"turn-on").help("Turn on the machine before running this operation");
     let dump_packets =
         arg!(--"dump-packets").help("Dumps decoded packets to the terminal for debugging");
@@ -24,13 +31,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .arg(
                     arg!(--"beverage" <name>)
                         .required(true)
-                        .help("The beverage to brew"),
+                        .help("The beverage to brew")
+                        .value_parser(enum_value_parser(EcamBeverageId::all())),
                 )
-                .arg(arg!(--"coffee" <amount>).help("Amount of coffee to brew"))
-                .arg(arg!(--"milk" <amount>).help("Amount of milk to steam/pour"))
-                .arg(arg!(--"hotwater" <amount>).help("Amount of hot water to pour"))
-                .arg(arg!(--"taste" <taste>).help("The strength of the beverage"))
-                .arg(arg!(--"temperature" <temperature>).help("The temperature of the beverage"))
+                .arg(
+                    arg!(--"coffee" <amount>)
+                        .help("Amount of coffee to brew")
+                        .value_parser(0..=2500),
+                )
+                .arg(
+                    arg!(--"milk" <amount>)
+                        .help("Amount of milk to steam/pour")
+                        .value_parser(0..=2500),
+                )
+                .arg(
+                    arg!(--"hotwater" <amount>)
+                        .help("Amount of hot water to pour")
+                        .value_parser(0..=2500),
+                )
+                .arg(
+                    arg!(--"taste" <taste>)
+                        .help("The strength of the beverage")
+                        .value_parser(enum_value_parser(EcamBeverageTaste::all())),
+                )
+                .arg(
+                    arg!(--"temperature" <temperature>)
+                        .help("The temperature of the beverage")
+                        .value_parser(enum_value_parser(EcamTemperature::all())),
+                )
                 .arg(
                     arg!(--"allow-defaults")
                         .help("Allow brewing if some parameters are not specified"),
@@ -91,19 +119,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let dump_packets = cmd.get_flag("dump-packets");
             let allow_defaults = cmd.get_flag("allow-defaults");
             let force = cmd.get_flag("force");
-            let device_name = &cmd
+            let device_name = cmd
                 .get_one::<String>("device-name")
-                .expect("Device name required")
-                .clone();
+                .expect("Device name required");
 
             let beverage: EcamBeverageId = EcamBeverageId::lookup_by_name_case_insensitive(
-                cmd.get_one::<String>("beverage").unwrap_or(&"".to_owned()),
+                cmd.get_one::<String>("beverage").unwrap(),
             )
             .expect("Beverage required");
 
             let mut ingredients = vec![];
             for arg in ["coffee", "milk", "hotwater", "taste", "temperature"] {
-                if let Some(value) = cmd.get_one::<String>(arg) {
+                if let Some(value) = cmd.get_raw(arg) {
+                    // Once clap has had a chance to validate the args, we go back to the underlying OsStr to parse it
+                    let value = value.into_iter().next().unwrap().to_str().unwrap();
                     if let Some(ingredient) = BrewIngredientInfo::from_arg(arg, value) {
                         ingredients.push(ingredient);
                     } else {

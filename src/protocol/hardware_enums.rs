@@ -6,7 +6,7 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 ///! This file contains validated hardware enumerations and associated values.
 
 macro_rules! hardware_enum {
-    ($comment:literal, $name:ident $($x:tt)*) => {
+    ($comment:literal, $name:ident { $($(# [ doc = $item_comment:literal ])? $x:ident = $v:literal,)* } ) => {
         #[doc=$comment]
         #[repr(u8)]
         #[derive(
@@ -22,7 +22,7 @@ macro_rules! hardware_enum {
             Hash,
             Sequence,
         )]
-        pub enum $name $($x)*
+        pub enum $name { $($(#[doc=$item_comment])? $x = $v),* }
 
         impl $name {
             pub fn all() -> impl Iterator<Item=$name> {
@@ -43,7 +43,16 @@ macro_rules! hardware_enum {
                 enum_iterator::all().find(|e| format!("{:?}", e) == s)
             }
         }
-        impl MachineEnumerable for $name {}
+
+        impl MachineEnumerable for $name {
+            fn to_arg_string(&self) -> String {
+                match *self {
+                    $(Self::$x => {
+                        stringify!($x).to_ascii_lowercase()
+                    })*
+                }
+            }
+        }
     };
 }
 

@@ -4,6 +4,7 @@ use std::{fmt::Debug, hash::Hash, marker::PhantomData};
 pub trait MachineEnumerable:
     TryFrom<u8> + Into<u8> + Copy + Debug + Eq + PartialEq + Ord + PartialOrd + Hash + Sized
 {
+    fn to_arg_string(&self) -> String;
 }
 
 /// Wraps a machine enumeration that may have unknown values.

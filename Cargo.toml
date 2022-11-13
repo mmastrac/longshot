@@ -16,7 +16,7 @@ pretty_env_logger = "0.4.0"
 uuid = "1.2.1"
 hex = "0.4.3"
 thiserror = "1.0.37"
-clap = { version = "4.0.18", features = ["cargo", "derive"] }
+clap = { version = "4.0.18", features = ["cargo", "derive", "string"] }
 async-stream = "0.3.3"
 stream-cancel = "0.8.1"
 tuples = "1.6.0"
