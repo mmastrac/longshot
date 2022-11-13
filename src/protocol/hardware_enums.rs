@@ -33,12 +33,12 @@ macro_rules! hardware_enum {
 
             fn lookup_by_name_case_insensitive(s: &str) -> Option<$name> {
                 // TODO: Can use one of the static ToString crates to improve this
-                Self::all().iter().map(|x| *x).find(|e| format!("{:?}", e).to_ascii_lowercase() == s.to_ascii_lowercase())
+                Self::all().iter().copied().find(|e| format!("{:?}", e).to_ascii_lowercase() == s.to_ascii_lowercase())
             }
 
             fn lookup_by_name(s: &str) -> Option<$name> {
                 // TODO: Can use one of the static ToString crates to improve this
-                Self::all().iter().map(|x| *x).find(|e| format!("{:?}", e) == s)
+                Self::all().iter().copied().find(|e| format!("{:?}", e) == s)
             }
 
             /// Generate the argument-style string for this enum. Ideally we'd use a [`&str`], but the appropriate methods
