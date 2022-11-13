@@ -6,8 +6,12 @@ use longshot::ecam::{ecam_lookup, ecam_scan, get_ecam_simulator, pipe_stdin, Eca
 use longshot::{operations::*, protocol::*};
 use uuid::Uuid;
 
-fn enum_value_parser<X: MachineEnumerable<X>, T: Iterator<Item = X>>(t: T) -> PossibleValuesParser {
-    PossibleValuesParser::new(t.map(|x| PossibleValue::new(x.to_arg_string())))
+fn enum_value_parser<T: MachineEnumerable<T> + 'static>() -> PossibleValuesParser {
+    PossibleValuesParser::new(
+        T::all()
+            .iter()
+            .map(|x| PossibleValue::new(x.to_arg_string())),
+    )
 }
 
 #[tokio::main]
@@ -32,7 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     arg!(--"beverage" <name>)
                         .required(true)
                         .help("The beverage to brew")
-                        .value_parser(enum_value_parser(EcamBeverageId::all())),
+                        .value_parser(enum_value_parser::<EcamBeverageId>()),
                 )
                 .arg(
                     arg!(--"coffee" <amount>)
@@ -52,12 +56,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .arg(
                     arg!(--"taste" <taste>)
                         .help("The strength of the beverage")
-                        .value_parser(enum_value_parser(EcamBeverageTaste::all())),
+                        .value_parser(enum_value_parser::<EcamBeverageTaste>()),
                 )
                 .arg(
                     arg!(--"temperature" <temperature>)
                         .help("The temperature of the beverage")
-                        .value_parser(enum_value_parser(EcamTemperature::all())),
+                        .value_parser(enum_value_parser::<EcamTemperature>()),
                 )
                 .arg(
                     arg!(--"allow-defaults")

@@ -25,10 +25,6 @@ macro_rules! hardware_enum {
         pub enum $name { $($(#[doc=$item_comment])? $x = $v),* }
 
         impl $name {
-            pub fn all() -> impl Iterator<Item=$name> {
-                enum_iterator::all()
-            }
-
             pub fn lookup_by_name_case_insensitive(s: &str) -> Option<$name> {
                 // TODO: Can use one of the static ToString crates to improve this
                 enum_iterator::all().find(|e| format!("{:?}", e).to_ascii_lowercase() == s.to_ascii_lowercase())
@@ -41,6 +37,10 @@ macro_rules! hardware_enum {
         }
 
         impl MachineEnumerable<$name> for $name {
+            fn all() -> &'static[$name] {
+                &[$(Self::$x),*]
+            }
+
             fn to_arg_string(&self) -> String {
                 match *self {
                     $(Self::$x => {

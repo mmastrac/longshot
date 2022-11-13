@@ -4,6 +4,7 @@ use std::{fmt::Debug, hash::Hash, marker::PhantomData};
 pub trait MachineEnumerable<T>:
     TryFrom<u8> + Into<u8> + Copy + Debug + Eq + PartialEq + Ord + PartialOrd + Hash + Sized
 {
+    fn all() -> &'static [T];
     fn to_arg_string(&self) -> String;
 }
 

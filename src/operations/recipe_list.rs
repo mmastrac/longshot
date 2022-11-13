@@ -23,7 +23,7 @@ impl Default for RecipeAccumulator {
 impl RecipeAccumulator {
     /// Creates a new accumulator for all recipes.
     pub fn new() -> Self {
-        Self::limited_to(EcamBeverageId::all().collect())
+        Self::limited_to(EcamBeverageId::all().to_vec())
     }
 
     /// Creates a new accumulator limited to a smaller subset of [`EcamBeverageId`]s (potentially just one).
@@ -179,10 +179,10 @@ impl RecipeDetails {
             m2.insert(r.ingredient, r);
         }
 
-        for ingredient in EcamIngredients::all() {
-            let key = &ingredient.into();
+        for ingredient in EcamIngredients::all().into_iter() {
+            let key = &(*ingredient).into();
             match IngredientRangeInfo::new(
-                ingredient,
+                *ingredient,
                 m1.get(key).map(|x| **x),
                 m2.get(key).map(|x| **x),
             ) {
