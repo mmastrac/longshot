@@ -1,7 +1,7 @@
 use std::{fmt::Debug, hash::Hash, marker::PhantomData};
 
 /// Helper trait that collects the requirements for a MachineEnum.
-pub trait MachineEnumerable:
+pub trait MachineEnumerable<T>:
     TryFrom<u8> + Into<u8> + Copy + Debug + Eq + PartialEq + Ord + PartialOrd + Hash + Sized
 {
     fn to_arg_string(&self) -> String;
@@ -9,14 +9,14 @@ pub trait MachineEnumerable:
 
 /// Wraps a machine enumeration that may have unknown values.
 #[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Hash)]
-pub enum MachineEnum<T: MachineEnumerable> {
+pub enum MachineEnum<T: MachineEnumerable<T>> {
     Value(T),
     Unknown(u8),
 }
 
 impl<T> Default for MachineEnum<T>
 where
-    T: MachineEnumerable,
+    T: MachineEnumerable<T>,
 {
     fn default() -> Self {
         MachineEnum::decode(0)
@@ -25,7 +25,7 @@ where
 
 impl<T> MachineEnum<T>
 where
-    T: MachineEnumerable,
+    T: MachineEnumerable<T>,
 {
     pub fn decode(value: u8) -> Self {
         if let Ok(value) = T::try_from(value) {
@@ -38,14 +38,14 @@ where
 
 impl<T> From<T> for MachineEnum<T>
 where
-    T: MachineEnumerable,
+    T: MachineEnumerable<T>,
 {
     fn from(t: T) -> Self {
         MachineEnum::Value(t)
     }
 }
 
-impl<T: MachineEnumerable> From<MachineEnum<T>> for u8 {
+impl<T: MachineEnumerable<T>> From<MachineEnum<T>> for u8 {
     fn from(v: MachineEnum<T>) -> Self {
         match v {
             MachineEnum::Value(v) => v.into(),
@@ -54,7 +54,7 @@ impl<T: MachineEnumerable> From<MachineEnum<T>> for u8 {
     }
 }
 
-impl<T: MachineEnumerable> From<MachineEnum<T>> for Option<T> {
+impl<T: MachineEnumerable<T>> From<MachineEnum<T>> for Option<T> {
     fn from(v: MachineEnum<T>) -> Self {
         match v {
             MachineEnum::Value(v) => Some(v),
@@ -63,7 +63,7 @@ impl<T: MachineEnumerable> From<MachineEnum<T>> for Option<T> {
     }
 }
 
-impl<T: MachineEnumerable> Debug for MachineEnum<T> {
+impl<T: MachineEnumerable<T>> Debug for MachineEnum<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Value(t) => t.fmt(f),
@@ -72,7 +72,7 @@ impl<T: MachineEnumerable> Debug for MachineEnum<T> {
     }
 }
 
-impl<T: MachineEnumerable> PartialEq<T> for MachineEnum<T> {
+impl<T: MachineEnumerable<T>> PartialEq<T> for MachineEnum<T> {
     fn eq(&self, other: &T) -> bool {
         match self {
             Self::Value(t) => t.eq(other),
@@ -83,18 +83,18 @@ impl<T: MachineEnumerable> PartialEq<T> for MachineEnum<T> {
 
 /// Represents a set of enum values, some potentially unknown.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct SwitchSet<T: MachineEnumerable> {
+pub struct SwitchSet<T: MachineEnumerable<T>> {
     pub value: u16,
     phantom: PhantomData<T>,
 }
 
-impl<T: MachineEnumerable> Default for SwitchSet<T> {
+impl<T: MachineEnumerable<T>> Default for SwitchSet<T> {
     fn default() -> Self {
         SwitchSet::empty()
     }
 }
 
-impl<T: MachineEnumerable> SwitchSet<T> {
+impl<T: MachineEnumerable<T>> SwitchSet<T> {
     pub fn of(input: &[T]) -> Self {
         let mut v = 0u16;
         for t in input {
@@ -127,7 +127,7 @@ impl<T: MachineEnumerable> SwitchSet<T> {
     }
 }
 
-impl<T: MachineEnumerable> std::fmt::Debug for SwitchSet<T> {
+impl<T: MachineEnumerable<T>> std::fmt::Debug for SwitchSet<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.value == 0 {
             f.write_str("(empty)")

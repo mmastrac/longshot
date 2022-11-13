@@ -6,7 +6,7 @@ use longshot::ecam::{ecam_lookup, ecam_scan, get_ecam_simulator, pipe_stdin, Eca
 use longshot::{operations::*, protocol::*};
 use uuid::Uuid;
 
-fn enum_value_parser<X: MachineEnumerable, T: Iterator<Item = X>>(t: T) -> PossibleValuesParser {
+fn enum_value_parser<X: MachineEnumerable<X>, T: Iterator<Item = X>>(t: T) -> PossibleValuesParser {
     PossibleValuesParser::new(t.map(|x| PossibleValue::new(x.to_arg_string())))
 }
 

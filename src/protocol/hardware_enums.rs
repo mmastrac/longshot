@@ -40,7 +40,7 @@ macro_rules! hardware_enum {
             }
         }
 
-        impl MachineEnumerable for $name {
+        impl MachineEnumerable<$name> for $name {
             fn to_arg_string(&self) -> String {
                 match *self {
                     $(Self::$x => {

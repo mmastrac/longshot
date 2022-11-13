@@ -19,7 +19,7 @@ pub struct MonitorV2Response {
     pub unknown4: u8,
 }
 
-impl<T: MachineEnumerable> PartialDecode<SwitchSet<T>> for SwitchSet<T> {
+impl<T: MachineEnumerable<T>> PartialDecode<SwitchSet<T>> for SwitchSet<T> {
     fn partial_decode(input: &mut &[u8]) -> Option<SwitchSet<T>> {
         let a = <u8>::partial_decode(input)? as u16;
         let b = <u8>::partial_decode(input)? as u16;
@@ -28,7 +28,7 @@ impl<T: MachineEnumerable> PartialDecode<SwitchSet<T>> for SwitchSet<T> {
     }
 }
 
-impl<T: MachineEnumerable> PartialEncode for SwitchSet<T> {
+impl<T: MachineEnumerable<T>> PartialEncode for SwitchSet<T> {
     fn partial_encode(&self, out: &mut Vec<u8>) {
         self.value.partial_encode(out)
     }

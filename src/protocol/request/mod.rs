@@ -41,7 +41,7 @@ impl<T: PartialEncode> PartialEncode for Vec<T> {
     }
 }
 
-impl<T: MachineEnumerable> PartialEncode for &MachineEnum<T> {
+impl<T: MachineEnumerable<T>> PartialEncode for &MachineEnum<T> {
     fn partial_encode(&self, out: &mut Vec<u8>) {
         out.push((**self).into())
     }
@@ -69,7 +69,7 @@ impl<T: PartialDecode<T>> PartialDecode<Vec<T>> for Vec<T> {
     }
 }
 
-impl<T: MachineEnumerable> PartialDecode<MachineEnum<T>> for MachineEnum<T> {
+impl<T: MachineEnumerable<T>> PartialDecode<MachineEnum<T>> for MachineEnum<T> {
     fn partial_decode(input: &mut &[u8]) -> Option<Self> {
         let (head, tail) = input.split_first()?;
         *input = tail;
