@@ -8,6 +8,8 @@ pub trait CollectMapJoin<X> {
 
 impl<T: Iterator<Item = X>, X> CollectMapJoin<X> for T {
     fn collect_map_join(self, sep: &str, f: fn(X) -> String) -> String {
+        // When https://github.com/rust-lang/rust/issues/79524 is fixed, this can probably be simplified
+        // self.map(f).intersperse(sep).collect()
         self.map(f).collect::<Vec<String>>().join(sep)
     }
 
