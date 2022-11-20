@@ -2,36 +2,11 @@ use crate::prelude::*;
 use std::time::Instant;
 
 use crate::display::*;
-use crate::{
-    ecam::{Ecam, EcamError, EcamOutput, EcamStatus},
-    protocol::*,
-};
+use crate::ecam::{Ecam, EcamError};
 
-pub async fn monitor(
-    ecam: Ecam,
-    turn_on: bool,
-    dump_decoded_packets: bool,
-) -> Result<(), EcamError> {
-    let mut tap = ecam.packet_tap().await?;
-    let ecam = ecam.clone();
-    let handle = tokio::spawn(async move {
-        while let Some(packet) = tap.next().await {
-            if dump_decoded_packets {
-                trace_packet!("{:?}", packet);
-            }
-            if packet == EcamOutput::Done {
-                break;
-            }
-        }
-    });
-
+pub async fn monitor(ecam: Ecam) -> Result<(), EcamError> {
     let mut state = ecam.current_state().await?;
     display_status(state);
-    if turn_on && state == EcamStatus::StandBy {
-        ecam.write_request(Request::AppControl(AppControl::TurnOn))
-            .await?;
-    }
-
     let mut debounce = Instant::now();
     while ecam.is_alive() {
         // Poll for current state
@@ -43,8 +18,6 @@ pub async fn monitor(
             debounce = Instant::now();
         }
     }
-
-    let _ = handle.await;
 
     Ok(())
 }

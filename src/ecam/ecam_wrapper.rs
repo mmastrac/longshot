@@ -182,11 +182,12 @@ struct EcamInternals {
     packet_tap: Arc<tokio::sync::broadcast::Sender<EcamOutput>>,
     ready_lock: Arc<tokio::sync::Semaphore>,
     status_interest: StatusInterest,
+    dump_packets: bool,
     started: bool,
 }
 
 impl Ecam {
-    pub async fn new(driver: Box<dyn EcamDriver>) -> Self {
+    pub async fn new(driver: Box<dyn EcamDriver>, dump_packets: bool) -> Self {
         let driver = Arc::new(driver);
         let (tx, rx) = tokio::sync::watch::channel(None);
         let (txb, _) = tokio::sync::broadcast::channel(100);
@@ -207,6 +208,7 @@ impl Ecam {
             ready_lock,
             status_interest: StatusInterest::new(),
             started: false,
+            dump_packets,
         }));
         let alive = Alive::new();
         let ecam_result = Ecam {
@@ -251,6 +253,7 @@ impl Ecam {
         alive: Alive,
     ) -> Result<(), EcamError> {
         let packet_tap_sender = internals.lock().await.packet_tap.clone();
+        let dump_packets = internals.lock().await.dump_packets;
         let mut started = false;
         while alive.is_alive() {
             // Treat end-of-stream as EcamOutput::Done, but we might want to reconsider this in the future
@@ -260,6 +263,9 @@ impl Ecam {
                 .unwrap_or(EcamDriverOutput::Done)
                 .into();
             let _ = packet_tap_sender.send(packet.clone());
+            if dump_packets {
+                trace_packet!("{:?}", packet);
+            }
             match packet {
                 EcamOutput::Ready => {
                     if started {

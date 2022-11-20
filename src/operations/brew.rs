@@ -63,7 +63,6 @@ pub async fn validate_brew(
 pub async fn brew(
     ecam: Ecam,
     skip_brew: bool,
-    dump_decoded_packets: bool,
     beverage: EcamBeverageId,
     recipe: Vec<RecipeInfo<u16>>,
 ) -> Result<(), EcamError> {
@@ -79,7 +78,7 @@ pub async fn brew(
     } else {
         ecam.write_request(req).await?;
     }
-    monitor(ecam, false, dump_decoded_packets).await?;
+    monitor(ecam).await?;
 
     Ok(())
 }

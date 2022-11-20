@@ -26,9 +26,9 @@ pub async fn ecam_scan() -> Result<(String, Uuid), EcamError> {
     EcamBT::scan().await
 }
 
-pub async fn ecam_lookup(device_name: &str) -> Result<Ecam, EcamError> {
+pub async fn ecam_lookup(device_name: &str, dump_packets: bool) -> Result<Ecam, EcamError> {
     let driver = Box::new(get_ecam_subprocess(device_name).await?);
-    Ok(Ecam::new(driver).await)
+    Ok(Ecam::new(driver, dump_packets).await)
 }
 
 #[derive(Error, Debug)]

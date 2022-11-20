@@ -1,8 +1,10 @@
 #![warn(clippy::all)]
 use clap::builder::{PossibleValue, PossibleValuesParser};
-use clap::{arg, command};
+use clap::{arg, command, Arg, ArgMatches};
 
-use longshot::ecam::{ecam_lookup, ecam_scan, get_ecam_simulator, pipe_stdin, EcamBT};
+use longshot::ecam::{
+    ecam_lookup, ecam_scan, get_ecam_simulator, pipe_stdin, Ecam, EcamBT, EcamError,
+};
 use longshot::{operations::*, protocol::*};
 use uuid::Uuid;
 
@@ -10,31 +12,61 @@ fn enum_value_parser<T: MachineEnumerable<T> + 'static>() -> PossibleValuesParse
     PossibleValuesParser::new(T::all().map(|x| PossibleValue::new(x.to_arg_string())))
 }
 
+struct DeviceCommon {
+    device_name: String,
+    dump_packets: bool,
+    turn_on: bool,
+    allow_off: bool,
+}
+
+impl DeviceCommon {
+    fn args() -> [Arg; 4] {
+        [
+            arg!(--"device-name" <name>)
+                .help("Provides the name of the device")
+                .required(true),
+            arg!(--"dump-packets").help("Dumps decoded packets to the terminal for debugging"),
+            arg!(--"turn-on")
+                .help("Turn on the machine before running this operation")
+                .conflicts_with("allow-off"),
+            arg!(--"allow-off")
+                .hide(true)
+                .help("Allow brewing while machine is off")
+                .conflicts_with("turn-on"),
+        ]
+    }
+
+    fn parse(cmd: &ArgMatches) -> Self {
+        Self {
+            device_name: cmd
+                .get_one::<String>("device-name")
+                .expect("Device name required")
+                .clone(),
+            dump_packets: cmd.get_flag("dump-packets"),
+            turn_on: cmd.get_flag("turn-on"),
+            allow_off: cmd.get_flag("allow-off"),
+        }
+    }
+}
+
+async fn ecam(cmd: &ArgMatches) -> Result<Ecam, EcamError> {
+    let device_common = DeviceCommon::parse(cmd);
+    let ecam = ecam_lookup(&device_common.device_name, device_common.dump_packets).await?;
+    power_on(ecam.clone(), device_common.allow_off, device_common.turn_on).await?;
+    Ok(ecam)
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     pretty_env_logger::init();
     longshot::display::initialize_display();
-
-    let device_common = [
-        arg!(--"device-name" <name>)
-            .help("Provides the name of the device")
-            .required(true),
-        arg!(--"dump-packets").help("Dumps decoded packets to the terminal for debugging"),
-        arg!(--"turn-on")
-            .help("Turn on the machine before running this operation")
-            .conflicts_with("allow-off"),
-        arg!(--"allow-off")
-            .hide(true)
-            .help("Allow brewing while machine is off")
-            .conflicts_with("turn-on"),
-    ];
 
     let matches = command!()
         .arg(arg!(--"trace").help("Trace packets to/from device"))
         .subcommand(
             command!("brew")
                 .about("Brew a coffee")
-                .args(&device_common)
+                .args(&DeviceCommon::args())
                 .arg(
                     arg!(--"beverage" <name>)
                         .required(true)
@@ -80,26 +112,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .subcommand(
             command!("monitor")
                 .about("Monitor the status of the device")
-                .args(&device_common),
+                .args(&DeviceCommon::args()),
         )
         .subcommand(
             command!("read-parameter")
                 .about("Read a parameter from the device")
-                .args(&device_common)
+                .args(&DeviceCommon::args())
                 .arg(arg!(--"parameter" <parameter>).help("The parameter ID"))
                 .arg(arg!(--"length" <length>).help("The parameter length")),
         )
         .subcommand(
             command!("list-recipes")
                 .about("List recipes stored in the device")
-                .args(&device_common),
+                .args(&DeviceCommon::args()),
         )
         .subcommand(command!("list").about("List all supported devices"))
         .subcommand(
             command!("x-internal-pipe")
                 .about("Used to communicate with the device")
                 .hide(true)
-                .args(&device_common),
+                .args(&DeviceCommon::args()),
         )
         .get_matches();
 
@@ -110,15 +142,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let subcommand = matches.subcommand();
     match subcommand {
         Some(("brew", cmd)) => {
-            let turn_on = cmd.get_flag("turn-on");
             let skip_brew = cmd.get_flag("skip-brew");
-            let allow_off = cmd.get_flag("allow-off");
-            let dump_packets = cmd.get_flag("dump-packets");
             let allow_defaults = cmd.get_flag("allow-defaults");
             let force = cmd.get_flag("force");
-            let device_name = cmd
-                .get_one::<String>("device-name")
-                .expect("Device name required");
 
             let beverage: EcamBeverageId = EcamBeverageId::lookup_by_name_case_insensitive(
                 cmd.get_one::<String>("beverage").unwrap(),
@@ -144,39 +170,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 (true, false) => IngredientCheckMode::AllowDefaults,
                 (false, false) => IngredientCheckMode::Strict,
             };
-            let ecam = ecam_lookup(device_name).await?;
+            let ecam = ecam(cmd).await?;
             let recipe = validate_brew(ecam.clone(), beverage, ingredients, mode).await?;
-            power_on(ecam.clone(), allow_off, turn_on).await?;
-            brew(ecam.clone(), skip_brew, dump_packets, beverage, recipe).await?;
+            brew(ecam.clone(), skip_brew, beverage, recipe).await?;
         }
         Some(("monitor", cmd)) => {
-            let turn_on = cmd.get_flag("turn-on");
-            let dump_packets = cmd.get_flag("dump-packets");
-            let device_name = &cmd
-                .get_one::<String>("device-name")
-                .expect("Device name required")
-                .clone();
-            let ecam = ecam_lookup(device_name).await?;
-            monitor(ecam, turn_on, dump_packets).await?;
+            let ecam = ecam(cmd).await?;
+            monitor(ecam).await?;
         }
         Some(("list", _cmd)) => {
             let (s, uuid) = ecam_scan().await?;
             longshot::info!("{}  {}", s, uuid);
         }
         Some(("list-recipes", cmd)) => {
-            let device_name = &cmd
-                .get_one::<String>("device-name")
-                .expect("Device name required")
-                .clone();
-            let ecam = ecam_lookup(device_name).await?;
+            let ecam = ecam(cmd).await?;
             list_recipes(ecam).await?;
         }
         Some(("read-parameter", cmd)) => {
-            let device_name = &cmd
-                .get_one::<String>("device-name")
-                .expect("Device name required")
-                .clone();
-            let ecam = ecam_lookup(device_name).await?;
             let parameter = cmd
                 .get_one::<String>("parameter")
                 .map(|s| s.parse::<u16>().expect("Invalid number"))
@@ -185,18 +195,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .get_one::<String>("length")
                 .map(|s| s.parse::<u8>().expect("Invalid number"))
                 .expect("Required");
+            let ecam = ecam(cmd).await?;
             read_parameter(ecam, parameter, length).await?;
         }
         Some(("x-internal-pipe", cmd)) => {
-            let device_name = &cmd
-                .get_one::<String>("device-name")
-                .expect("Device name required")
-                .clone();
+            let device_name = DeviceCommon::parse(cmd).device_name;
             if device_name == "simulate" {
                 let ecam = get_ecam_simulator().await?;
                 pipe_stdin(ecam).await?;
             } else {
-                let uuid = Uuid::parse_str(device_name).expect("Failed to parse UUID");
+                let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
                 let ecam = EcamBT::get(uuid).await?;
                 pipe_stdin(ecam).await?;
             }
