@@ -94,6 +94,7 @@ impl EcamBT {
             time::sleep(Duration::from_secs(1)).await;
             let peripherals = adapter.peripherals().await?;
             for peripheral in peripherals.into_iter() {
+                trace_packet!("Found peripheral, address = {:?}", peripheral.address());
                 if let Some(peripheral) = EcamPeripheral::validate(peripheral).await? {
                     return Ok(Some(peripheral));
                 }
@@ -198,7 +199,7 @@ impl EcamPeripheral {
     pub async fn validate(peripheral: Peripheral) -> Result<Option<Self>, EcamError> {
         let properties = peripheral.properties().await?;
         let is_connected = peripheral.is_connected().await?;
-        let properties = properties.unwrap();
+        let properties = properties.map_or(Err(EcamError::Unknown), Ok)?;
         if let Some(local_name) = properties.local_name {
             if !is_connected {
                 peripheral.connect().await?
