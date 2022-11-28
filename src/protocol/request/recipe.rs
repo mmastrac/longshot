@@ -85,3 +85,22 @@ impl PartialDecode<RecipeMinMaxInfo> for RecipeMinMaxInfo {
         panic!("Unhandled ingredient {:?}", ingredient);
     }
 }
+
+impl PartialEncode for RecipeMinMaxInfo {
+    fn partial_encode(&self, out: &mut Vec<u8>) {
+        out.push(self.ingredient.into());
+        let ingredient: Option<EcamIngredients> = self.ingredient.into();
+        if ingredient
+            .and_then(|x| x.is_wide_encoding())
+            .expect("Unknown encoding")
+        {
+            self.min.partial_encode(out);
+            self.value.partial_encode(out);
+            self.max.partial_encode(out);
+        } else {
+            (self.min as u8).partial_encode(out);
+            (self.value as u8).partial_encode(out);
+            (self.max as u8).partial_encode(out);
+        }
+    }
+}
