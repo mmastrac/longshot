@@ -2,6 +2,8 @@
 use clap::builder::{PossibleValue, PossibleValuesParser};
 use clap::{arg, command, Arg, ArgMatches};
 
+mod app;
+
 use longshot::ecam::{
     ecam_lookup, ecam_scan, get_ecam_simulator, pipe_stdin, Ecam, EcamBT, EcamError,
 };
@@ -124,7 +126,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .subcommand(
             command!("list-recipes")
                 .about("List recipes stored in the device")
-                .args(&DeviceCommon::args()),
+                .args(&DeviceCommon::args())
+                .arg(arg!(--"detail").help("Show detailed ingredient information")),
         )
         .subcommand(command!("list").about("List all supported devices"))
         .subcommand(
@@ -184,7 +187,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Some(("list-recipes", cmd)) => {
             let ecam = ecam(cmd).await?;
-            list_recipes(ecam).await?;
+            let detailed = cmd.get_flag("detail");
+            if detailed {
+                list_recipes_detailed(ecam).await?;
+            } else {
+                list_recipes(ecam).await?;
+            }
         }
         Some(("read-parameter", cmd)) => {
             let parameter = cmd
