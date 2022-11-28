@@ -21,6 +21,7 @@ impl EcamDriver for EcamSimulate {
     }
 
     fn write(&self, data: crate::protocol::EcamDriverPacket) -> AsyncFuture<()> {
+        trace_packet!("{{host->device}} {}", hexdump(&data.bytes));
         Box::pin(async move {
             if data.bytes[0] == EcamRequestId::RecipeQuantityRead as u8 {
                 // TODO: How do we get rustfmt to format this better?
