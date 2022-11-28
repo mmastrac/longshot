@@ -182,5 +182,9 @@ pub mod test {
             packetize(&from_hex_str("84 0f 02 01")),
             from_hex_str("0d 07 84 0f 02 01 55 12")
         );
+        assert_eq!(
+            packetize(&from_hex_str("75 f0")),
+            from_hex_str("0d 05 75 f0 c4 d5")
+        );
     }
 }
