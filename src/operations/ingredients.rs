@@ -296,13 +296,17 @@ pub fn check_ingredients(
     }
     for ingredient in brew.iter() {
         let key = ingredient.ingredient();
-        if let Some(range) = ranges_map.remove(&key) {
-            match check_ingredient(ingredient, range) {
-                Err(s) => range_errors.push((key, s)),
-                Ok(r) => v.push(r),
-            }
+        if mode == IngredientCheckMode::Force {
+            v.push(*ingredient)
         } else {
-            extra.push(ingredient.ingredient());
+            if let Some(range) = ranges_map.remove(&key) {
+                match check_ingredient(ingredient, range) {
+                    Err(s) => range_errors.push((key, s)),
+                    Ok(r) => v.push(r),
+                }
+            } else {
+                extra.push(ingredient.ingredient());
+            }
         }
     }
     let mut missing: Vec<_> = ranges_map.values().map(|y| **y).collect::<Vec<_>>();
@@ -311,7 +315,9 @@ pub fn check_ingredients(
             v.push(ingredient.to_default())
         }
     }
-    if extra.is_empty() && missing.is_empty() && range_errors.is_empty() {
+    if mode == IngredientCheckMode::Force
+        || (extra.is_empty() && missing.is_empty() && range_errors.is_empty())
+    {
         v.sort();
         Ok(v)
     } else {
