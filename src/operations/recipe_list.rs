@@ -1,13 +1,13 @@
 use crate::{display, prelude::*};
-use std::collections::HashMap;
-
 use crate::{
     ecam::{Ecam, EcamError},
     operations::IngredientRangeInfo,
     protocol::*,
 };
+use std::collections::HashMap;
 
 /// Accumulates recipe responses, allowing us to fetch them one-at-a-time and account for which ones went missing in transit.
+/// Note that this doesn't support profiles yet and currently requires the use of profile 1.
 pub struct RecipeAccumulator {
     recipe: HashMap<EcamBeverageId, Vec<RecipeInfo<u16>>>,
     recipe_min_max: HashMap<EcamBeverageId, Vec<RecipeMinMaxInfo>>,
@@ -48,6 +48,14 @@ impl RecipeAccumulator {
             remaining.push(*beverage);
         }
         remaining
+    }
+
+    /// Returns the [`Request`] required to fetch this beverage.
+    pub fn get_request_packets(&self, beverage: EcamBeverageId) -> Vec<Request> {
+        vec![
+            Request::RecipeMinMaxSync(beverage.into()),
+            Request::RecipeQuantityRead(1, beverage.into()),
+        ]
     }
 
     /// Is our fetch complete for this [`EcamBeverageId`].
@@ -134,6 +142,16 @@ impl RecipeAccumulator {
         }
         list
     }
+
+    pub fn get(
+        &self,
+        beverage: EcamBeverageId,
+    ) -> (Option<Vec<RecipeInfo<u16>>>, Option<Vec<RecipeMinMaxInfo>>) {
+        (
+            self.recipe.get(&beverage).map(Clone::clone),
+            self.recipe_min_max.get(&beverage).map(Clone::clone),
+        )
+    }
 }
 
 /// A completed list of [`RecipeDetails`], containing one [`RecipeDetails`] object for each valid [`EcamBeverageId`].
@@ -200,6 +218,14 @@ pub async fn list_recipies_for(
     ecam: Ecam,
     recipes: Option<Vec<EcamBeverageId>>,
 ) -> Result<RecipeList, EcamError> {
+    Ok(accumulate_recipies_for(ecam, recipes).await?.take())
+}
+
+/// Accumulates recipe min/max and ingredient info for either all recipes, or just the given ones.
+pub async fn accumulate_recipies_for(
+    ecam: Ecam,
+    recipes: Option<Vec<EcamBeverageId>>,
+) -> Result<RecipeAccumulator, EcamError> {
     // Get the tap we'll use for reading responses
     let mut tap = ecam.packet_tap().await?;
     let mut recipes = if let Some(recipes) = recipes {
@@ -218,10 +244,7 @@ pub async fn list_recipies_for(
             );
         }
         'outer: for beverage in recipes.get_remaining_beverages() {
-            'inner: for packet in vec![
-                Request::RecipeMinMaxSync(beverage.into()),
-                Request::RecipeQuantityRead(1, beverage.into()),
-            ] {
+            'inner: for packet in recipes.get_request_packets(beverage) {
                 crate::display::display_status(crate::ecam::EcamStatus::Fetching(
                     (total - recipes.get_remaining_beverages().len()) * 100 / total,
                 ));
@@ -253,7 +276,7 @@ pub async fn list_recipies_for(
         display::display_status(crate::ecam::EcamStatus::Fetching(100));
         display::clear_status();
     }
-    Ok(recipes.take())
+    Ok(recipes)
 }
 
 pub async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
@@ -263,6 +286,117 @@ pub async fn list_recipes(ecam: Ecam) -> Result<(), EcamError> {
     info!("Beverages supported:");
     for recipe in list.recipes {
         info!("  {}", recipe.to_arg_string());
+    }
+
+    Ok(())
+}
+
+fn enspacen(b: &[u8]) -> String {
+    let mut s = "".to_owned();
+    let space = "·";
+    if let Some((head, tail)) = b.split_first() {
+        s += &format!("{:02x}{}", head, space);
+        s += &match tail.len() {
+            1 => format!("{:02x}", tail[0]),
+            2 => format!("{:02x}{:02x}", tail[0], tail[1]),
+            3 => format!(
+                "{:02x}{}{:02x}{}{:02x}",
+                tail[0], space, tail[1], space, tail[2]
+            ),
+            6 => format!(
+                "{:02x}{:02x}{}{:02x}{:02x}{}{:02x}{:02x}",
+                tail[0], tail[1], space, tail[2], tail[3], space, tail[4], tail[5]
+            ),
+            _ => hex::encode(tail),
+        };
+    }
+    s
+}
+
+pub async fn list_recipes_detailed(ecam: Ecam) -> Result<(), EcamError> {
+    use ariadne::{
+        CharSet, Color, ColorGenerator, Config, Fmt, Label, Report, ReportBuilder, ReportKind,
+        Source,
+    };
+
+    // Wait for device to settle
+    ecam.wait_for_connection().await?;
+    let list = accumulate_recipies_for(ecam, None).await?;
+    for beverage in EcamBeverageId::all() {
+        let name = &format!("{:?}", beverage);
+        let (recipe, minmax) = list.get(beverage);
+        let mut s = "".to_owned();
+        let mut builder = Report::build(ReportKind::Custom("Beverage", Color::Cyan), name, 0)
+            .with_message(format!("{:?} (id 0x{:02x})", beverage, beverage as u8));
+        let len = |s: &str| s.chars().count();
+
+        // Add a chunk of labelled text
+        let add_labelled_text =
+            |builder: ReportBuilder<_>, i: usize, s: &mut String, t: &str, msg: &str| {
+                if i > 0 {
+                    *s += "•";
+                }
+                let start_len = len(&s);
+                *s += t;
+                let end_len = len(&s);
+                let label = Label::new((name, start_len..end_len))
+                    .with_message(msg)
+                    .with_order(-(i as i32))
+                    .with_color([Color::Unset, Color::Cyan][i % 2]);
+                builder.with_label(label)
+            };
+
+        // Add a note about missing data
+        let add_missing_note = |mut builder: ReportBuilder<_>, mut s: &mut String, msg| {
+            builder = add_labelled_text(builder, 0, &mut s, "", msg);
+            builder.with_note("The recipe or min/max info is not correct, which means this recipe is likely not supported")
+        };
+
+        // Print the recipe
+        if let Some(recipe) = recipe {
+            if recipe.is_empty() {
+                builder = add_missing_note(builder, &mut s, "Empty recipe");
+            }
+            for (i, recipe_info) in recipe.iter().enumerate() {
+                builder = add_labelled_text(
+                    builder,
+                    i,
+                    &mut s,
+                    &enspacen(&recipe_info.encode()),
+                    &format!("{:?}={}", recipe_info.ingredient, recipe_info.value),
+                );
+            }
+        } else {
+            builder = add_missing_note(builder, &mut s, "Missing recipe");
+        }
+        s += "\n";
+
+        // Print the min/max info
+        if let Some(minmax) = minmax {
+            if minmax.is_empty() {
+                builder = add_missing_note(builder, &mut s, "Empty min/max");
+            }
+            for (i, minmax_info) in minmax.iter().enumerate() {
+                builder = add_labelled_text(
+                    builder,
+                    i,
+                    &mut s,
+                    &enspacen(&minmax_info.encode()),
+                    &format!(
+                        "{:?}: {}<={}<={}",
+                        minmax_info.ingredient, minmax_info.min, minmax_info.value, minmax_info.max
+                    ),
+                );
+            }
+        } else {
+            builder = add_missing_note(builder, &mut s, "Missing min/max");
+        }
+        s += "\n";
+
+        builder
+            .with_config(Config::default().with_underlines(true))
+            .finish()
+            .print((name, Source::from(s)))?;
     }
 
     Ok(())
