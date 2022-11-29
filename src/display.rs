@@ -92,14 +92,22 @@ trait StatusDisplay: Send + Sync {
 
 /// [`StatusDisplay`] for basic terminals, or non-TTY stdio.
 #[derive(Default)]
-struct NoTtyStatusDisplay {}
+struct NoTtyStatusDisplay {
+    last_state: Option<EcamStatus>
+}
 
 impl StatusDisplay for NoTtyStatusDisplay {
     fn display(&mut self, state: EcamStatus) {
+        if self.last_state == Some(state) {
+            return;
+        }
         println!("{:?}", state);
+        self.last_state = Some(state);
     }
 
-    fn clear_status(&mut self) {}
+    fn clear_status(&mut self) {
+        self.last_state = None;
+    }
 
     fn log(&mut self, level: LogLevel, s: &str) {
         if level == LogLevel::Info {
