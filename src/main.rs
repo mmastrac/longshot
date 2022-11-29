@@ -54,7 +54,10 @@ impl DeviceCommon {
 async fn ecam(cmd: &ArgMatches) -> Result<Ecam, EcamError> {
     let device_common = DeviceCommon::parse(cmd);
     let ecam = ecam_lookup(&device_common.device_name, device_common.dump_packets).await?;
-    power_on(ecam.clone(), device_common.allow_off, device_common.turn_on).await?;
+    if !power_on(ecam.clone(), device_common.allow_off, device_common.turn_on).await? {
+        longshot::display::shutdown();
+        std::process::exit(1);
+    }
     Ok(ecam)
 }
 

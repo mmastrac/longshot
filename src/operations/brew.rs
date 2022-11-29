@@ -2,7 +2,7 @@ use crate::{prelude::*, display};
 use crate::{
     ecam::{Ecam, EcamError, EcamStatus},
     operations::{
-        check_ingredients, list_recipies_for, monitor, BrewIngredientInfo, IngredientCheckError,
+        check_ingredients, list_recipies_for, BrewIngredientInfo, IngredientCheckError,
         IngredientCheckMode,
     },
     protocol::*,

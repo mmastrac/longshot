@@ -8,7 +8,8 @@ pub async fn power_on(ecam: Ecam, allow_off: bool, turn_on: bool) -> Result<bool
         EcamStatus::Ready => {}
         EcamStatus::StandBy => {
             if allow_off {
-                info!("Machine is off, but --allow-off will allow us to proceed")
+                info!("Machine is off, but --allow-off will allow us to proceed");
+                return Ok(true);
             } else if !turn_on {
                 info!("Machine is not on, pass --turn-on to turn it on before operation");
             } else {
@@ -17,8 +18,8 @@ pub async fn power_on(ecam: Ecam, allow_off: bool, turn_on: bool) -> Result<bool
                     .await?;
                 ecam.wait_for_state(EcamStatus::Ready, display::display_status)
                     .await?;
-                return Ok(true);
-            }
+                    return Ok(true);
+                }
         }
         s => {
             info!(
