@@ -125,51 +125,22 @@ impl EcamDriver for EcamSimulate {
         trace_packet!("{{host->device}} {}", hexdump(&data.bytes));
         Box::pin(async move {
             if data.bytes[0] == EcamRequestId::RecipeQuantityRead as u8 {
-                let beverage = data.bytes[3].try_into();
-                if let Ok(beverage) = beverage {
+                let mut packet = vec![data.bytes[0], 0xf0, 1, data.bytes[3]];
+                if let Ok(beverage) = data.bytes[3].try_into() {
                     if let Some((recipe, _)) = get_recipes(beverage) {
-                        let packet = [
-                            vec![
-                                EcamRequestId::RecipeQuantityRead as u8,
-                                0xf0,
-                                1,
-                                beverage as u8,
-                            ],
-                            recipe,
-                        ]
-                        .concat();
-                        self.tx
-                            .lock()
-                            .await
-                            .send(EcamDriverOutput::Packet(EcamDriverPacket::from_slice(
-                                &packet,
-                            )))
-                            .await
-                            .map_err(eat_errors_with_warning)?;
-                        trace_packet!("response {:?} -> {:?}", data.bytes, packet);
+                        packet = [packet, recipe].concat();
                     }
                 }
+                send(&*self.tx.lock().await, packet).await?;
             }
             if data.bytes[0] == EcamRequestId::RecipeMinMaxSync as u8 {
-                let beverage = data.bytes[2].try_into();
-                if let Ok(beverage) = beverage {
+                let mut packet = vec![data.bytes[0], 0xf0, data.bytes[2]];
+                if let Ok(beverage) = data.bytes[2].try_into() {
                     if let Some((_, minmax)) = get_recipes(beverage) {
-                        let packet = [
-                            vec![EcamRequestId::RecipeMinMaxSync as u8, 0xf0, beverage as u8],
-                            minmax,
-                        ]
-                        .concat();
-                        self.tx
-                            .lock()
-                            .await
-                            .send(EcamDriverOutput::Packet(EcamDriverPacket::from_slice(
-                                &packet,
-                            )))
-                            .await
-                            .map_err(eat_errors_with_warning)?;
-                        trace_packet!("response {:?} -> {:?}", data.bytes, packet);
+                        packet = [packet, minmax].concat();
                     }
                 }
+                send(&*self.tx.lock().await, packet).await?;
             }
             Ok(())
         })
@@ -225,30 +196,34 @@ async fn send(
     send_output(tx, EcamDriverOutput::Packet(EcamDriverPacket::from_vec(v))).await
 }
 
-pub async fn get_ecam_simulator() -> Result<impl EcamDriver, EcamError> {
+pub async fn get_ecam_simulator(simulator: &str) -> Result<impl EcamDriver, EcamError> {
     let (tx, rx) = tokio::sync::mpsc::channel(1);
     const DELAY: Duration = Duration::from_millis(250);
     send_output(&tx, EcamDriverOutput::Ready).await?;
     let tx_out = tx.clone();
+    let on = simulator.ends_with("[on]");
+    trace_packet!("Initializing simulator: {}", simulator);
     tokio::spawn(async move {
-        // Start in standby
-        for _ in 0..5 {
-            send(
-                &tx,
-                make_simulated_response(EcamMachineState::StandBy, 0, 0),
-            )
-            .await?;
-            tokio::time::sleep(DELAY).await;
-        }
+        if !on {
+            // Start in standby
+            for _ in 0..5 {
+                send(
+                    &tx,
+                    make_simulated_response(EcamMachineState::StandBy, 0, 0),
+                )
+                .await?;
+                tokio::time::sleep(DELAY).await;
+            }
 
-        // Turning on
-        for i in 0..5 {
-            send(
-                &tx,
-                make_simulated_response(EcamMachineState::TurningOn, 0, i * 20),
-            )
-            .await?;
-            tokio::time::sleep(DELAY).await;
+            // Turning on
+            for i in 0..5 {
+                send(
+                    &tx,
+                    make_simulated_response(EcamMachineState::TurningOn, 0, i * 20),
+                )
+                .await?;
+                tokio::time::sleep(DELAY).await;
+            }
         }
 
         // Ready

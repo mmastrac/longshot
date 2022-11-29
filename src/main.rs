@@ -215,8 +215,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Some(("x-internal-pipe", cmd)) => {
             let device_name = DeviceCommon::parse(cmd).device_name;
-            if device_name == "simulate" {
-                let ecam = get_ecam_simulator().await?;
+            if device_name.starts_with("sim") {
+                let ecam = get_ecam_simulator(&device_name).await?;
                 pipe_stdin(ecam).await?;
             } else {
                 let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");

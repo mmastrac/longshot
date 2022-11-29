@@ -1,4 +1,4 @@
-use crate::{prelude::*, display};
+use crate::{display, prelude::*};
 use crate::{
     ecam::{Ecam, EcamError, EcamStatus},
     operations::{
@@ -80,13 +80,18 @@ pub async fn brew(
     }
 
     // Wait for not ready
-    ecam.wait_for_not_state(EcamStatus::Ready, display::display_status).await?;
+    ecam.wait_for_not_state(EcamStatus::Ready, display::display_status)
+        .await?;
 
     // Wait for not busy
-    ecam.wait_for(|m| match EcamStatus::extract(m) {
-        EcamStatus::Busy(_) => { false },
-        _ => { true } 
-    }, display::display_status).await?;
+    ecam.wait_for(
+        |m| match EcamStatus::extract(m) {
+            EcamStatus::Busy(_) => false,
+            _ => true,
+        },
+        display::display_status,
+    )
+    .await?;
 
     display::log(display::LogLevel::Info, "Completed");
 

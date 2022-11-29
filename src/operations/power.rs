@@ -5,7 +5,9 @@ use crate::protocol::*;
 
 pub async fn power_on(ecam: Ecam, allow_off: bool, turn_on: bool) -> Result<bool, EcamError> {
     match ecam.current_state().await? {
-        EcamStatus::Ready => {}
+        EcamStatus::Ready => {
+            return Ok(true);
+        }
         EcamStatus::StandBy => {
             if allow_off {
                 info!("Machine is off, but --allow-off will allow us to proceed");
@@ -18,8 +20,8 @@ pub async fn power_on(ecam: Ecam, allow_off: bool, turn_on: bool) -> Result<bool
                     .await?;
                 ecam.wait_for_state(EcamStatus::Ready, display::display_status)
                     .await?;
-                    return Ok(true);
-                }
+                return Ok(true);
+            }
         }
         s => {
             info!(
