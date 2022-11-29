@@ -127,7 +127,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             command!("list-recipes")
                 .about("List recipes stored in the device")
                 .args(&DeviceCommon::args())
-                .arg(arg!(--"detail").help("Show detailed ingredient information")),
+                .arg(arg!(--"detail").help("Show detailed ingredient information"))
+                .arg(arg!(--"raw").help("Show raw ingredient information")),
         )
         .subcommand(command!("list").about("List all supported devices"))
         .subcommand(
@@ -188,8 +189,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(("list-recipes", cmd)) => {
             let ecam = ecam(cmd).await?;
             let detailed = cmd.get_flag("detail");
+            let raw = cmd.get_flag("raw");
             if detailed {
                 list_recipes_detailed(ecam).await?;
+            } else if raw {
+                list_recipes_raw(ecam).await?;
             } else {
                 list_recipes(ecam).await?;
             }

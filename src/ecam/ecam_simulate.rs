@@ -3,13 +3,114 @@ use tokio::sync::Mutex;
 use crate::ecam::{EcamDriver, EcamDriverOutput, EcamError};
 use crate::prelude::*;
 use crate::protocol::{
-    hexdump, EcamAccessory, EcamDriverPacket, EcamMachineState, EcamMachineSwitch, EcamRequestId,
-    MonitorV2Response, PartialEncode, SwitchSet,
+    hexdump, EcamAccessory, EcamBeverageId, EcamDriverPacket, EcamMachineState, EcamMachineSwitch,
+    EcamRequestId, MonitorV2Response, PartialEncode, SwitchSet,
 };
 
 struct EcamSimulate {
     rx: Mutex<tokio::sync::mpsc::Receiver<EcamDriverOutput>>,
     tx: Mutex<tokio::sync::mpsc::Sender<EcamDriverOutput>>,
+}
+
+/// These are the recipes the simulator will make
+fn get_recipes(beverage: EcamBeverageId) -> Option<(Vec<u8>, Vec<u8>)> {
+    use EcamBeverageId::*;
+
+    let (recipe, minmax) = match beverage {
+        EspressoCoffee => (
+            "010028020308001b041901",
+            "010014002800b4020003050800000118010101190101011b0004041c000000",
+        ),
+        RegularCoffee => (
+            "0100b402031b041901",
+            "01006400b400f00200030518010101190101011b0004041c000000",
+        ),
+        LongCoffee => (
+            "0100fa02051b041901",
+            "01007300a000fa0200030518010101190101011b0004041c000000",
+        ),
+        EspressoCoffee2X => (
+            "010050020308001b041901",
+            "01002800500168020003050801010118000000190101011b0004041c000000",
+        ),
+        DoppioPlus => (
+            "01007802011b041901",
+            "010050007800b40200010118010101190101011b0004041c000000",
+        ),
+        Cappuccino => (
+            "0100410900be02030c001b0419011c02",
+            "010014004100b409003c00be03840200030518010101190101010c0000001c0002001b000404",
+        ),
+        LatteMacchiato => (
+            "01003c0900dc02030c001b0419011c02",
+            "010014003c00b409003c00dc03840200030518010101190101010c0000001c0002001b000404",
+        ),
+        CaffeLatte => (
+            "01003c0901f402030c001b0419011c02",
+            "010014003c00b409003201f403840200030518010101190101010c0000001c0002001b000404",
+        ),
+        FlatWhite => (
+            "01003c0901f402030c001b0419011c02",
+            "010014003c00b409003c01f403840200030518010101190101010c0000001c0002001b000404",
+        ),
+        EspressoMacchiato => (
+            "01001e09003c02030c001b0419011c02",
+            "010014001e00b409003c003c03840200030518010101190101010c0000001c0002001b000404",
+        ),
+        HotMilk => (
+            "0901c21c021b041901",
+            "09003c01c2038418010101190101011c0002001b000404",
+        ),
+        CappuccinoDoppioPlus => (
+            "0100780900be02010c001b0419011c02",
+            "010050007800b409003c00be03840200010118010101190101010c0000001c0002001b000404",
+        ),
+        CappuccinoReverse => (
+            "0100410900be02030c011b0419011c02",
+            "010014004100b409003c00be03840200030518010101190101010c0101011c0002001b000404",
+        ),
+        HotWater => ("0f00fa19011c01", "0f001400fa01a418010101190101011c000100"),
+        CoffeePot => (
+            "0100fa02030f00001b041901",
+            "0100fa00fa00fa18000000020003050f000000000000190101011b000404",
+        ),
+        Cortado => (
+            "01006402000f00001b041901",
+            "010028006400f018010101020003050f000000000000190101011b000404",
+        ),
+        Custom01 => (
+            "0100b409000002050c001c001b041901",
+            "010014005000b409003200a003840200030518010101190000000c0000011c0000001b000404",
+        ),
+        Custom02 => (
+            "01002809000002050c001c001b041901",
+            "010014005000b409003200a003840200030518010101190000000c0000011c0000001b000404",
+        ),
+        Custom03 => (
+            "01000009000002030c001c001b041900",
+            "010014005000b409003200a003840200030518010101190000000c0000011c0000001b000404",
+        ),
+        Custom04 => (
+            "0100500900a002030c001c001b041900",
+            "010014005000b409003200a003840200030518010101190000000c0000011c0000001b000404",
+        ),
+        Custom05 => (
+            "0100500900a002030c001c001b041900",
+            "010014005000b409003200a003840200030518010101190000000c0000011c0000001b000404",
+        ),
+        Custom06 => (
+            "0100500900a002030c001c001b041900",
+            "010014005000b409003200a003840200030518010101190000000c0000011c0000001b000404",
+        ),
+        _ => {
+            return None;
+        }
+    };
+
+    Some((
+        hex::decode(recipe).expect("Failed to decode constant"),
+        hex::decode(minmax).expect("Failed to decode constant"),
+    ))
 }
 
 impl EcamDriver for EcamSimulate {
@@ -24,81 +125,38 @@ impl EcamDriver for EcamSimulate {
         trace_packet!("{{host->device}} {}", hexdump(&data.bytes));
         Box::pin(async move {
             if data.bytes[0] == EcamRequestId::RecipeQuantityRead as u8 {
-                // TODO: How do we get rustfmt to format this better?
-                let packet = &[
-                    166,
-                    240,
-                    1,
-                    data.bytes[3],
-                    1,
-                    0,
-                    40,
-                    2,
-                    3,
-                    8,
-                    0,
-                    27,
-                    4,
-                    25,
-                    1,
-                ];
-                self.tx
-                    .lock()
-                    .await
-                    .send(EcamDriverOutput::Packet(EcamDriverPacket::from_slice(
-                        packet,
-                    )))
-                    .await
-                    .map_err(eat_errors_with_warning)?;
-                trace_packet!("response {:?} -> {:?}", data.bytes, packet);
+                let beverage = data.bytes[3].try_into();
+                if let Ok(beverage) = beverage {
+                    if let Some((recipe, _)) = get_recipes(beverage) {
+                        let packet = [vec![EcamRequestId::RecipeQuantityRead as u8, 0xf0, 1, beverage as u8], recipe].concat();
+                        self.tx
+                            .lock()
+                            .await
+                            .send(EcamDriverOutput::Packet(EcamDriverPacket::from_slice(
+                                &packet,
+                            )))
+                            .await
+                            .map_err(eat_errors_with_warning)?;
+                        trace_packet!("response {:?} -> {:?}", data.bytes, packet);
+                    }
+                }
             }
             if data.bytes[0] == EcamRequestId::RecipeMinMaxSync as u8 {
-                // TODO: How do we get rustfmt to format this better?
-                let packet = &[
-                    176,
-                    240,
-                    data.bytes[2],
-                    1,
-                    0,
-                    20,
-                    0,
-                    40,
-                    0,
-                    180,
-                    2,
-                    0,
-                    3,
-                    5,
-                    8,
-                    0,
-                    0,
-                    1,
-                    24,
-                    1,
-                    1,
-                    1,
-                    25,
-                    1,
-                    1,
-                    1,
-                    27,
-                    0,
-                    4,
-                    4,
-                    28,
-                    0,
-                    0,
-                    0,
-                ];
-                self.tx
-                    .lock()
-                    .await
-                    .send(EcamDriverOutput::Packet(EcamDriverPacket::from_slice(
-                        packet,
-                    )))
-                    .await
-                    .map_err(eat_errors_with_warning)?;
-                trace_packet!("response {:?} {:?}", data.bytes, packet);
+                let beverage = data.bytes[2].try_into();
+                if let Ok(beverage) = beverage {
+                    if let Some((_, minmax)) = get_recipes(beverage) {
+                        let packet = [vec![EcamRequestId::RecipeMinMaxSync as u8, 0xf0, beverage as u8], minmax].concat();
+                        self.tx
+                            .lock()
+                            .await
+                            .send(EcamDriverOutput::Packet(EcamDriverPacket::from_slice(
+                                &packet,
+                            )))
+                            .await
+                            .map_err(eat_errors_with_warning)?;
+                        trace_packet!("response {:?} -> {:?}", data.bytes, packet);
+                    }
+                }
             }
             Ok(())
         })

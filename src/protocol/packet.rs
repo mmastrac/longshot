@@ -109,11 +109,14 @@ where
 }
 
 fn packetize(buffer: &[u8]) -> Vec<u8> {
-    let mut out: Vec<u8> = vec![
-        0x0d,
-        (buffer.len() + 3).try_into().expect("Packet too large"),
-    ];
-    out.extend_from_slice(buffer);
+    let mut out = [
+        &[
+            0x0d,
+            (buffer.len() + 3).try_into().expect("Packet too large"),
+        ],
+        buffer,
+    ]
+    .concat();
     out.extend_from_slice(&checksum(&out));
     out
 }

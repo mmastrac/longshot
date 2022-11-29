@@ -42,7 +42,7 @@
 //! # use longshot::{ecam::*, protocol::*};
 //! # let _ = async {
 //! # let device_name = "00000000-0000-0000-0000-000000000000";
-//! let ecam = ecam_lookup(device_name).await?;
+//! let ecam = ecam_lookup(device_name, false).await?;
 //! let req = Request::BeverageDispensingMode(
 //!     EcamBeverageId::LongCoffee.into(),
 //!     EcamOperationTrigger::Start.into(),

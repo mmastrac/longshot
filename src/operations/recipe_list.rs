@@ -1,3 +1,5 @@
+use colored::Colorize;
+
 use crate::{display, prelude::*};
 use crate::{
     ecam::{Ecam, EcamError},
@@ -314,10 +316,8 @@ fn enspacen(b: &[u8]) -> String {
 }
 
 pub async fn list_recipes_detailed(ecam: Ecam) -> Result<(), EcamError> {
-    use ariadne::{
-        CharSet, Color, ColorGenerator, Config, Fmt, Label, Report, ReportBuilder, ReportKind,
-        Source,
-    };
+    use ariadne::{Color, Config, Label, Report, ReportBuilder, ReportKind, Source};
+    const LINE_LIMIT: usize = 100;
 
     // Wait for device to settle
     ecam.wait_for_connection().await?;
@@ -334,7 +334,11 @@ pub async fn list_recipes_detailed(ecam: Ecam) -> Result<(), EcamError> {
         let add_labelled_text =
             |builder: ReportBuilder<_>, i: usize, s: &mut String, t: &str, msg: &str| {
                 if i > 0 {
-                    *s += "•";
+                    if s.rfind("\n").unwrap_or_default() + LINE_LIMIT < s.len() {
+                        *s += "•\n↳ ";
+                    } else {
+                        *s += "•";
+                    }
                 }
                 let start_len = len(&s);
                 *s += t;
@@ -398,6 +402,42 @@ pub async fn list_recipes_detailed(ecam: Ecam) -> Result<(), EcamError> {
             .finish()
             .print((name, Source::from(s)))?;
     }
+
+    Ok(())
+}
+
+pub async fn list_recipes_raw(ecam: Ecam) -> Result<(), EcamError> {
+    // Wait for device to settle
+    ecam.wait_for_connection().await?;
+    let list = accumulate_recipies_for(ecam, None).await?;
+    let mut s = "".to_owned();
+
+    for beverage in EcamBeverageId::all() {
+        if !list.is_complete(beverage) {
+            continue;
+        }
+
+        s += &format!("# {:?} (id=0x{:02x})\n", beverage, beverage as u8);
+        let (recipe, minmax) = list.get(beverage);
+
+        // Print the recipe
+        if let Some(recipe) = recipe {
+            for (i, recipe_info) in recipe.iter().enumerate() {
+                s += &hex::encode(&recipe_info.encode());
+            }
+        }
+        s += "\n";
+
+        // Print the min/max info
+        if let Some(minmax) = minmax {
+            for (i, minmax_info) in minmax.iter().enumerate() {
+                s += &hex::encode(&minmax_info.encode());
+            }
+        }
+        s += "\n";
+    }
+
+    println!("{}", s);
 
     Ok(())
 }
