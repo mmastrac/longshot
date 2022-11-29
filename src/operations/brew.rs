@@ -1,6 +1,6 @@
-use crate::prelude::*;
+use crate::{prelude::*, display};
 use crate::{
-    ecam::{Ecam, EcamError},
+    ecam::{Ecam, EcamError, EcamStatus},
     operations::{
         check_ingredients, list_recipies_for, monitor, BrewIngredientInfo, IngredientCheckError,
         IngredientCheckMode,
@@ -78,7 +78,17 @@ pub async fn brew(
     } else {
         ecam.write_request(req).await?;
     }
-    monitor(ecam).await?;
+
+    // Wait for not ready
+    ecam.wait_for_not_state(EcamStatus::Ready, display::display_status).await?;
+
+    // Wait for not busy
+    ecam.wait_for(|m| match EcamStatus::extract(m) {
+        EcamStatus::Busy(_) => { false },
+        _ => { true } 
+    }, display::display_status).await?;
+
+    display::log(display::LogLevel::Info, "Completed");
 
     Ok(())
 }

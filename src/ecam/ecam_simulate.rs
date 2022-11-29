@@ -128,7 +128,16 @@ impl EcamDriver for EcamSimulate {
                 let beverage = data.bytes[3].try_into();
                 if let Ok(beverage) = beverage {
                     if let Some((recipe, _)) = get_recipes(beverage) {
-                        let packet = [vec![EcamRequestId::RecipeQuantityRead as u8, 0xf0, 1, beverage as u8], recipe].concat();
+                        let packet = [
+                            vec![
+                                EcamRequestId::RecipeQuantityRead as u8,
+                                0xf0,
+                                1,
+                                beverage as u8,
+                            ],
+                            recipe,
+                        ]
+                        .concat();
                         self.tx
                             .lock()
                             .await
@@ -145,7 +154,11 @@ impl EcamDriver for EcamSimulate {
                 let beverage = data.bytes[2].try_into();
                 if let Ok(beverage) = beverage {
                     if let Some((_, minmax)) = get_recipes(beverage) {
-                        let packet = [vec![EcamRequestId::RecipeMinMaxSync as u8, 0xf0, beverage as u8], minmax].concat();
+                        let packet = [
+                            vec![EcamRequestId::RecipeMinMaxSync as u8, 0xf0, beverage as u8],
+                            minmax,
+                        ]
+                        .concat();
                         self.tx
                             .lock()
                             .await

@@ -54,6 +54,10 @@ pub fn clear_status() {
     }
 }
 
+pub fn shutdown() {
+    println!();
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LogLevel {
     Trace,
@@ -93,7 +97,7 @@ trait StatusDisplay: Send + Sync {
 /// [`StatusDisplay`] for basic terminals, or non-TTY stdio.
 #[derive(Default)]
 struct NoTtyStatusDisplay {
-    last_state: Option<EcamStatus>
+    last_state: Option<EcamStatus>,
 }
 
 impl StatusDisplay for NoTtyStatusDisplay {

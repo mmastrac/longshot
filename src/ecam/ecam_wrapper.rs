@@ -60,7 +60,7 @@ impl From<EcamOutput> for EcamDriverOutput {
 }
 
 impl EcamStatus {
-    fn extract(state: &MonitorV2Response) -> EcamStatus {
+    pub fn extract(state: &MonitorV2Response) -> EcamStatus {
         if state.state == EcamMachineState::TurningOn {
             return EcamStatus::TurningOn(state.percentage as usize);
         }
@@ -313,6 +313,24 @@ impl Ecam {
         state: EcamStatus,
         monitor: fn(EcamStatus) -> (),
     ) -> Result<(), EcamError> {
+        self.wait_for(|status| state.matches(status), monitor).await
+    }
+
+    /// Blocks until the device state is not in the undesired state.
+    pub async fn wait_for_not_state(
+        &self,
+        state: EcamStatus,
+        monitor: fn(EcamStatus) -> (),
+    ) -> Result<(), EcamError> {
+        self.wait_for(|status| !state.matches(status), monitor)
+            .await
+    }
+
+    /// Blocks until the state test function returns true.
+    pub async fn wait_for<F>(&self, f: F, monitor: fn(EcamStatus) -> ()) -> Result<(), EcamError>
+    where
+        F: Fn(&MonitorV2Response) -> bool,
+    {
         let alive = self.alive.clone();
         let mut internals = self.internals.lock().await;
         let mut rx = internals.last_status.clone();
@@ -321,7 +339,7 @@ impl Ecam {
         while alive.is_alive() {
             if let Some(test) = rx.borrow().as_ref() {
                 monitor(EcamStatus::extract(test));
-                if state.matches(test) {
+                if f(test) {
                     drop(status_interest);
                     return Ok(());
                 }

@@ -1,5 +1,3 @@
-use colored::Colorize;
-
 use crate::{display, prelude::*};
 use crate::{
     ecam::{Ecam, EcamError},
