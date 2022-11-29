@@ -27,6 +27,7 @@ lazy_static = "1.4.0"
 atty = "0.2.14"
 itertools = "0.10.5"
 ariadne = "0.1.5"
+crc = "3.0.0"
 axum = { version = "0.5.17", features = ["ws"] }
 serde = "1.0.147"
 serde_json = "1.0.87"
