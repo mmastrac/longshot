@@ -377,8 +377,8 @@ mod test {
 
     /// Basic espresso, just coffee.
     const ESPRESSO_RECIPE: [IngredientRangeInfo; 1] = [IngredientRangeInfo::Coffee(0, 100, 250)];
-    /// Cappucino with coffee and milk.
-    const CAPPUCINO_RECIPE: [IngredientRangeInfo; 3] = [
+    /// CAPPUCCINO with coffee and milk.
+    const CAPPUCCINO_RECIPE: [IngredientRangeInfo; 3] = [
         IngredientRangeInfo::Coffee(0, 100, 250),
         IngredientRangeInfo::Milk(0, 50, 750),
         IngredientRangeInfo::Taste(EcamBeverageTaste::Normal),
@@ -454,8 +454,8 @@ mod test {
     #[case(&ESPRESSO_RECIPE, "milk 100", Err(("coffee", "milk", "")))]
     #[case(&ESPRESSO_RECIPE, "coffee 100 milk 100", Err(("", "milk", "")))]
     #[case(&ESPRESSO_RECIPE, "coffee 1000 milk 100", Err(("", "milk", "coffee")))]
-    #[case(&CAPPUCINO_RECIPE, "coffee 100", Err(("milk taste", "", "")))]
-    #[case(&CAPPUCINO_RECIPE, "coffee 200 milk 50 taste strong", Ok("coffee 200 milk 50 taste strong"))]
+    #[case(&CAPPUCCINO_RECIPE, "coffee 100", Err(("milk taste", "", "")))]
+    #[case(&CAPPUCCINO_RECIPE, "coffee 200 milk 50 taste strong", Ok("coffee 200 milk 50 taste strong"))]
     fn strict(
         #[case] ranges: &[IngredientRangeInfo],
         #[case] input: &str,
@@ -470,8 +470,8 @@ mod test {
     #[case(&ESPRESSO_RECIPE, "milk 100", Err(("", "milk", "")))]
     #[case(&ESPRESSO_RECIPE, "coffee 100 milk 100", Err(("", "milk", "")))]
     #[case(&ESPRESSO_RECIPE, "coffee 1000 milk 100", Err(("", "milk", "coffee")))]
-    #[case(&CAPPUCINO_RECIPE, "coffee 100", Ok("coffee 100 milk 50 taste normal"))]
-    #[case(&CAPPUCINO_RECIPE, "coffee 200 milk 50 taste strong", Ok("coffee 200 milk 50 taste strong"))]
+    #[case(&CAPPUCCINO_RECIPE, "coffee 100", Ok("coffee 100 milk 50 taste normal"))]
+    #[case(&CAPPUCCINO_RECIPE, "coffee 200 milk 50 taste strong", Ok("coffee 200 milk 50 taste strong"))]
     fn allow_defaults(
         #[case] ranges: &[IngredientRangeInfo],
         #[case] input: &str,

@@ -240,9 +240,9 @@ mod test {
 
     #[rstest]
     #[case(&crate::protocol::test::RESPONSE_BREW_RECEIVED)]
-    #[case(&crate::protocol::test::RESPONSE_STATUS_CAPPUCINO_MILK)]
-    #[case(&crate::protocol::test::RESPONSE_STATUS_READY_AFTER_CAPPUCINO)]
-    #[case(&crate::protocol::test::RESPONSE_STATUS_CLEANING_AFTER_CAPPUCINO)]
+    #[case(&crate::protocol::test::RESPONSE_STATUS_CAPPUCCINO_MILK)]
+    #[case(&crate::protocol::test::RESPONSE_STATUS_READY_AFTER_CAPPUCCINO)]
+    #[case(&crate::protocol::test::RESPONSE_STATUS_CLEANING_AFTER_CAPPUCCINO)]
     #[case(&crate::protocol::test::RESPONSE_STATUS_STANDBY_NO_ALARMS)]
     #[case(&crate::protocol::test::RESPONSE_STATUS_STANDBY_NO_WATER_TANK)]
     #[case(&crate::protocol::test::RESPONSE_STATUS_STANDBY_WATER_SPOUT)]

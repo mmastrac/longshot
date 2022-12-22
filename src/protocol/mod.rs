@@ -16,14 +16,14 @@ pub mod test {
 
     /// Packet received when a brew response is sent
     pub const RESPONSE_BREW_RECEIVED: [u8; 8] = Decoder::Hex.decode(b"d00783f0010064d9");
-    /// Packet received when pouring Cappucino milk
-    pub const RESPONSE_STATUS_CAPPUCINO_MILK: [u8; 19] =
+    /// Packet received when pouring CAPPUCCINO milk
+    pub const RESPONSE_STATUS_CAPPUCCINO_MILK: [u8; 19] =
         Decoder::Hex.decode(b"d012750f02040100400a040000000000004183");
-    /// Packet received after pouring a Cappucino but before cleaning
-    pub const RESPONSE_STATUS_READY_AFTER_CAPPUCINO: [u8; 19] =
+    /// Packet received after pouring a CAPPUCCINO but before cleaning
+    pub const RESPONSE_STATUS_READY_AFTER_CAPPUCCINO: [u8; 19] =
         Decoder::Hex.decode(b"d012750f02040100400700000000000000d621");
     /// Packet received during cleaing
-    pub const RESPONSE_STATUS_CLEANING_AFTER_CAPPUCINO: [u8; 19] =
+    pub const RESPONSE_STATUS_CLEANING_AFTER_CAPPUCCINO: [u8; 19] =
         Decoder::Hex.decode(b"d012750f04050100400c030900000000001cf0");
     /// Packet received when no alarms are present, and the water spout is removed.
     pub const RESPONSE_STATUS_STANDBY_NO_ALARMS: [u8; 19] =
