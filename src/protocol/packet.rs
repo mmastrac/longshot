@@ -1,6 +1,6 @@
-use std::fmt::Debug;
-use crc::{Crc, Algorithm};
 use crate::protocol::request::{PartialDecode, PartialEncode};
+use crc::{Algorithm, Crc};
+use std::fmt::Debug;
 
 #[derive(Clone, Eq, PartialEq)]
 /// A simple byte-based driver packet, with header, length and checksum.
@@ -88,7 +88,7 @@ impl<T> From<EcamPacket<T>> for EcamDriverPacket {
 
 pub const CRC_ALGO: Crc<u16> = Crc::<u16>::new(&crc::CRC_16_SPI_FUJITSU);
 
-/// Computes the checksum from a partial packet. Note that the checksum used here is 
+/// Computes the checksum from a partial packet. Note that the checksum used here is
 /// equivalent to the `CRC_16_SPI_FUJITSU` definition (initial 0x1d0f, poly 0x1021).
 pub fn checksum(buffer: &[u8]) -> [u8; 2] {
     let i = CRC_ALGO.checksum(buffer);

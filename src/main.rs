@@ -51,10 +51,17 @@ impl DeviceCommon {
     }
 }
 
-async fn ecam(cmd: &ArgMatches) -> Result<Ecam, EcamError> {
+async fn ecam(cmd: &ArgMatches, allow_off_and_alarms: bool) -> Result<Ecam, EcamError> {
     let device_common = DeviceCommon::parse(cmd);
     let ecam = ecam_lookup(&device_common.device_name, device_common.dump_packets).await?;
-    if !power_on(ecam.clone(), device_common.allow_off, device_common.turn_on).await? {
+    if !power_on(
+        ecam.clone(),
+        device_common.allow_off | allow_off_and_alarms,
+        allow_off_and_alarms,
+        device_common.turn_on,
+    )
+    .await?
+    {
         longshot::display::shutdown();
         std::process::exit(1);
     }
@@ -177,12 +184,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 (true, false) => IngredientCheckMode::AllowDefaults,
                 (false, false) => IngredientCheckMode::Strict,
             };
-            let ecam = ecam(cmd).await?;
+            let ecam = ecam(cmd, false).await?;
             let recipe = validate_brew(ecam.clone(), beverage, ingredients, mode).await?;
             brew(ecam.clone(), skip_brew, beverage, recipe).await?;
         }
         Some(("monitor", cmd)) => {
-            let ecam = ecam(cmd).await?;
+            let ecam = ecam(cmd, true).await?;
             monitor(ecam).await?;
         }
         Some(("list", _cmd)) => {
@@ -190,7 +197,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             longshot::info!("{}  {}", s, uuid);
         }
         Some(("list-recipes", cmd)) => {
-            let ecam = ecam(cmd).await?;
+            let ecam = ecam(cmd, true).await?;
             let detailed = cmd.get_flag("detail");
             let raw = cmd.get_flag("raw");
             if detailed {
@@ -210,7 +217,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .get_one::<String>("length")
                 .map(|s| s.parse::<u8>().expect("Invalid number"))
                 .expect("Required");
-            let ecam = ecam(cmd).await?;
+            let ecam = ecam(cmd, true).await?;
             read_parameter(ecam, parameter, length).await?;
         }
         Some(("x-internal-pipe", cmd)) => {

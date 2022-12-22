@@ -3,7 +3,12 @@ use crate::ecam::{Ecam, EcamError, EcamStatus};
 use crate::prelude::*;
 use crate::protocol::*;
 
-pub async fn power_on(ecam: Ecam, allow_off: bool, turn_on: bool) -> Result<bool, EcamError> {
+pub async fn power_on(
+    ecam: Ecam,
+    allow_off: bool,
+    allow_alarms: bool,
+    turn_on: bool,
+) -> Result<bool, EcamError> {
     match ecam.current_state().await? {
         EcamStatus::Ready => {
             return Ok(true);
@@ -24,6 +29,9 @@ pub async fn power_on(ecam: Ecam, allow_off: bool, turn_on: bool) -> Result<bool
             }
         }
         s => {
+            if allow_alarms {
+                return Ok(true);
+            }
             info!(
                 "Machine is in state {:?}, so we will cowardly refuse to brew coffee",
                 s

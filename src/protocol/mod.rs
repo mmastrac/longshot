@@ -46,4 +46,7 @@ pub mod test {
     /// Packet received while shutting down.
     pub const RESPONSE_STATUS_SHUTTING_DOWN_3: [u8; 19] =
         Decoder::Hex.decode(b"d012750f000000000002066400000000006681");
+    /// Packet received during descaling.
+    pub const RESPONSE_STATUS_DESCALING: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f010500040804040000000000001018");
 }

@@ -14,6 +14,7 @@ pub enum EcamStatus {
     Ready,
     Busy(usize),
     Cleaning(usize),
+    Descaling,
     Alarm(MachineEnum<EcamMachineAlarm>),
     Fetching(usize),
 }
@@ -80,9 +81,14 @@ impl EcamStatus {
         {
             return EcamStatus::Busy(state.percentage as usize);
         }
+        if state.state == EcamMachineState::Descaling {
+            return EcamStatus::Descaling;
+        }
         #[allow(clippy::never_loop)]
         for alarm in state.alarms.set() {
-            return EcamStatus::Alarm(alarm);
+            if alarm != MachineEnum::Value(EcamMachineAlarm::CleanKnob) {
+                return EcamStatus::Alarm(alarm);
+            }
         }
         if state.state == EcamMachineState::StandBy {
             return EcamStatus::StandBy;
