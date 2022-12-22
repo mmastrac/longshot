@@ -251,7 +251,7 @@ hardware_enum! {"The set of alarms the machine can produce.", EcamMachineAlarm {
     CoffeeWasteContainerFull = 1,
     DescaleAlarm = 2,
     ReplaceWaterFilter = 3,
-    CoffeGroundTooFine = 4,
+    CoffeeGroundTooFine = 4,
     CoffeeBeansEmpty = 5,
     MachineToService = 6,
     CoffeeHeaterProbeFailure = 7,
