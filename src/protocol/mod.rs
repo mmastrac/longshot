@@ -47,6 +47,32 @@ pub mod test {
     pub const RESPONSE_STATUS_SHUTTING_DOWN_3: [u8; 19] =
         Decoder::Hex.decode(b"d012750f000000000002066400000000006681");
     /// Packet received during descaling.
-    pub const RESPONSE_STATUS_DESCALING: [u8; 19] =
+    pub const RESPONSE_STATUS_DESCALING_A: [u8; 19] =
         Decoder::Hex.decode(b"d012750f010500040804040000000000001018");
+    pub const RESPONSE_STATUS_DESCALING_B: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f01450005080408000000000000f076");
+    pub const RESPONSE_STATUS_DESCALING_C: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f011500040804080000000000007523");
+    pub const RESPONSE_STATUS_DESCALING_D: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f01030004080409000000000000f12c");
+    pub const RESPONSE_STATUS_DESCALING_E: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f01010004080409000000000000f7c6");
+    pub const RESPONSE_STATUS_DESCALING_F: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f01050004080409000000000000fa12");
+    pub const RESPONSE_STATUS_DESCALING_G: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f014500050804090000000000004817");
+    pub const RESPONSE_STATUS_DESCALING_H: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f014500050804070000000000007a9f");
+    pub const RESPONSE_STATUS_DESCALING_I: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f01150004080407000000000000ffca");
+    pub const RESPONSE_STATUS_DESCALING_J: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f01050004080407000000000000c89a");
+    pub const RESPONSE_STATUS_DESCALING_K: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f014d000100041100000000000073a3");
+    pub const RESPONSE_STATUS_DESCALING_L: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f01450001000411000000000000680b");
+    pub const RESPONSE_STATUS_DESCALING_M: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f01150000000109640000000000588f");
+    pub const RESPONSE_STATUS_DESCALING_N: [u8; 19] =
+        Decoder::Hex.decode(b"d012750f010500000001096400000000006fdf");
 }
