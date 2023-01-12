@@ -77,6 +77,7 @@ impl EcamStatus {
             return EcamStatus::Cleaning(state.percentage as usize);
         }
         if state.state == EcamMachineState::MilkPreparation
+            || state.state == EcamMachineState::HotWaterDelivery
             || (state.state == EcamMachineState::ReadyOrDispensing && state.progress != 0)
         {
             return EcamStatus::Busy(state.percentage as usize);
