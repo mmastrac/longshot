@@ -1,6 +1,6 @@
 use crate::{prelude::*, protocol::*};
 
-use uuid::Uuid;
+use super::EcamId;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum EcamDriverOutput {
@@ -22,7 +22,7 @@ pub trait EcamDriver: Send + Sync {
     fn alive(&self) -> AsyncFuture<bool>;
 
     /// Scan for the first matching device.
-    fn scan<'a>() -> AsyncFuture<'a, (String, Uuid)>
+    fn scan<'a>() -> AsyncFuture<'a, (String, EcamId)>
     where
         Self: Sized;
 }
@@ -72,7 +72,7 @@ mod test {
             Box::pin(async { Ok(true) })
         }
 
-        fn scan<'a>() -> crate::prelude::AsyncFuture<'a, (String, uuid::Uuid)>
+        fn scan<'a>() -> crate::prelude::AsyncFuture<'a, (String, EcamId)>
         where
             Self: Sized,
         {

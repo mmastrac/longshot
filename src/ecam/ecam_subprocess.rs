@@ -15,6 +15,8 @@ use crate::{
     protocol::*,
 };
 
+use super::EcamId;
+
 pub struct EcamSubprocess {
     stdin: Arc<Mutex<ChildStdin>>,
     receiver: EcamPacketReceiver,
@@ -51,7 +53,7 @@ impl EcamDriver for EcamSubprocess {
         Box::pin(self.is_alive())
     }
 
-    fn scan<'a>() -> AsyncFuture<'a, (String, uuid::Uuid)>
+    fn scan<'a>() -> AsyncFuture<'a, (String, EcamId)>
     where
         Self: Sized,
     {
@@ -106,12 +108,12 @@ pub async fn stream(
     Result::Ok(stdout.merge(stderr).merge(termination))
 }
 
-pub async fn connect(device_name: &str) -> Result<EcamSubprocess, EcamError> {
+pub async fn connect(id: &EcamId) -> Result<EcamSubprocess, EcamError> {
     let mut cmd = tokio::process::Command::new(std::env::current_exe()?);
     cmd.arg("--trace");
     cmd.arg("x-internal-pipe");
     cmd.arg("--device-name");
-    cmd.arg(device_name);
+    cmd.arg(id.to_string());
     cmd.stdin(Stdio::piped());
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());

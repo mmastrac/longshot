@@ -5,17 +5,16 @@ use clap::{arg, command, Arg, ArgMatches};
 mod app;
 
 use longshot::ecam::{
-    ecam_lookup, ecam_scan, get_ecam_simulator, pipe_stdin, Ecam, EcamBT, EcamError,
+    ecam_lookup, ecam_scan, get_ecam_simulator, pipe_stdin, Ecam, EcamBT, EcamError, EcamId,
 };
 use longshot::{operations::*, protocol::*};
-use uuid::Uuid;
 
 fn enum_value_parser<T: MachineEnumerable<T> + 'static>() -> PossibleValuesParser {
     PossibleValuesParser::new(T::all().map(|x| PossibleValue::new(x.to_arg_string())))
 }
 
 struct DeviceCommon {
-    device_name: String,
+    device_id: EcamId,
     dump_packets: bool,
     turn_on: bool,
     allow_off: bool,
@@ -40,10 +39,10 @@ impl DeviceCommon {
 
     fn parse(cmd: &ArgMatches) -> Self {
         Self {
-            device_name: cmd
+            device_id: cmd
                 .get_one::<String>("device-name")
                 .expect("Device name required")
-                .clone(),
+                .into(),
             dump_packets: cmd.get_flag("dump-packets"),
             turn_on: cmd.get_flag("turn-on"),
             allow_off: cmd.get_flag("allow-off"),
@@ -53,7 +52,7 @@ impl DeviceCommon {
 
 async fn ecam(cmd: &ArgMatches, allow_off_and_alarms: bool) -> Result<Ecam, EcamError> {
     let device_common = DeviceCommon::parse(cmd);
-    let ecam = ecam_lookup(&device_common.device_name, device_common.dump_packets).await?;
+    let ecam = ecam_lookup(&device_common.device_id, device_common.dump_packets).await?;
     if !power_on(
         ecam.clone(),
         device_common.allow_off | allow_off_and_alarms,
@@ -68,12 +67,8 @@ async fn ecam(cmd: &ArgMatches, allow_off_and_alarms: bool) -> Result<Ecam, Ecam
     Ok(ecam)
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    pretty_env_logger::init();
-    longshot::display::initialize_display();
-
-    let matches = command!()
+fn command() -> clap::Command {
+    command!()
         .arg(arg!(--"trace").help("Trace packets to/from device"))
         .subcommand(
             command!("brew")
@@ -130,8 +125,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             command!("read-parameter")
                 .about("Read a parameter from the device")
                 .args(&DeviceCommon::args())
-                .arg(arg!(--"parameter" <parameter>).help("The parameter ID"))
-                .arg(arg!(--"length" <length>).help("The parameter length")),
+                .arg(
+                    arg!(--"parameter" <parameter>)
+                        .required(true)
+                        .help("The parameter ID"),
+                )
+                .arg(
+                    arg!(--"length" <length>)
+                        .required(true)
+                        .help("The parameter length"),
+                ),
         )
         .subcommand(
             command!("list-recipes")
@@ -147,7 +150,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .hide(true)
                 .args(&DeviceCommon::args()),
         )
-        .get_matches();
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    pretty_env_logger::init();
+    longshot::display::initialize_display();
+
+    let matches = command().get_matches();
 
     if matches.get_flag("trace") {
         longshot::logging::enable_tracing();
@@ -220,18 +230,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let ecam = ecam(cmd, true).await?;
             read_parameter(ecam, parameter, length).await?;
         }
-        Some(("x-internal-pipe", cmd)) => {
-            let device_name = DeviceCommon::parse(cmd).device_name;
-            if device_name.starts_with("sim") {
-                let ecam = get_ecam_simulator(&device_name).await?;
-                pipe_stdin(ecam).await?;
-            } else {
-                let uuid = Uuid::parse_str(&device_name).expect("Failed to parse UUID");
-                let ecam = EcamBT::get(uuid).await?;
+        Some(("x-internal-pipe", cmd)) => match DeviceCommon::parse(cmd).device_id {
+            id @ EcamId::Simulator(..) => {
+                let ecam = get_ecam_simulator(&id).await?;
                 pipe_stdin(ecam).await?;
             }
+            id => {
+                let ecam = EcamBT::get(id).await?;
+                pipe_stdin(ecam).await?;
+            }
+        },
+        _ => {
+            command().print_help()?;
         }
-        _ => {}
     }
 
     longshot::display::shutdown();

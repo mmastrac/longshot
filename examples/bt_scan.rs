@@ -1,9 +1,7 @@
 use std::time::Duration;
 
-use btleplug::api::{
-    Central, CharPropFlags, Characteristic, Manager as _, Peripheral as _, ScanFilter,
-};
-use btleplug::platform::{Adapter, Manager, Peripheral, PeripheralId};
+use btleplug::api::{Central, Characteristic, Manager as _, Peripheral as _, ScanFilter};
+use btleplug::platform::{Manager, Peripheral};
 use uuid::Uuid;
 
 const SERVICE_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000300);

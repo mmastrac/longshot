@@ -7,6 +7,8 @@ use crate::protocol::{
     EcamRequestId, MonitorV2Response, PartialEncode, SwitchSet,
 };
 
+use super::EcamId;
+
 struct EcamSimulate {
     rx: Mutex<tokio::sync::mpsc::Receiver<EcamDriverOutput>>,
     tx: Mutex<tokio::sync::mpsc::Sender<EcamDriverOutput>>,
@@ -150,7 +152,7 @@ impl EcamDriver for EcamSimulate {
         Box::pin(async { Ok(true) })
     }
 
-    fn scan<'a>() -> AsyncFuture<'a, (String, uuid::Uuid)>
+    fn scan<'a>() -> AsyncFuture<'a, (String, EcamId)>
     where
         Self: Sized,
     {
@@ -196,7 +198,13 @@ async fn send(
     send_output(tx, EcamDriverOutput::Packet(EcamDriverPacket::from_vec(v))).await
 }
 
-pub async fn get_ecam_simulator(simulator: &str) -> Result<impl EcamDriver, EcamError> {
+pub async fn get_ecam_simulator(id: &EcamId) -> Result<impl EcamDriver, EcamError> {
+    let simulator = if let EcamId::Simulator(simulator) = id {
+        simulator
+    } else {
+        return Err(EcamError::NotFound);
+    };
+
     let (tx, rx) = tokio::sync::mpsc::channel(1);
     const DELAY: Duration = Duration::from_millis(250);
     send_output(&tx, EcamDriverOutput::Ready).await?;

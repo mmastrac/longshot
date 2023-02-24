@@ -1,17 +1,20 @@
+use std::collections::HashSet;
+
 use crate::ecam::{EcamDriver, EcamDriverOutput, EcamError, EcamPacketReceiver};
 use crate::{prelude::*, protocol::*};
 use btleplug::api::{
     Central, CharPropFlags, Characteristic, Manager as _, Peripheral as _, ScanFilter,
 };
-use btleplug::platform::{Adapter, Manager, PeripheralId};
+use btleplug::platform::{Adapter, Manager};
 use stream_cancel::{StreamExt as _, Tripwire};
 use tokio::time;
-use uuid::Uuid;
 
 use super::packet_stream::packet_stream;
+use super::EcamId;
 
-const SERVICE_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000300);
-const CHARACTERISTIC_UUID: Uuid = Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000301);
+const SERVICE_UUID: uuid::Uuid = uuid::Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000300);
+const CHARACTERISTIC_UUID: uuid::Uuid =
+    uuid::Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000301);
 
 /// The concrete peripheral type to avoid going crazy here managaing an unsized trait.
 type Peripheral = <Adapter as Central>::Peripheral;
@@ -23,13 +26,13 @@ pub struct EcamBT {
 }
 
 impl EcamBT {
-    /// Returns the given [`EcamBT`] instance identified by the [`Uuid`].
-    pub async fn get(uuid: Uuid) -> Result<Self, EcamError> {
+    /// Returns the given [`EcamBT`] instance identified by the [`EcamId`].
+    pub async fn get(id: EcamId) -> Result<Self, EcamError> {
         let manager = Manager::new().await?;
-        Self::get_ecam_from_manager(&manager, uuid).await
+        Self::get_ecam_from_manager(&manager, id).await
     }
 
-    async fn get_ecam_from_manager(manager: &Manager, uuid: Uuid) -> Result<Self, EcamError> {
+    async fn get_ecam_from_manager(manager: &Manager, id: EcamId) -> Result<Self, EcamError> {
         let adapter_list = manager.adapters().await?;
         if adapter_list.is_empty() {
             return Result::Err(EcamError::NotFound);
@@ -37,28 +40,51 @@ impl EcamBT {
 
         let (tx, mut rx) = tokio::sync::mpsc::channel(1);
         for adapter in adapter_list.into_iter() {
-            adapter.start_scan(ScanFilter::default()).await?;
+            let id = id.clone();
+            adapter
+                .start_scan(ScanFilter {
+                    services: vec![SERVICE_UUID],
+                })
+                .await?;
             let tx = tx.clone();
             let _ = tokio::spawn(async move {
-                trace_packet!("Looking for peripheral {}", uuid);
-                loop {
-                    if let Ok(peripheral) = adapter.peripheral(&PeripheralId::from(uuid)).await {
-                        trace_packet!("Got peripheral");
-                        let peripheral = EcamPeripheral::connect(peripheral).await?;
-                        trace_packet!("Connected");
-                        let notifications = EcamPacketReceiver::from_stream(
-                            Box::pin(peripheral.notifications().await?),
-                            true,
-                        );
+                trace_packet!("Looking for peripheral '{}'", id);
+                let mut invalid_peripherals = HashSet::new();
+                'outer: loop {
+                    for peripheral in adapter.peripherals().await? {
+                        let raw_id = peripheral.id();
+                        if invalid_peripherals.contains(&raw_id) {
+                            continue;
+                        }
+                        let ecam_peripheral = if let Some(ecam_peripheral) =
+                            EcamPeripheral::validate(peripheral).await?
+                        {
+                            ecam_peripheral
+                        } else {
+                            trace_packet!("Found peripheral, not a match: {:?}", raw_id);
+                            invalid_peripherals.insert(raw_id);
+                            continue;
+                        };
 
-                        // Ignore errors here -- we just want the first peripheral that connects
-                        let _ = tx
-                            .send(EcamBT {
-                                peripheral,
-                                notifications,
-                            })
-                            .await;
-                        break;
+                        if ecam_peripheral.matches(&id) {
+                            trace_packet!("Got peripheral: {:?}", ecam_peripheral.peripheral.id());
+                            let peripheral =
+                                EcamPeripheral::connect(ecam_peripheral.peripheral).await?;
+                            trace_packet!("Connected");
+                            let notifications = EcamPacketReceiver::from_stream(
+                                Box::pin(peripheral.notifications().await?),
+                                true,
+                            );
+
+                            // Ignore errors here -- we just want the first peripheral that connects
+                            let _ = tx
+                                .send(EcamBT {
+                                    peripheral,
+                                    notifications,
+                                })
+                                .await;
+                            break 'outer;
+                        }
                     }
                 }
                 Result::<_, EcamError>::Ok(())
@@ -66,24 +92,27 @@ impl EcamBT {
             .await;
         }
 
-        Ok(rx.recv().await.expect("Failed to receive anything"))
+        let ecam = rx.recv().await.expect("Failed to receive anything");
+        trace_packet!("Got ECAM!");
+        Ok(ecam)
     }
 
     /// Scans for ECAM devices.
-    async fn scan() -> Result<(String, Uuid), EcamError> {
+    async fn scan() -> Result<(String, EcamId), EcamError> {
         let manager = Manager::new().await?;
         let adapter_list = manager.adapters().await?;
         for adapter in adapter_list.into_iter() {
-            if let Ok(Some(p)) = Self::get_ecam_from_adapter(&adapter).await {
-                let id = p.id();
-                return Ok((p.local_name, id));
+            if let Ok(Some(p)) = Self::get_peripheral_matching(&adapter).await {
+                return Ok((p.local_name.clone(), EcamId::Name(p.id())));
             }
         }
         Err(EcamError::NotFound)
     }
 
     /// Searches an adapter for something that meets the definition of [`EcamPeripheral`].
-    async fn get_ecam_from_adapter(adapter: &Adapter) -> Result<Option<EcamPeripheral>, EcamError> {
+    async fn get_peripheral_matching(
+        adapter: &Adapter,
+    ) -> Result<Option<EcamPeripheral>, EcamError> {
         trace_packet!("Starting scan on {}...", adapter.adapter_info().await?);
         let filter = ScanFilter {
             services: vec![SERVICE_UUID],
@@ -118,7 +147,7 @@ impl EcamDriver for EcamBT {
         Box::pin(self.peripheral.is_alive())
     }
 
-    fn scan<'a>() -> AsyncFuture<'a, (String, Uuid)>
+    fn scan<'a>() -> AsyncFuture<'a, (String, EcamId)>
     where
         Self: Sized,
     {
@@ -135,6 +164,14 @@ struct EcamPeripheral {
 }
 
 impl EcamPeripheral {
+    pub fn matches(&self, id: &EcamId) -> bool {
+        match id {
+            EcamId::Simulator(..) => false,
+            EcamId::Any => true,
+            EcamId::Name(name) => format!("{:?}", self.peripheral.id()).contains(name),
+        }
+    }
+
     pub async fn write(&self, data: Vec<u8>) -> Result<(), EcamError> {
         trace_packet!("{{host->device}} {}", hexdump(&data));
         Result::Ok(
@@ -152,10 +189,10 @@ impl EcamPeripheral {
         Ok(self.peripheral.is_connected().await?)
     }
 
-    pub fn id(&self) -> Uuid {
-        // Icky, but we don't have a PeripheralId to UUID function
-        let uuid = format!("{:?}", self.peripheral.id())[13..49].to_owned();
-        Uuid::parse_str(&uuid).expect("failed to parse UUID from debug string")
+    pub fn id(&self) -> String {
+        let id = format!("{:?}", self.peripheral.id());
+        let id = id[13..id.len() - 1].to_owned();
+        id
     }
 
     pub async fn notifications(&self) -> Result<impl Stream<Item = EcamDriverOutput>, EcamError> {

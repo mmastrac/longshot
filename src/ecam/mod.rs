@@ -1,9 +1,10 @@
 //! Low-level communication with ECAM-based devices.
 
+use std::fmt::Display;
+
 use crate::prelude::*;
 
 use thiserror::Error;
-use uuid::Uuid;
 
 mod driver;
 mod ecam_bt;
@@ -22,12 +23,53 @@ pub use ecam_wrapper::{Ecam, EcamOutput, EcamStatus};
 pub use packet_receiver::EcamPacketReceiver;
 pub use stdin_stream::pipe_stdin;
 
-pub async fn ecam_scan() -> Result<(String, Uuid), EcamError> {
+/// Holds the device name we would like to communicate with.
+#[derive(Clone, PartialEq, Eq)]
+pub enum EcamId {
+    /// 'sim'
+    Simulator(String),
+    /// 'any'
+    Any,
+    /// Any non-wildcard string
+    Name(String),
+}
+
+impl EcamId {
+    pub fn to_string(&self) -> String {
+        format!("{}", self)
+    }
+}
+
+impl Display for EcamId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Any => f.write_fmt(format_args!("{}", "any")),
+            Self::Simulator(sim) => f.write_fmt(format_args!("{}", sim)),
+            Self::Name(name) => f.write_fmt(format_args!("{}", name)),
+        }
+    }
+}
+
+impl<S: AsRef<str>> From<S> for EcamId {
+    fn from(value: S) -> Self {
+        let value = value.as_ref();
+        if value.starts_with("sim") {
+            Self::Simulator(value.to_string())
+        } else if value == "any" {
+            Self::Any
+        } else {
+            Self::Name(value.to_string())
+        }
+    }
+}
+
+pub async fn ecam_scan() -> Result<(String, EcamId), EcamError> {
     EcamBT::scan().await
 }
 
-pub async fn ecam_lookup(device_name: &str, dump_packets: bool) -> Result<Ecam, EcamError> {
-    let driver = Box::new(get_ecam_subprocess(device_name).await?);
+pub async fn ecam_lookup(id: &EcamId, dump_packets: bool) -> Result<Ecam, EcamError> {
+    let driver = Box::new(get_ecam_subprocess(id).await?);
+    trace_packet!("Got ECAM subprocess");
     Ok(Ecam::new(driver, dump_packets).await)
 }
 
