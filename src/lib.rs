@@ -41,8 +41,8 @@
 //! ```no_run
 //! # use longshot::{ecam::*, protocol::*};
 //! # let _ = async {
-//! # let device_name = "00000000-0000-0000-0000-000000000000";
-//! let ecam = ecam_lookup(device_name, false).await?;
+//! # let device_id = EcamId::Name("00000000-0000-0000-0000-000000000000".into());
+//! let ecam = ecam_lookup(&device_id, false).await?;
 //! let req = Request::BeverageDispensingMode(
 //!     EcamBeverageId::LongCoffee.into(),
 //!     EcamOperationTrigger::Start.into(),
