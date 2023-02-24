@@ -1,5 +1,5 @@
 use crate::protocol::request::{PartialDecode, PartialEncode};
-use crc::{Crc};
+use crc::Crc;
 use std::fmt::Debug;
 
 #[derive(Clone, Eq, PartialEq)]
