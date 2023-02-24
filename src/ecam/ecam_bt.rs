@@ -172,6 +172,7 @@ impl EcamPeripheral {
         }
     }
 
+    /// Write a packet to the device. We must set "WithResponse" to get data back from the device.
     pub async fn write(&self, data: Vec<u8>) -> Result<(), EcamError> {
         trace_packet!("{{host->device}} {}", hexdump(&data));
         Result::Ok(

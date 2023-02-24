@@ -122,6 +122,11 @@ fn command() -> clap::Command {
                 .args(&DeviceCommon::args()),
         )
         .subcommand(
+            command!("status")
+                .about("Print the status of the device and then exit")
+                .args(&DeviceCommon::args()),
+        )
+        .subcommand(
             command!("read-parameter")
                 .about("Read a parameter from the device")
                 .args(&DeviceCommon::args())
@@ -201,6 +206,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(("monitor", cmd)) => {
             let ecam = ecam(cmd, true).await?;
             monitor(ecam).await?;
+        }
+        Some(("status", cmd)) => {
+            let ecam = ecam(cmd, true).await?;
+            eprintln!("Status = {:?}", ecam.current_state().await?);
         }
         Some(("list", _cmd)) => {
             let (s, uuid) = ecam_scan().await?;
