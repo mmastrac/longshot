@@ -179,7 +179,7 @@ impl EcamPeripheral {
                 .write(
                     &self.characteristic,
                     &data,
-                    btleplug::api::WriteType::WithoutResponse,
+                    btleplug::api::WriteType::WithResponse,
                 )
                 .await?,
         )
