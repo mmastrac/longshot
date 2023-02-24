@@ -34,12 +34,6 @@ pub enum EcamId {
     Name(String),
 }
 
-impl EcamId {
-    pub fn to_string(&self) -> String {
-        format!("{}", self)
-    }
-}
-
 impl Display for EcamId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

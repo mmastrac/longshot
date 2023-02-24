@@ -14,7 +14,7 @@ fn parse_line(s: &str) -> Option<EcamDriverOutput> {
     if s == "R: READY" {
         Some(EcamDriverOutput::Ready)
     } else if let Some(s) = s.strip_prefix("S: ") {
-        if let Ok(bytes) = hex::decode(&s) {
+        if let Ok(bytes) = hex::decode(s) {
             Some(EcamDriverOutput::Packet(EcamDriverPacket::from_vec(bytes)))
         } else {
             None

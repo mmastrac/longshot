@@ -20,7 +20,7 @@ pub fn initialize_display() {
         *DISPLAY
             .lock()
             .expect("Failed to lock display for initialization") =
-            Some(Box::new(NoTtyStatusDisplay::default()));
+            Some(Box::<NoTtyStatusDisplay>::default());
     } else if colorterm.is_some() {
         *DISPLAY
             .lock()

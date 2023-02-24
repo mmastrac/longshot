@@ -23,7 +23,7 @@ impl PartialDecode<RecipeInfo<u16>> for RecipeInfo<u16> {
             if known.is_wide_encoding().expect("Unknown encoding") {
                 return Some(RecipeInfo {
                     ingredient,
-                    value: <u16>::partial_decode(input)? as u16,
+                    value: <u16>::partial_decode(input)?,
                 });
             } else {
                 return Some(RecipeInfo {

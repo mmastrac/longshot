@@ -332,15 +332,15 @@ pub async fn list_recipes_detailed(ecam: Ecam) -> Result<(), EcamError> {
         let add_labelled_text =
             |builder: ReportBuilder<_>, i: usize, s: &mut String, t: &str, msg: &str| {
                 if i > 0 {
-                    if s.rfind("\n").unwrap_or_default() + LINE_LIMIT < s.len() {
+                    if s.rfind('\n').unwrap_or_default() + LINE_LIMIT < s.len() {
                         *s += "•\n↳ ";
                     } else {
                         *s += "•";
                     }
                 }
-                let start_len = len(&s);
+                let start_len = len(s);
                 *s += t;
-                let end_len = len(&s);
+                let end_len = len(s);
                 let label = Label::new((name, start_len..end_len))
                     .with_message(msg)
                     .with_order(-(i as i32))
@@ -349,8 +349,8 @@ pub async fn list_recipes_detailed(ecam: Ecam) -> Result<(), EcamError> {
             };
 
         // Add a note about missing data
-        let add_missing_note = |mut builder: ReportBuilder<_>, mut s: &mut String, msg| {
-            builder = add_labelled_text(builder, 0, &mut s, "", msg);
+        let add_missing_note = |mut builder: ReportBuilder<_>, s: &mut String, msg| {
+            builder = add_labelled_text(builder, 0, s, "", msg);
             builder.with_note("The recipe or min/max info is not correct, which means this recipe is likely not supported")
         };
 
@@ -420,16 +420,16 @@ pub async fn list_recipes_raw(ecam: Ecam) -> Result<(), EcamError> {
 
         // Print the recipe
         if let Some(recipe) = recipe {
-            for (i, recipe_info) in recipe.iter().enumerate() {
-                s += &hex::encode(&recipe_info.encode());
+            for recipe_info in recipe.iter() {
+                s += &hex::encode(recipe_info.encode());
             }
         }
         s += "\n";
 
         // Print the min/max info
         if let Some(minmax) = minmax {
-            for (i, minmax_info) in minmax.iter().enumerate() {
-                s += &hex::encode(&minmax_info.encode());
+            for minmax_info in minmax.iter() {
+                s += &hex::encode(minmax_info.encode());
             }
         }
         s += "\n";

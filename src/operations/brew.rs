@@ -85,10 +85,7 @@ pub async fn brew(
 
     // Wait for not busy
     ecam.wait_for(
-        |m| match EcamStatus::extract(m) {
-            EcamStatus::Busy(_) => false,
-            _ => true,
-        },
+        |m| !matches!(EcamStatus::extract(m), EcamStatus::Busy(_)),
         display::display_status,
     )
     .await?;

@@ -75,7 +75,7 @@ pub async fn stream(
             if s == "R: READY" {
                 yield EcamDriverOutput::Ready;
             } else if let Some(s) = s.strip_prefix("R: ") {
-                if let Ok(bytes) = hex::decode(&s) {
+                if let Ok(bytes) = hex::decode(s) {
                     yield EcamDriverOutput::Packet(EcamDriverPacket::from_vec(bytes));
                 } else {
                     trace_packet!("Failed to decode '{}'", s);

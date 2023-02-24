@@ -192,8 +192,7 @@ impl EcamPeripheral {
 
     pub fn id(&self) -> String {
         let id = format!("{:?}", self.peripheral.id());
-        let id = id[13..id.len() - 1].to_owned();
-        id
+        id[13..id.len() - 1].to_owned()
     }
 
     pub async fn notifications(&self) -> Result<impl Stream<Item = EcamDriverOutput>, EcamError> {

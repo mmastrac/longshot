@@ -39,6 +39,7 @@ async fn run_with_peripheral(
     peripheral: Peripheral,
     characteristic: Characteristic,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    eprintln!("{:?}", peripheral.id());
     eprintln!("{:?}", characteristic);
     Ok(())
 }
