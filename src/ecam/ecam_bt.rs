@@ -168,7 +168,11 @@ impl EcamPeripheral {
         match id {
             EcamId::Simulator(..) => false,
             EcamId::Any => true,
-            EcamId::Name(name) => format!("{:?}", self.peripheral.id()).contains(name),
+            EcamId::Name(name) => {
+                let name = name.to_lowercase();
+                let btaddr = self.peripheral.address().to_string().to_lowercase();
+                btaddr.contains(&name) || format!("{:?}", self.peripheral.id()).contains(&name)
+            }
         }
     }
 
@@ -190,6 +194,12 @@ impl EcamPeripheral {
         Ok(self.peripheral.is_connected().await?)
     }
 
+    #[cfg(not(target_os = "macos"))]
+    pub fn id(&self) -> String {
+        self.peripheral.address().to_string()
+    }
+
+    #[cfg(target_os = "macos")]
     pub fn id(&self) -> String {
         let id = format!("{:?}", self.peripheral.id());
         id[13..id.len() - 1].to_owned()
