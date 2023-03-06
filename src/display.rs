@@ -22,12 +22,12 @@ static DISPLAY: SharedGlobalMut<Box<dyn StatusDisplay>> = SharedGlobalMut::new_l
 
 /// Displays the [`EcamStatus`] according to the current mode.
 pub fn display_status(state: EcamStatus) {
-    DISPLAY.shared_mut().write().display(state)
+    DISPLAY.write().display(state)
 }
 
 /// Clears the currently displayed status.
 pub fn clear_status() {
-    DISPLAY.shared_mut().write().clear_status()
+    DISPLAY.write().clear_status()
 }
 
 pub fn shutdown() {
@@ -55,7 +55,7 @@ impl LogLevel {
 
 /// Logs the [`EcamStatus`] according to the current mode.
 pub fn log(level: LogLevel, s: &str) {
-    DISPLAY.shared_mut().write().log(level, s)
+    DISPLAY.write().log(level, s)
 }
 
 trait StatusDisplay: Send {
