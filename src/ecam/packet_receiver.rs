@@ -1,11 +1,12 @@
 use crate::prelude::*;
-use tokio::sync::{mpsc::Receiver, Mutex};
+use keepcalm::SharedMut;
+use tokio::sync::{mpsc::Receiver};
 
 use crate::ecam::{EcamDriverOutput, EcamError};
 
 /// Converts a stream into something that can be more easily awaited.
 pub struct EcamPacketReceiver {
-    rx: Arc<Mutex<Pin<Box<Receiver<EcamDriverOutput>>>>>,
+    rx: SharedMut<Receiver<EcamDriverOutput>>,
 }
 
 impl EcamPacketReceiver {
@@ -32,11 +33,11 @@ impl EcamPacketReceiver {
         });
 
         EcamPacketReceiver {
-            rx: Arc::new(Mutex::new(Box::pin(rx))),
+            rx: SharedMut::new(rx),
         }
     }
 
     pub async fn recv(&self) -> Result<Option<EcamDriverOutput>, EcamError> {
-        Ok(self.rx.lock().await.recv().await)
+        Ok(self.rx.write().recv().await)
     }
 }
