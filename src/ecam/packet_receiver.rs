@@ -4,7 +4,8 @@ use tokio::sync::{mpsc::Receiver};
 
 use crate::ecam::{EcamDriverOutput, EcamError};
 
-/// Converts a stream into something that can be more easily awaited.
+/// Converts a stream into something that can be more easily awaited. In addition, it can optionally add
+/// [`EcamDriverOutput::Ready`] and [`EcamDriverOutput::Done`] packets to the start and end of the stream.
 pub struct EcamPacketReceiver {
     rx: SharedMut<Receiver<EcamDriverOutput>>,
 }
