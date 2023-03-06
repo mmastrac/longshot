@@ -707,7 +707,6 @@ dependencies = [
  "hex",
  "itertools",
  "keepcalm",
- "lazy_static",
  "num_enum",
  "pretty_env_logger",
  "rstest",
