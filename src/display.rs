@@ -5,10 +5,9 @@ use atty::Stream;
 use colored::*;
 use keepcalm::SharedGlobalMut;
 use std::io::Write;
-use std::sync::Mutex;
 
 /// Initializes the global display based on the `TERM` and `COLORTERM` environment variables.
-static DISPLAY: SharedGlobalMut<Box<dyn StatusDisplay>> = SharedGlobalMut::new_lazy(|| {
+static DISPLAY: SharedGlobalMut<Box<dyn StatusDisplay>> = SharedGlobalMut::new_lazy_unsync(|| {
     let term = std::env::var("TERM").ok();
     let colorterm = std::env::var("COLORTERM").ok();
 
@@ -59,7 +58,7 @@ pub fn log(level: LogLevel, s: &str) {
     DISPLAY.shared_mut().write().log(level, s)
 }
 
-trait StatusDisplay: Send + Sync {
+trait StatusDisplay: Send {
     fn display(&mut self, state: EcamStatus);
     fn clear_status(&mut self);
     fn log(&mut self, level: LogLevel, s: &str);
@@ -98,7 +97,6 @@ struct TtyStatus {
     pub width: usize,
     last_was_status: bool,
     last_status: Option<String>,
-    lock: Mutex<()>,
 }
 
 impl TtyStatus {
@@ -108,12 +106,10 @@ impl TtyStatus {
             width,
             last_was_status: false,
             last_status: None,
-            lock: Mutex::new(()),
         }
     }
 
     fn log(&mut self, level: LogLevel, s: &str) {
-        let lock = self.lock.lock();
         if std::mem::take(&mut self.last_was_status) {
             print!("\r{}\r", " ".repeat(self.width));
             std::io::stdout().flush().unwrap();
@@ -130,26 +126,21 @@ impl TtyStatus {
             self.last_was_status = true;
             std::io::stdout().flush().unwrap();
         }
-        drop(lock);
     }
 
     fn clear_status(&mut self) {
-        let lock = self.lock.lock();
         if std::mem::take(&mut self.last_was_status) {
             print!("\r{}\r", " ".repeat(self.width));
             std::io::stdout().flush().unwrap();
         }
         self.last_status = None;
-        drop(lock);
     }
 
     fn status(&mut self, s: &str) {
-        let lock = self.lock.lock();
         self.last_status = Some(s.to_owned());
         print!("{}", s);
         self.last_was_status = true;
         std::io::stdout().flush().unwrap();
-        drop(lock);
     }
 
     fn random<T: From<usize>>(&self, n: usize, i: usize) -> T {
