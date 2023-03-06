@@ -160,7 +160,6 @@ fn command() -> clap::Command {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     pretty_env_logger::init();
-    longshot::display::initialize_display();
 
     let matches = command().get_matches();
 

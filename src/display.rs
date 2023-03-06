@@ -3,55 +3,32 @@
 use crate::ecam::EcamStatus;
 use atty::Stream;
 use colored::*;
-use lazy_static::lazy_static;
+use keepcalm::SharedGlobalMut;
 use std::io::Write;
 use std::sync::Mutex;
 
-lazy_static! {
-    static ref DISPLAY: Mutex<Option<Box<dyn StatusDisplay>>> = Mutex::new(None);
-}
-
 /// Initializes the global display based on the `TERM` and `COLORTERM` environment variables.
-pub fn initialize_display() {
+static DISPLAY: SharedGlobalMut<Box<dyn StatusDisplay>> = SharedGlobalMut::new_lazy(|| {
     let term = std::env::var("TERM").ok();
     let colorterm = std::env::var("COLORTERM").ok();
 
     if term.is_none() || !atty::is(Stream::Stdout) || !atty::is(Stream::Stderr) {
-        *DISPLAY
-            .lock()
-            .expect("Failed to lock display for initialization") =
-            Some(Box::<NoTtyStatusDisplay>::default());
+        Box::<NoTtyStatusDisplay>::default()
     } else if colorterm.is_some() {
-        *DISPLAY
-            .lock()
-            .expect("Failed to lock display for initialization") =
-            Some(Box::new(ColouredStatusDisplay::new(80)));
+        Box::new(ColouredStatusDisplay::new(80))
     } else {
-        *DISPLAY
-            .lock()
-            .expect("Failed to lock display for initialization") =
-            Some(Box::new(BasicStatusDisplay::new(80)));
+        Box::new(BasicStatusDisplay::new(80))
     }
-}
+});
 
 /// Displays the [`EcamStatus`] according to the current mode.
 pub fn display_status(state: EcamStatus) {
-    if let Ok(mut display) = DISPLAY.lock() {
-        if let Some(ref mut display) = *display {
-            display.display(state);
-            return;
-        }
-    }
-    println!("[default] {:?}", state);
+    DISPLAY.shared_mut().write().display(state)
 }
 
 /// Clears the currently displayed status.
 pub fn clear_status() {
-    if let Ok(mut display) = DISPLAY.lock() {
-        if let Some(ref mut display) = *display {
-            display.clear_status();
-        }
-    }
+    DISPLAY.shared_mut().write().clear_status()
 }
 
 pub fn shutdown() {
@@ -79,13 +56,7 @@ impl LogLevel {
 
 /// Logs the [`EcamStatus`] according to the current mode.
 pub fn log(level: LogLevel, s: &str) {
-    if let Ok(mut display) = DISPLAY.lock() {
-        if let Some(ref mut display) = *display {
-            display.log(level, s);
-            return;
-        }
-    }
-    println!("[default] {:?}", s);
+    DISPLAY.shared_mut().write().log(level, s)
 }
 
 trait StatusDisplay: Send + Sync {
