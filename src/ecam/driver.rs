@@ -29,14 +29,13 @@ pub trait EcamDriver: Send + Sync {
 
 #[cfg(test)]
 mod test {
+    use keepcalm::SharedMut;
     use super::*;
     use crate::ecam::EcamError;
-    use std::sync::Mutex;
 
-    #[derive(Default)]
     struct EcamTest {
-        pub read_items: Arc<Mutex<Vec<EcamDriverOutput>>>,
-        pub write_items: Arc<Mutex<Vec<EcamDriverPacket>>>,
+        pub read_items: SharedMut<Vec<EcamDriverOutput>>,
+        pub write_items: SharedMut<Vec<EcamDriverPacket>>,
     }
 
     impl EcamTest {
@@ -46,8 +45,8 @@ mod test {
             read_items.extend(items);
             read_items.push(EcamDriverOutput::Done);
             EcamTest {
-                read_items: Arc::new(Mutex::new(read_items)),
-                write_items: Arc::new(Mutex::new(vec![])),
+                read_items: SharedMut::new(read_items),
+                write_items: SharedMut::new(vec![]),
             }
         }
     }
@@ -55,16 +54,16 @@ mod test {
     impl EcamDriver for EcamTest {
         fn read(&self) -> crate::prelude::AsyncFuture<Option<EcamDriverOutput>> {
             Box::pin(async {
-                if self.read_items.lock().unwrap().is_empty() {
+                if self.read_items.read().is_empty() {
                     Ok(None)
                 } else {
-                    Ok(Some(self.read_items.lock().unwrap().remove(0)))
+                    Ok(Some(self.read_items.write().remove(0)))
                 }
             })
         }
 
         fn write(&self, data: EcamDriverPacket) -> crate::prelude::AsyncFuture<()> {
-            self.write_items.lock().unwrap().push(data);
+            self.write_items.write().push(data);
             Box::pin(async { Ok(()) })
         }
 
