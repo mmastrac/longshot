@@ -1,17 +1,16 @@
 //! Status display utilities.
 
 use crate::ecam::EcamStatus;
-use atty::Stream;
 use colored::*;
 use keepcalm::SharedGlobalMut;
-use std::io::Write;
+use std::io::{Write, IsTerminal};
 
 /// Initializes the global display based on the `TERM` and `COLORTERM` environment variables.
 static DISPLAY: SharedGlobalMut<Box<dyn StatusDisplay>> = SharedGlobalMut::new_lazy_unsync(|| {
     let term = std::env::var("TERM").ok();
     let colorterm = std::env::var("COLORTERM").ok();
 
-    if term.is_none() || !atty::is(Stream::Stdout) || !atty::is(Stream::Stderr) {
+    if term.is_none() || !std::io::stdout().is_terminal() || !std::io::stderr().is_terminal() {
         Box::<NoTtyStatusDisplay>::default()
     } else if colorterm.is_some() {
         Box::new(ColouredStatusDisplay::new(80))
