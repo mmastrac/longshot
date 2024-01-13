@@ -233,6 +233,7 @@ impl EcamPeripheral {
             uuid: CHARACTERISTIC_UUID,
             service_uuid: SERVICE_UUID,
             properties: CharPropFlags::WRITE | CharPropFlags::READ | CharPropFlags::INDICATE,
+            descriptors: Default::default(),
         };
 
         Ok(EcamPeripheral {

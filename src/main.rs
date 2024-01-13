@@ -4,6 +4,8 @@ use clap::{arg, command, Arg, ArgMatches};
 
 mod app;
 
+embed_plist::embed_info_plist!("Info.plist");
+
 use longshot::ecam::{
     ecam_lookup, ecam_scan, get_ecam_simulator, pipe_stdin, Ecam, EcamBT, EcamError, EcamId,
 };
