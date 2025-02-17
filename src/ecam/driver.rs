@@ -29,9 +29,9 @@ pub trait EcamDriver: Send + Sync {
 
 #[cfg(test)]
 mod test {
-    use keepcalm::SharedMut;
     use super::*;
     use crate::ecam::EcamError;
+    use keepcalm::SharedMut;
 
     struct EcamTest {
         pub read_items: SharedMut<Vec<EcamDriverOutput>>,

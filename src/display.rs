@@ -3,7 +3,7 @@
 use crate::ecam::EcamStatus;
 use colored::*;
 use keepcalm::SharedGlobalMut;
-use std::io::{Write, IsTerminal};
+use std::io::{IsTerminal, Write};
 
 /// Initializes the global display based on the `TERM` and `COLORTERM` environment variables.
 static DISPLAY: SharedGlobalMut<Box<dyn StatusDisplay>> = SharedGlobalMut::new_lazy_unsync(|| {

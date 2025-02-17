@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use keepcalm::SharedMut;
-use tokio::sync::{mpsc::Receiver};
+use tokio::sync::mpsc::Receiver;
 
 use crate::ecam::{EcamDriverOutput, EcamError};
 
