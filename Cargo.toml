@@ -1,6 +1,6 @@
 [package]
 name = "longshot"
-version = "0.1.8"
+version = "0.1.9"
 authors = ["Matt Mastracci <matthew@mastracci.com>"]
 edition = "2021"
 description = "API and CLI for ECAM-based Delonghi machines"
@@ -32,9 +32,8 @@ serde = "1.0"
 serde_json = "1.0"
 keepcalm = { version = "0.3", features = ["serde", "global_experimental"] }
 
-[dev_dependencies]
-# This appears to fail when upgraded
-rstest = "=0.19.0"
+[dev-dependencies]
+rstest = "0.24"
 const-decoder = "0"
 
 [lib]
