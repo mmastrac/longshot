@@ -42,8 +42,7 @@ pub async fn power_on(
 }
 
 pub async fn app_control(ecam: Ecam, a: u8, b: u8) -> Result<(), EcamError> {
-    ecam.wait_for_state(EcamStatus::Ready, display::display_status)
-        .await?;
+    eprintln!("Sending app control command {:02x} {:02x}", a, b);
     ecam.write_request(Request::AppControl(AppControl::Custom(a, b)))
         .await?;
     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
