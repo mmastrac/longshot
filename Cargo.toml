@@ -1,6 +1,6 @@
 [package]
 name = "longshot"
-version = "0.1.9"
+version = "0.1.10"
 authors = ["Matt Mastracci <matthew@mastracci.com>"]
 edition = "2021"
 description = "API and CLI for ECAM-based Delonghi machines"
