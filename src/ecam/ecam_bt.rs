@@ -9,8 +9,8 @@ use btleplug::platform::{Adapter, Manager};
 use stream_cancel::{StreamExt as _, Tripwire};
 use tokio::time;
 
-use super::packet_stream::packet_stream;
 use super::EcamId;
+use super::packet_stream::packet_stream;
 
 const SERVICE_UUID: uuid::Uuid = uuid::Uuid::from_u128(0x00035b03_58e6_07dd_021a_08123a000300);
 const CHARACTERISTIC_UUID: uuid::Uuid =
@@ -205,7 +205,9 @@ impl EcamPeripheral {
         id[13..id.len() - 1].to_owned()
     }
 
-    pub async fn notifications(&self) -> Result<impl Stream<Item = EcamDriverOutput> + use<>, EcamError> {
+    pub async fn notifications(
+        &self,
+    ) -> Result<impl Stream<Item = EcamDriverOutput> + use<>, EcamError> {
         self.peripheral.subscribe(&self.characteristic).await?;
         let peripheral = self.peripheral.clone();
         let (trigger, tripwire) = Tripwire::new();

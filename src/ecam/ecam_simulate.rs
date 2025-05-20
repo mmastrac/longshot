@@ -3,8 +3,8 @@ use tokio::sync::Mutex;
 use crate::ecam::{EcamDriver, EcamDriverOutput, EcamError};
 use crate::prelude::*;
 use crate::protocol::{
-    hexdump, EcamAccessory, EcamBeverageId, EcamDriverPacket, EcamMachineState, EcamMachineSwitch,
-    EcamRequestId, MonitorV2Response, PartialEncode, SwitchSet,
+    EcamAccessory, EcamBeverageId, EcamDriverPacket, EcamMachineState, EcamMachineSwitch,
+    EcamRequestId, MonitorV2Response, PartialEncode, SwitchSet, hexdump,
 };
 
 use super::EcamId;

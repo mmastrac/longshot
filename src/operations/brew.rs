@@ -2,8 +2,8 @@ use crate::{display, prelude::*};
 use crate::{
     ecam::{Ecam, EcamError, EcamStatus},
     operations::{
-        check_ingredients, list_recipies_for, BrewIngredientInfo, IngredientCheckError,
-        IngredientCheckMode,
+        BrewIngredientInfo, IngredientCheckError, IngredientCheckMode, check_ingredients,
+        list_recipies_for,
     },
     protocol::*,
 };

@@ -2,7 +2,7 @@ use crate::prelude::*;
 use async_stream::stream;
 use std::time::Duration;
 use tokio::join;
-use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
+use tokio_stream::{Stream, StreamExt, wrappers::ReceiverStream};
 use tuples::*;
 
 use crate::protocol::EcamDriverPacket;

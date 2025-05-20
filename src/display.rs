@@ -307,7 +307,7 @@ impl StatusDisplay for BasicStatusDisplay {
 
 #[cfg(test)]
 mod test {
-    use super::{make_bar, ColouredStatusDisplay, StatusDisplay};
+    use super::{ColouredStatusDisplay, StatusDisplay, make_bar};
 
     #[test]
     fn format_no_progress() {
