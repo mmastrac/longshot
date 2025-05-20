@@ -200,7 +200,7 @@ packet_definition!(
     ParameterRead(parameter u16, len u8) => (),
     ParameterWrite() => (),
     ParameterReadExt(parameter u16, len u8) => (parameter u16, data Vec<u8>),
-    StatisticsRead(parameter u16, len u8) => (),
+    StatisticsRead(parameter u16, len u8) => (data Vec<u8>),
     Checksum() => (),
     ProfileNameRead(start u8, end u8) => (names Vec<WideStringWithIcon>),
     ProfileNameWrite() => (),
@@ -228,6 +228,7 @@ impl Request {
                 | Request::MonitorV0()
                 | Request::MonitorV1()
                 | Request::MonitorV2()
+                | Request::StatisticsRead(..)
         )
     }
 }
@@ -331,7 +332,9 @@ mod test {
                 EcamBeverageTasteType::PrepareInversion.into()
             )
             .encode(),
-            vec![0x83, 0xf0, 0x02, 0x01, 0x01, 0x00, 0x67, 0x02, 0x02, 0x00, 0x00, 0x06]
+            vec![
+                0x83, 0xf0, 0x02, 0x01, 0x01, 0x00, 0x67, 0x02, 0x02, 0x00, 0x00, 0x06
+            ]
         );
     }
 }

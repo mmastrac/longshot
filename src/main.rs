@@ -1,13 +1,13 @@
 #![warn(clippy::all)]
 use clap::builder::{PossibleValue, PossibleValuesParser};
-use clap::{arg, command, Arg, ArgMatches};
+use clap::{Arg, ArgMatches, arg, command};
 
 mod app;
 
 embed_plist::embed_info_plist!("Info.plist");
 
 use longshot::ecam::{
-    ecam_lookup, ecam_scan, get_ecam_simulator, pipe_stdin, Ecam, EcamBT, EcamError, EcamId,
+    Ecam, EcamBT, EcamError, EcamId, ecam_lookup, ecam_scan, get_ecam_simulator, pipe_stdin,
 };
 use longshot::{operations::*, protocol::*};
 
@@ -144,6 +144,21 @@ fn command() -> clap::Command {
                 ),
         )
         .subcommand(
+            command!("read-statistic")
+                .about("Read a statistic from the device")
+                .args(DeviceCommon::args())
+                .arg(
+                    arg!(--"statistic" <statistic>)
+                        .required(true)
+                        .help("The statistic ID"),
+                )
+                .arg(
+                    arg!(--"length" <length>)
+                        .required(true)
+                        .help("The statistic length"),
+                ),
+        )
+        .subcommand(
             command!("read-parameter-memory")
                 .about("Read the parameter memory from the device")
                 .args(DeviceCommon::args()),
@@ -251,6 +266,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .expect("Required");
             let ecam = ecam(cmd, true).await?;
             read_parameter(ecam, parameter, length).await?;
+        }
+        Some(("read-statistic", cmd)) => {
+            let parameter = cmd
+                .get_one::<String>("statistic")
+                .map(|s| s.parse::<u16>().expect("Invalid number"))
+                .expect("Required");
+            let length = cmd
+                .get_one::<String>("length")
+                .map(|s| s.parse::<u8>().expect("Invalid number"))
+                .expect("Required");
+            let ecam = ecam(cmd, true).await?;
+            read_statistic(ecam, parameter, length).await?;
         }
         Some(("read-parameter-memory", cmd)) => {
             let ecam = ecam(cmd, true).await?;
