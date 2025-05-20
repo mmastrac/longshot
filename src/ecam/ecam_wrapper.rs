@@ -399,7 +399,7 @@ impl Ecam {
         self.write(EcamPacket::from_represenation(r)).await
     }
 
-    pub async fn packet_tap(&self) -> Result<impl Stream<Item = EcamOutput>, EcamError> {
+    pub async fn packet_tap(&self) -> Result<impl Stream<Item = EcamOutput> + use<>, EcamError> {
         let internals = self.internals.lock().await;
         Ok(BroadcastStream::new(internals.packet_tap.subscribe())
             .map(|x| x.expect("Unexpected receive error")))

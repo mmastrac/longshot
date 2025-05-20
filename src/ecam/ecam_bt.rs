@@ -205,7 +205,7 @@ impl EcamPeripheral {
         id[13..id.len() - 1].to_owned()
     }
 
-    pub async fn notifications(&self) -> Result<impl Stream<Item = EcamDriverOutput>, EcamError> {
+    pub async fn notifications(&self) -> Result<impl Stream<Item = EcamDriverOutput> + use<>, EcamError> {
         self.peripheral.subscribe(&self.characteristic).await?;
         let peripheral = self.peripheral.clone();
         let (trigger, tripwire) = Tripwire::new();

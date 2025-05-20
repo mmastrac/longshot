@@ -198,7 +198,7 @@ async fn send(
     send_output(tx, EcamDriverOutput::Packet(EcamDriverPacket::from_vec(v))).await
 }
 
-pub async fn get_ecam_simulator(id: &EcamId) -> Result<impl EcamDriver, EcamError> {
+pub async fn get_ecam_simulator(id: &EcamId) -> Result<impl EcamDriver + use<>, EcamError> {
     let simulator = if let EcamId::Simulator(simulator) = id {
         simulator
     } else {
