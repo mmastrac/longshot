@@ -30,7 +30,7 @@ impl PartialDecode<WideStringWithIcon> for WideStringWithIcon {
             name: s
                 .iter()
                 .collect::<String>()
-                .trim_end_matches(&['\0'])
+                .trim_end_matches(['\0'])
                 .to_owned(),
             icon: <u8>::partial_decode(input)?,
         })

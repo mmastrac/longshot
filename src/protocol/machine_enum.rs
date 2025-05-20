@@ -120,7 +120,7 @@ impl<T: MachineEnumerable<T>> SwitchSet<T> {
     pub fn from_u16(v: u16) -> Self {
         SwitchSet {
             value: v,
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
         }
     }
 

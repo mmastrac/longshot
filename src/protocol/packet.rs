@@ -96,10 +96,7 @@ pub fn checksum(buffer: &[u8]) -> [u8; 2] {
 }
 
 /// Returns the contents of the packet, minus header and checksum.
-pub fn unwrap_packet<T: ?Sized>(buffer: &T) -> &[u8]
-where
-    T: AsRef<[u8]>,
-{
+pub fn unwrap_packet<T: ?Sized + AsRef<[u8]>>(buffer: &T) -> &[u8] {
     let u: &[u8] = buffer.as_ref();
     &u[2..u.len() - 2]
 }
@@ -134,8 +131,7 @@ pub fn hexdump(buffer: &[u8]) -> String {
         .collect::<String>();
     let s2: String = buffer
         .iter()
-        .enumerate()
-        .map(|(_i, b)| {
+        .map(|b| {
             if *b >= 32 && *b < 127 {
                 *b as char
             } else {

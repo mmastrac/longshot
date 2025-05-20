@@ -247,7 +247,7 @@ impl EcamPeripheral {
     pub async fn validate(peripheral: Peripheral) -> Result<Option<Self>, EcamError> {
         let properties = peripheral.properties().await?;
         let is_connected = peripheral.is_connected().await?;
-        let properties = properties.map_or(Err(EcamError::Unknown), Ok)?;
+        let properties = properties.ok_or(EcamError::Unknown)?;
         if let Some(local_name) = properties.local_name {
             if !is_connected {
                 peripheral.connect().await?

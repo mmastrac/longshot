@@ -148,8 +148,8 @@ impl RecipeAccumulator {
         beverage: EcamBeverageId,
     ) -> (Option<Vec<RecipeInfo<u16>>>, Option<Vec<RecipeMinMaxInfo>>) {
         (
-            self.recipe.get(&beverage).map(Clone::clone),
-            self.recipe_min_max.get(&beverage).map(Clone::clone),
+            self.recipe.get(&beverage).cloned(),
+            self.recipe_min_max.get(&beverage).cloned(),
         )
     }
 }

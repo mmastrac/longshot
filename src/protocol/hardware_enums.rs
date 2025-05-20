@@ -1,8 +1,8 @@
+//! This file contains validated hardware enumerations and associated values.
+
 #![allow(dead_code)]
 use super::MachineEnumerable;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
-
-///! This file contains validated hardware enumerations and associated values.
 
 macro_rules! hardware_enum {
     ($comment:literal, $name:ident { $($(# [ doc = $item_comment:literal ])? $x:ident = $v:literal,)* } ) => {
@@ -33,7 +33,7 @@ macro_rules! hardware_enum {
 
             fn lookup_by_name_case_insensitive(s: &str) -> Option<$name> {
                 // TODO: Can use one of the static ToString crates to improve this
-                Self::all().find(|e| format!("{:?}", e).to_ascii_lowercase() == s.to_ascii_lowercase())
+                Self::all().find(|e| format!("{:?}", e).eq_ignore_ascii_case(s))
             }
 
             fn lookup_by_name(s: &str) -> Option<$name> {

@@ -75,7 +75,7 @@ fn command() -> clap::Command {
         .subcommand(
             command!("brew")
                 .about("Brew a coffee")
-                .args(&DeviceCommon::args())
+                .args(DeviceCommon::args())
                 .arg(
                     arg!(--"beverage" <name>)
                         .required(true)
@@ -121,17 +121,17 @@ fn command() -> clap::Command {
         .subcommand(
             command!("monitor")
                 .about("Monitor the status of the device")
-                .args(&DeviceCommon::args()),
+                .args(DeviceCommon::args()),
         )
         .subcommand(
             command!("status")
                 .about("Print the status of the device and then exit")
-                .args(&DeviceCommon::args()),
+                .args(DeviceCommon::args()),
         )
         .subcommand(
             command!("read-parameter")
                 .about("Read a parameter from the device")
-                .args(&DeviceCommon::args())
+                .args(DeviceCommon::args())
                 .arg(
                     arg!(--"parameter" <parameter>)
                         .required(true)
@@ -146,12 +146,12 @@ fn command() -> clap::Command {
         .subcommand(
             command!("read-parameter-memory")
                 .about("Read the parameter memory from the device")
-                .args(&DeviceCommon::args()),
+                .args(DeviceCommon::args()),
         )
         .subcommand(
             command!("list-recipes")
                 .about("List recipes stored in the device")
-                .args(&DeviceCommon::args())
+                .args(DeviceCommon::args())
                 .arg(arg!(--"detail").help("Show detailed ingredient information"))
                 .arg(arg!(--"raw").help("Show raw ingredient information")),
         )
@@ -160,12 +160,12 @@ fn command() -> clap::Command {
             command!("x-internal-pipe")
                 .about("Used to communicate with the device")
                 .hide(true)
-                .args(&DeviceCommon::args()),
+                .args(DeviceCommon::args()),
         )
         .subcommand(
             command!("app-control")
                 .about("Send a custom app-control command to the device (potentially dangerous)")
-                .args(&DeviceCommon::args())
+                .args(DeviceCommon::args())
                 .arg(arg!(--"a" <a>).help("The first byte of the command"))
                 .arg(arg!(--"b" <b>).help("The second byte of the command")),
         )
