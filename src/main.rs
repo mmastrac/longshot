@@ -144,6 +144,11 @@ fn command() -> clap::Command {
                 ),
         )
         .subcommand(
+            command!("read-parameter-memory")
+                .about("Read the parameter memory from the device")
+                .args(&DeviceCommon::args()),
+        )
+        .subcommand(
             command!("list-recipes")
                 .about("List recipes stored in the device")
                 .args(&DeviceCommon::args())
@@ -156,6 +161,13 @@ fn command() -> clap::Command {
                 .about("Used to communicate with the device")
                 .hide(true)
                 .args(&DeviceCommon::args()),
+        )
+        .subcommand(
+            command!("app-control")
+                .about("Send a custom app-control command to the device (potentially dangerous)")
+                .args(&DeviceCommon::args())
+                .arg(arg!(--"a" <a>).help("The first byte of the command"))
+                .arg(arg!(--"b" <b>).help("The second byte of the command")),
         )
 }
 
@@ -239,6 +251,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .expect("Required");
             let ecam = ecam(cmd, true).await?;
             read_parameter(ecam, parameter, length).await?;
+        }
+        Some(("read-parameter-memory", cmd)) => {
+            let ecam = ecam(cmd, true).await?;
+            read_parameter_memory(ecam).await?;
+        }
+        Some(("app-control", cmd)) => {
+            let ecam = ecam(cmd, true).await?;
+            let a = cmd
+                .get_one::<String>("a")
+                .map(|s| s.parse::<u8>().expect("Invalid number"))
+                .expect("Required");
+            let b = cmd
+                .get_one::<String>("b")
+                .map(|s| s.parse::<u8>().expect("Invalid number"))
+                .expect("Required");
+            app_control(ecam, a, b).await?;
         }
         Some(("x-internal-pipe", cmd)) => match DeviceCommon::parse(cmd).device_id {
             id @ EcamId::Simulator(..) => {

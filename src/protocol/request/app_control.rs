@@ -9,6 +9,8 @@ pub enum AppControl {
     TurnOn,
     /// Uncertain, but sent by the application.
     RefreshAppId,
+    /// Custom command.
+    Custom(u8, u8),
 }
 
 impl PartialEncode for AppControl {
@@ -16,6 +18,7 @@ impl PartialEncode for AppControl {
         match self {
             Self::TurnOn => out.extend_from_slice(&[2, 1]),
             Self::RefreshAppId => out.extend_from_slice(&[3, 2]),
+            Self::Custom(a, b) => out.extend_from_slice(&[*a, *b]),
         }
     }
 }

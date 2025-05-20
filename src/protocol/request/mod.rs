@@ -199,7 +199,7 @@ packet_definition!(
     AppControl(request AppControl) => (),
     ParameterRead(parameter u16, len u8) => (),
     ParameterWrite() => (),
-    ParameterReadExt(parameter u16, len u8) => (),
+    ParameterReadExt(parameter u16, len u8) => (parameter u16, data Vec<u8>),
     StatisticsRead(parameter u16, len u8) => (),
     Checksum() => (),
     ProfileNameRead(start u8, end u8) => (names Vec<WideStringWithIcon>),
