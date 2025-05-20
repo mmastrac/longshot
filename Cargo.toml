@@ -2,7 +2,7 @@
 name = "longshot"
 version = "0.1.10"
 authors = ["Matt Mastracci <matthew@mastracci.com>"]
-edition = "2021"
+edition = "2024"
 description = "API and CLI for ECAM-based Delonghi machines"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/mmastrac/longshot"
