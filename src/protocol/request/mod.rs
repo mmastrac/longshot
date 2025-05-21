@@ -93,6 +93,14 @@ impl PartialDecode<u16> for u16 {
     }
 }
 
+impl PartialDecode<u32> for u32 {
+    fn partial_decode(input: &mut &[u8]) -> Option<u32> {
+        let a = <u16>::partial_decode(input)? as u32;
+        let b = <u16>::partial_decode(input)? as u32;
+        Some((a << 16) | b)
+    }
+}
+
 macro_rules! packet_definition {
     (
         $(
@@ -200,7 +208,7 @@ packet_definition!(
     ParameterRead(parameter u16, len u8) => (),
     ParameterWrite() => (),
     ParameterReadExt(parameter u16, len u8) => (parameter u16, data Vec<u8>),
-    StatisticsRead(parameter u16, len u8) => (data Vec<u8>),
+    StatisticsRead(parameter u16, len u8) => (data Vec<Statistic>),
     Checksum() => (),
     ProfileNameRead(start u8, end u8) => (names Vec<WideStringWithIcon>),
     ProfileNameWrite() => (),
@@ -230,6 +238,21 @@ impl Request {
                 | Request::MonitorV2()
                 | Request::StatisticsRead(..)
         )
+    }
+}
+
+/// A statistic read from the device.
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct Statistic {
+    pub stat: u16,
+    pub value: u32,
+}
+
+impl PartialDecode<Statistic> for Statistic {
+    fn partial_decode(input: &mut &[u8]) -> Option<Self> {
+        let stat = <u16>::partial_decode(input)?;
+        let value = <u32>::partial_decode(input)?;
+        Some(Statistic { stat, value })
     }
 }
 

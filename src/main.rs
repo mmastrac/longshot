@@ -159,6 +159,11 @@ fn command() -> clap::Command {
                 ),
         )
         .subcommand(
+            command!("read-statistics")
+                .about("Read all statistics from the device")
+                .args(DeviceCommon::args()),
+        )
+        .subcommand(
             command!("read-parameter-memory")
                 .about("Read the parameter memory from the device")
                 .args(DeviceCommon::args()),
@@ -266,6 +271,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .expect("Required");
             let ecam = ecam(cmd, true).await?;
             read_parameter(ecam, parameter, length).await?;
+        }
+        Some(("read-statistics", cmd)) => {
+            let ecam = ecam(cmd, true).await?;
+            read_statistics(ecam).await?;
         }
         Some(("read-statistic", cmd)) => {
             let parameter = cmd
